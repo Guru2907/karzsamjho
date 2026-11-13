@@ -28,6 +28,13 @@ Every agent session and every person adds an entry here at the end of each task,
 - Status in docs/TASKS.md: no task ID (demo fix)
 - Next: A4 cache.
 - Broken / risks: none.
+### 13 Nov 2026, 6:55 PM · after-review split + D7 language change · agent for Gurpreet
+- Did: split the remaining backend/bot work between Gurpreet and Siddeshwar by file (PLAN.md "After the review", D34); D7 changed from Kannada to Bengali + Marathi (D32; both edge-tts voices checked to exist); voice-note input contract (D33); signatures for cache, harass, evidence, next_step, transcribe, speak with lang; Siddeshwar's prompt.
+- Files: docs/PLAN.md, docs/TASKS.md (D6, D7, owners), docs/DECISIONS.md (D32 to D34), docs/PROGRESS.md
+- Proof: docs only; `pytest -q` 152 passed on main.
+- Status in docs/TASKS.md: no status change; owners added
+- Next: Gurpreet seconds stamp on the card, then A4 (cache); Siddeshwar F1 (harassment rules).
+- Broken / risks: Bengali/Marathi sentences need a native speaker's check before D7 is merged.
 
 ### 13 Nov 2026, 6:30 PM · docs brought up to date with main · agent for Gurpreet
 - Did: all PRs #1 to #11 are merged; local main matches GitHub (7e7b7cb). Updated every doc the code now contradicts: START_HERE (checks are real, merge rules), ARCHITECTURE (what is built, second reading only on a mismatch), TESTING (152 tests, real-run results), RUNBOOK (new symptoms), README, DEMO (seconds stamp, LIVE 2 needs C1/C2), PLAN (status), TASKS (B3, B4, B5, D2 = done after an independent check; D3, D4 review until real Telegram), DECISIONS D28 to D31.

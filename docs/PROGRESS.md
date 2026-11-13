@@ -21,6 +21,13 @@ Every agent session and every person adds an entry here at the end of each task,
 
 ## Log
 
+### 14 Nov 2026, 12:05 AM · B9b scam rule in more scripts · agent for Gurpreet
+- Did: the advance-fee code rule (backup for the AI) now knows Devanagari Hindi, Bengali and Marathi pay / charge / before words, matched as plain text because their vowel signs break ; sentences also split on । and ॥. Left out on purpose: Bengali দিন ("give" and "day") and कर ("tax", but inside कर्ज). English words keep matching with endings (released, disbursal).
+- Files: api/core/extract.py, api/tests/test_advance_fee.py, docs/ARCHITECTURE.md, TASKS.md
+- Proof: `pytest -q` 280 passed (14 new: 6 scams caught, 6 normal offers / repayments not, । split, Devanagari voice note caught when the AI misses it). Real AI: hi / bn / mr scams -> 1500 / 1200 / 1500 from both the AI and the code rule; normal Marathi offer -> no warning, numbers right.
+- Status in docs/TASKS.md: B9b = review
+- Next: C1 lender check (needs Anam's RBI CSV, G4).
+- Broken / risks: none.
 ### 14 Nov 2026, 12:45 AM · B11 Gemini backup for SMS and voice · agent for Gurpreet
 - Did: read_text tries gpt-oss-20b then Gemini Flash-Lite (regex stays the caller's last resort); transcribe tries Whisper then Gemini listening to the audio (OGG / WAV / MP3). Same rules: temperature 0, timeout, no retry, a 429 or a rejected reply moves on, engine name recorded. Harassment labelling (F1) gets the backup too because it uses read_text. Tests: conftest makes both Gemini backups offline, so no test reaches the internet even with real keys.
 - Bug found in the first drill and fixed: the Gemini client was not kept in a variable, so Python closed it before the request ("client has been closed"); a regression test fails if that comes back.

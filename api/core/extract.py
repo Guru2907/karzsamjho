@@ -238,12 +238,34 @@ def _numbers_in(text: str) -> set[float]:
     return out
 
 
-_PAY_VERB = re.compile(r"\b(pay|paid|deposit|transfer|send|bhejo|bhejiye|bhejen|jama|bharo|bhariye|"
-                       r"chukao)\b", re.I)
-_CHARGE = re.compile(r"(fee|fees|charge|charges|insurance|registration|processing|gst|tax|token|"
-                     r"security|verification|stamp|file|kharcha|shulk)", re.I)
-_BEFORE = re.compile(r"(release|before|unlock|activate|to get|disburs|approval|approve|advance|\bnow\b|"
-                     r"immediately|turant|pehle|abhi)", re.I)
+def _words(latin: str, native: tuple[str, ...]) -> re.Pattern:
+    """Latin words are matched as whole words (endings allowed where written \\w*); Devanagari and
+    Bengali words as plain text, because their vowel signs break the \\b word boundary (B9b).
+    Ambiguous short words are left out on purpose: Bengali দিন is both "give" and "day", and
+    Hindi/Marathi कर is "tax" but also part of कर्ज (loan)."""
+    return re.compile(rf"\b(?:{latin})\b|(?:{'|'.join(map(re.escape, native))})", re.I)
+
+
+_PAY_VERB = _words(
+    r"pay|paid|deposit|transfer|send|bhejo|bhejiye|bhejen|jama|bharo|bhariye|chukao",
+    ("भेजो", "भेजें", "भेजिए", "भेज दो", "भेज दें", "जमा करो", "जमा करें", "जमा कीजिए", "भरो", "भरें",
+     "भुगतान करें", "भुगतान करो", "ट्रांसफर",                                         # Hindi
+     "পাঠান", "পাঠাও", "পাঠিয়ে", "জমা দিন", "জমা করুন", "পেমেন্ট করুন", "ট্রান্সফার",     # Bengali
+     "पाठवा", "पाठवावे", "भरा", "भरावे", "जमा करा", "भरणा करा", "पेमेंट करा", "ट्रान्सफर"))  # Marathi
+_CHARGE = _words(
+    r"fees?|charges?|insurance|registration|processing|gst|tax|token|security|verification|stamp|"
+    r"files?|kharcha|shulk",
+    ("शुल्क", "फीस", "फी", "चार्ज", "प्रोसेसिंग", "बीमा", "इंश्योरेंस", "रजिस्ट्रेशन", "पंजीकरण", "जीएसटी",
+     "टैक्स", "टोकन",                                                                  # Hindi (+ Marathi शुल्क, फी)
+     "ফি", "চার্জ", "প্রসেসিং", "বীমা", "ইন্স্যুরেন্স", "রেজিস্ট্রেশন", "নিবন্ধন", "শুল্ক", "জিএসটি",
+     "ট্যাক্স",                                                                          # Bengali
+     "विमा", "नोंदणी"))                                                                # Marathi
+_BEFORE = _words(
+    r"releas\w*|before|unlock\w*|activat\w*|to get|disburs\w*|approv\w*|advance|now|immediately|"
+    r"turant|pehle|abhi",
+    ("पहले", "अभी", "तुरंत", "रिलीज", "पाने के लिए", "मिलने से पहले", "एडवांस",            # Hindi
+     "আগে", "এখনই", "এখন", "তাড়াতাড়ি", "রিলিজ", "পেতে", "পাওয়ার জন্য",              # Bengali
+     "आधी", "आत्ता", "आता", "त्वरित", "लगेच", "मिळवण्यासाठी", "मिळण्यासाठी"))           # Marathi
 
 
 def pay_first_in_text(text: str) -> Optional[float]:
@@ -252,7 +274,7 @@ def pay_first_in_text(text: str) -> Optional[float]:
     Needs all three in one sentence: a pay word, a charge word and a before/now word, plus an
     amount. "Pay Rs 5600 in 7 days" (repaying) has no charge word, so it does not count.
     """
-    for sentence in re.split(r"[.!?\n]+", text.translate(DEVANAGARI_DIGITS)):
+    for sentence in re.split(r"[.!?\n।॥]+", text.translate(DEVANAGARI_DIGITS)):    # । ends Hindi/Bengali sentences
         if _PAY_VERB.search(sentence) and _CHARGE.search(sentence) and _BEFORE.search(sentence):
             m = _AMOUNT.search(sentence)
             if m:

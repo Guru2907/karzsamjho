@@ -147,7 +147,7 @@ All changes go through a pull request that Gurpreet merges (D27).
 - Done when: "₹5 lakh" -> 500000 from the AI path and the regex path, and is not dropped as an invented number
 
 ### B9b · Scam code rule in Devanagari Hindi, Bengali and Marathi words
-- Status: todo (Gurpreet)
+- Status: review (Gurpreet): Devanagari Hindi, Bengali, Marathi words + । sentence split; real AI and code rule agree (12:05 AM)
 - Type: Must
 - Depends on: B9
 - Files: api/core/extract.py, api/tests/test_advance_fee.py

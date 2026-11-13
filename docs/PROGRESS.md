@@ -21,6 +21,14 @@ Every agent session and every person adds an entry here at the end of each task,
 
 ## Log
 
+### 13 Nov 2026, 7:35 PM · B9 advance-fee warning + B10 lakh/crore · agent for Gurpreet
+- Did: the reader also copies `pay_first` (money asked before the loan); a code rule backs it up for SMS; such a check gets next step DO_NOT_PAY_FIRST and the voice starts "Savdhaan! ... Paise mat bhejo"; a pay-first scam with no loan numbers now answers instead of "samajh nahi aaya". "5 lakh", "2 crore", "50 hazaar", "5k" become rupees (AI path, regex path, and the invented-number check). CLAUDE.md reader field list updated (D36).
+- Files: api/core/extract.py, api/main.py, api/tests/test_advance_fee.py (new), CLAUDE.md, docs/TASKS.md (B9, B10 new), DECISIONS.md (D36), ARCHITECTURE.md, TESTING.md, DEMO.md
+- Proof: `pytest -q` 224 passed (32 new). Real API + gpt-oss on Anam's 3 scam texts: scam2 and scam3 warned, scam1 not, "₹5 lakh" -> 500000; a normal offer unchanged.
+- Status in docs/TASKS.md: B9, B10 = review
+- Next: A3 database.
+- Broken / risks: api/data/offers/sms_offers.json (Anam's, #19) expects scam3 in_hand 498800; with D36 the insurance is paid separately, so in_hand is 500000 and fees null. Ask her to update that line. Touches main.py and extract.py like Siddeshwar's #20: whichever merges second may need a small conflict fix.
+
 ### 13 Nov 2026, 7:16 PM · D6 server side (PR 1 of 4 for D6 + D7) · agent for Siddeshwar
 - Did: voice note -> card. fallback.transcribe (Groq Whisper, hi, temp 0, timeout, no retries; logs length only). extract.extract_from_voice: Whisper -> gpt-oss "numbers in digits" (D22; raw transcript if it fails) -> code expands "6 हजार" -> 6000 -> extract_from_text. Engines.listen. POST /api/checks takes form field `audio`; no cache, no second reading. Started before the 7:30 gate was confirmed, on Siddeshwar's say-so.
 - Files: api/core/fallback.py (transcribe), api/core/extract.py (extract_from_voice, expand_multipliers, MSG_BAD_VOICE), api/core/schemas.py (Engines.listen), api/main.py (create_check audio, run_check audio, engines.listen), api/tests/test_voice.py (new), api/tests/test_pipeline.py (2 expected engines blocks gain "listen": None)

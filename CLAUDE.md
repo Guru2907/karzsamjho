@@ -105,7 +105,7 @@ CheckResult:
 - lender.match: FOUND | SIMILAR | NOT_FOUND
 
 ## The Decide rules
-Extract (AI) returns ONLY JSON with: is_loan_ad, principal, in_hand, fees, repay_total, emi_amount, emi_count, tenure_days, lender_name, app_name. null for anything not clearly written. The AI copies numbers that are written; it never calculates. If the AI returns in_hand but the ad did not state it, ignore the AI's value and derive it in code.
+Extract (AI) returns ONLY JSON with: is_loan_ad, principal, in_hand, fees, repay_total, emi_amount, emi_count, tenure_days, lender_name, app_name, pay_first (money asked BEFORE the loan, D36). null for anything not clearly written. Amounts like "5 lakh" are copied as written and turned into rupees by code. The AI copies numbers that are written; it never calculates. If the AI returns in_hand but the ad did not state it, ignore the AI's value and derive it in code.
 
 Cross-check (code), within Rs 1: principal - fees = in_hand; emi_amount * emi_count = repay_total. A mismatch triggers the second reading. Fields the two readers disagree on become unverified.
 

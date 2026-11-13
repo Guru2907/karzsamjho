@@ -271,7 +271,7 @@ All changes go through a pull request that Gurpreet merges (D27).
 - Done when: with /bhasha bn or mr the card labels are in that language (native-speaker OK first)
 
 ### D12 · WhatsApp via Twilio sandbox (D39)
-- Status: todo (Siddeshwar)
+- Status: dropped (lead, 9:15 PM, D41): WhatsApp stays out of scope (D11)
 - Type: Stretch of stretch
 - Depends on: every Must and Stretch task passed
 - Files: a new bot/whatsapp.py (Siddeshwar); reuses POST /api/checks

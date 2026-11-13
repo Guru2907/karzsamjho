@@ -3,7 +3,7 @@
 This replaces the earlier split. Decision D25 in docs/DECISIONS.md. If this file and the code disagree, trust the code and fix this file.
 
 
-## Night plan: from 9:00 PM, 13 Nov (D37, D38, D39)
+## Night plan: from 9:00 PM, 13 Nov (D37, D38, D40, D41)
 
 The 7:30 PM review passed. This section replaces the earlier splits for everything still open. **Nobody edits a file outside their own list.** Hard limits: **12:30 AM** all 4 core features pass · **1:00 AM** kill-switch drill · **3:30 AM** feature freeze · **9:00 AM** submission.
 
@@ -40,7 +40,6 @@ Everyone may add their own entry to `docs/PROGRESS.md` and set their own task st
 | D | D9 bot tidy: one short line instead of a traceback on a network blip | S | Siddeshwar | none | after 12:30 |
 | D | D10 cached ads show "⏱ 0.0 sec": wording ("pehle se jaancha hua") | S | Siddeshwar | none | after 12:30 |
 | D | D11 card text in Bengali/Marathi too | SS | Siddeshwar | D7 | if time |
-| D | D12 WhatsApp via Twilio (D39 conditions) | SS | Siddeshwar | everything else | if time, before 3:30 |
 | E | E2 Raju card · E3 + E9 /check (photo, SMS, audio, states) | M | Tejaswini | none | 10:00 PM |
 | E | E6 home-screen app (manifest, icons) | M | Tejaswini | E3 | 10:30 PM |
 | E | E4 /cases · E5 /cases/:id (timeline, rules, PDF, verify) | M | Tejaswini | F2 shape | 12:00 AM |
@@ -71,7 +70,7 @@ Critical path: **A3 -> F2 -> F3 + F4 -> D5** (feature 4) and **G4 -> C1 -> C2 + 
 | Person | Wave 1 (now, in this order) | Later |
 |---|---|---|
 | Gurpreet | B9b -> A3 -> F2 (unblocks Siddeshwar's F3, D5) -> C1 (unblocks his C4) -> A5 -> B11 | C2, F4, F5, G6, G7, G5, I5 |
-| Siddeshwar | MUST first: F1 -> C4 -> F3 -> D5; then STRETCH: D9 -> D10 -> D8 -> D11 | D12 WhatsApp (D39) |
+| Siddeshwar | MUST first: F1 -> C4 -> F3 -> D5; then STRETCH: D9 -> D10 -> D8 -> D11 | (WhatsApp dropped, D41) |
 | Tejaswini | E2/E3/E9 -> E6 -> E4/E5 -> E8 -> E7 | H1-H3 |
 | Anam | G4 -> G2 -> G8 -> G3 | G1, I1, I3 |
 
@@ -126,7 +125,6 @@ STRETCH (right after 1 to 4 are merged; D40):
 
 STRETCH OF STRETCH (only if everything above is done, and before 3:30 AM):
 8. D11 card text in Bengali/Marathi (native-speaker OK first).
-9. D12 WhatsApp via Twilio sandbox, under D39: a separate entry point that reuses POST /api/checks; needs a public tunnel; never replaces Telegram; stop at 3:30 AM even if unfinished.
 ```
 
 ### Prompt for Tejaswini (Antigravity, web)

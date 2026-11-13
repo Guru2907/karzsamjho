@@ -70,14 +70,14 @@ All changes go through a pull request that Gurpreet merges (D27).
 ## B. Reading and maths
 
 ### B1 · `extract.py`: photo → fields with Qwen (temperature 0, fences stripped, fields validated)
-- Status: todo
+- Status: review (Gurpreet): synthetic ad read correctly; printed ads still to test
 - Type: Must
 - Depends on: A4
 - Files: api/core/extract.py
 - Done when: The 3 printed ads, photographed by phone, return correct fields
 
 ### B2 · Text input → fields with gpt-oss-20b
-- Status: todo
+- Status: review (Gurpreet)
 - Type: Must
 - Depends on: A4
 - Files: api/core/extract.py
@@ -112,14 +112,14 @@ All changes go through a pull request that Gurpreet merges (D27).
 - Done when: A disputed field becomes "couldn't verify"; an agreed field is kept
 
 ### B7 · Not-a-loan detection
-- Status: todo
+- Status: review (Gurpreet)
 - Type: Must
 - Depends on: B1
 - Files: api/core/extract.py
 - Done when: A photo of a menu gets a polite refusal, not a card
 
 ### B8 · Regex backup for text offers
-- Status: todo
+- Status: review (Gurpreet)
 - Type: Must
 - Depends on: B2
 - Files: api/core/extract.py, api/tests/test_extract.py

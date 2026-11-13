@@ -6,7 +6,7 @@ Every agent session and every person adds an entry here at the end of each task,
 - Now: re-planned at 4:50 PM (D25); no product code yet. Everyone follows docs/PLAN.md: photo or text -> card + Hindi voice, with second reading, merged and tested by 7:00 PM, rehearsal 7:00 to 7:30 PM. Harassment, lender, database and cache wait until after the review.
 - Gates: 2:00 PM [x] · 7:30 PM [ ] · 12:30 AM [ ] · 3:30 AM freeze [ ]
 - Known broken: (none yet)
-- Groq photo reads used today on the server account: 0 of about 80 (Gurpreet's own account: 1)
+- Groq photo reads used today on the server account: 0 of about 80 (Gurpreet's own account: 2)
 
 ## Entry template (copy, fill, paste at the top of the log below)
 ```
@@ -20,6 +20,14 @@ Every agent session and every person adds an entry here at the end of each task,
 ```
 
 ## Log
+
+### 13 Nov 2026, 5:45 PM · L3 extract.py (B1, B2, B7, B8) · agent for Gurpreet
+- Did: reading prompt; strip fences; Pydantic `Fields` that turns "Rs 5,000" -> 5000, "2 weeks" -> 14 days, "10%" fee -> rupees (in code); not-a-loan and nothing-readable raise NotALoan / Unreadable with the Hindi text; SMS numbers not written in the message are dropped (stops invented in_hand, D18); regex backup when gpt-oss is down or answers badly.
+- Files: api/core/extract.py, api/tests/test_extract.py (new)
+- Proof: `pytest -q` 59 passed (40 new; uses the real Qwen/Gemini replies). Real run: ad photo via Qwen 2.18 s -> 5000/1200/5000/7; English and Hinglish SMS via gpt-oss ~1 s, both correct; a non-loan message -> polite Hindi refusal.
+- Status in docs/TASKS.md: B2, B7, B8 = review; B1 = review on the synthetic ad, the 3 printed ads still to test
+- Next: L4 join everything in POST /api/checks (needs Siddeshwar's PRs #3, #4 and speak.py).
+- Broken / risks: B1 "done when" needs the printed ads (data teammate, 6:00 PM). Second reading (L5) not in yet.
 
 ### 13 Nov 2026, 5:40 PM · L2 read_image(), read_text() (A4, A6) · agent for Gurpreet
 - Did: Qwen -> Gemini photo reading, gpt-oss-20b text reading. Each engine once, temperature 0, timeout from config, Groq max_retries=0, Gemini 1 attempt; a 429, error or a reply that `check` rejects moves on at once; EngineError when all fail. Logs engine, seconds, tokens, Groq tokens/requests left; errors logged by type + status only.

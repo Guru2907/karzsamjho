@@ -28,6 +28,13 @@ Every agent session and every person adds an entry here at the end of each task,
 - Status in docs/TASKS.md: F1 = review
 - Next: C4 lender sentence, then F3 PDF, then D5 bot.
 - Broken / risks: the old skeleton name label_event is replaced by label (docs/PLAN.md signature). No G2 samples in api/data/harassment yet, so the samples are in the test file.
+### 13 Nov 2026, 11:45 PM · A3 SQLite database · agent for Gurpreet
+- Did: db.py stores checks, cases and events in SQLite (DB_PATH, *.db not committed); one short connection per call; helpers for F2: last_event_hash (chain start = 64 zeros) and calls_on (H6). main.py writes every check to the database (cache hits never overwrite the first answer), reads /api/checks, /api/checks/{id} and /api/stats from it, keeps CHECKS only as a fast in-memory copy, and never reuses a check id after a restart. Every test now gets its own temp database (conftest.py). /api/cases is still sample data until F2.
+- Files: api/core/db.py, api/main.py, api/tests/test_db.py (new), api/tests/conftest.py, docs/ARCHITECTURE.md, START_HERE.md, RUNBOOK.md, TASKS.md
+- Proof: `pytest -q` 274 passed (8 new), no real database file created by the tests. Real: SMS check chk_0001 (4500 / 5600 / 7 / 1100) -> API fully stopped -> started again -> same check returned from the database; stats and health count it.
+- Status in docs/TASKS.md: A3 = review
+- Next: F2 events + hash chain (unblocks Siddeshwar's F3 and D5).
+- Broken / risks: none. Before the demo, copy karzsamjho.db with cache/ and audio/ to the backup laptop (RUNBOOK).
 
 ### 13 Nov 2026, 9:15 PM · WhatsApp skipped · agent for Gurpreet
 - Did: the lead skipped WhatsApp: D41 reverses D39, D12 dropped, CLAUDE.md and AGENTS.md list WhatsApp as plain out of scope again; removed from Siddeshwar's prompt.

@@ -43,6 +43,29 @@ Every agent session and every person adds an entry here at the end of each task,
 - Status in docs/TASKS.md: A3 = review
 - Next: F2 events + hash chain (unblocks Siddeshwar's F3 and D5).
 - Broken / risks: none. Before the demo, copy karzsamjho.db with cache/ and audio/ to the backup laptop (RUNBOOK).
+### 13 Nov 2026, 11:53 PM · F3 evidence PDF · agent for Siddeshwar
+- Did: evidence.build_pdf(case) -> English PDF: case details + "Day N of 30", rules-broken table with the RBI basis (H6 marked as our threshold), timeline (masked words), every hash and prev_hash, where to complain (case route, or all routes + police when H2/H5), complaint draft on one page. mask(): any 12-digit number -> "XXXX XXXX 1234". Text in Devanagari/Bengali script gets a note instead of broken letters (D20). Also event_hash / verify_chain = SHA-256(prev_hash + event fields) for F2 / F4 if Gurpreet wants one shared definition.
+- Files: api/core/evidence.py, api/tests/test_evidence.py (new, 23 tests), docs/PROGRESS.md, docs/TASKS.md
+- Proof: `pytest -q` 348 passed. Sample PDF checked by eye: 2 pages, every section present, Aadhaar masked.
+- Status in docs/TASKS.md: F3 = review
+- Next: D5 bot (forward -> case event -> PDF).
+- Broken / risks: GET /api/cases/{id}/evidence.pdf is Gurpreet's main.py: it should return build_pdf(case) with media_type application/pdf. Needs F2 for real cases.
+
+### 13 Nov 2026, 11:48 PM · C4 spoken lender result · agent for Siddeshwar
+- Did: speak.lender_sentence(lender, lang) -> fixed sentence for FOUND / SIMILAR / NOT_FOUND, None when match is null (D37, mentor feedback: Raju cannot read the card). Hindi exactly as docs/PLAN.md "Night plan"; bn / mr are drafts waiting for the native-speaker OK. Never "safe", "illegal" or "fake" (tested in all three languages).
+- Files: api/core/speak.py, api/tests/test_speak.py (14 new tests), docs/PROGRESS.md, docs/TASKS.md
+- Proof: `pytest -q` 325 passed.
+- Status in docs/TASKS.md: C4 = review (wiring into the voice is Gurpreet's main.py, after C1)
+- Next: F3 evidence PDF, then D5.
+- Broken / risks: not spoken yet: main.py must append lender_sentence(...) after speech_text(...) once C1 fills lender.match. bn / mr wording needs a native speaker.
+
+### 13 Nov 2026, 11:46 PM · F1 harassment rules · agent for Siddeshwar
+- Did: harass.label(event, calls_that_day) -> sorted rule ids. H1 (before 08:00 / after 19:00 IST, hours from config), H6 (calls_that_day >= h6_calls_per_day, "our threshold") and H3 when contacted is family/employer/contacts are plain code. H2-H5: gpt-oss-20b JSON (check= parser) plus a Hinglish/English/Devanagari keyword list, used alone when the model is down and added as a safety net when it answers. RULES (English meanings) and RULES_BASIS for the PDF.
+- Files: api/core/harass.py, api/tests/test_harass.py (new, 45 tests), docs/PROGRESS.md, docs/TASKS.md
+- Proof: `pytest -q` 311 passed. Real gpt-oss on 10 hand-written samples: 10/10 match (first try without the safety net: 7/10; it missed "family ko sab bata diya" H3 and "warna police" H2). Polite 11 AM reminder -> []. ~2 s per event.
+- Status in docs/TASKS.md: F1 = review
+- Next: C4 lender sentence, then F3 PDF, then D5 bot.
+- Broken / risks: the old skeleton name label_event is replaced by label (docs/PLAN.md signature). No G2 samples in api/data/harassment yet, so the samples are in the test file.
 
 ### 13 Nov 2026, 9:15 PM · WhatsApp skipped · agent for Gurpreet
 - Did: the lead skipped WhatsApp: D41 reverses D39, D12 dropped, CLAUDE.md and AGENTS.md list WhatsApp as plain out of scope again; removed from Siddeshwar's prompt.

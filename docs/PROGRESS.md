@@ -21,6 +21,14 @@ Every agent session and every person adds an entry here at the end of each task,
 
 ## Log
 
+### 13 Nov 2026, 7:18 PM · D6 bot side (PR 2 of 4 for D6 + D7) · agent for Siddeshwar
+- Did: bot/main.py on_voice: a Telegram voice note goes to POST /api/checks as form field `audio` (voice.ogg), then the same card + MP3 as a photo. Notes over 60 s are refused in Hindi before any Whisper call; a failed download or an unclear note gets "Awaaz saaf nahi aayi. Dobara bolo, ya photo bhejo."; /start mentions voice notes.
+- Files: bot/main.py, api/tests/test_bot.py (6 new tests), docs/PROGRESS.md, docs/TASKS.md
+- Proof: `pytest -q` 198 passed. Real run (bot handler + real API + real Whisper / gpt-oss / edge-tts; only Telegram faked): spoken offer -> card ₹5,000 / ₹6,000 / 7 din / ₹1,000 zyada, ⏱ 5.7 sec, then a 64 KB MP3.
+- Status in docs/TASKS.md: D6 = review
+- Next: D7 (PR 3 server: bn + mr voices; PR 4 bot: /bhasha). Real Telegram voice note with the test bot.
+- Broken / risks: not yet tried in the real Telegram app. Stacked on PR 1 (merge #17 first).
+
 ### 13 Nov 2026, 7:16 PM · D6 server side (PR 1 of 4 for D6 + D7) · agent for Siddeshwar
 - Did: voice note -> card. fallback.transcribe (Groq Whisper, hi, temp 0, timeout, no retries; logs length only). extract.extract_from_voice: Whisper -> gpt-oss "numbers in digits" (D22; raw transcript if it fails) -> code expands "6 हजार" -> 6000 -> extract_from_text. Engines.listen. POST /api/checks takes form field `audio`; no cache, no second reading. Started before the 7:30 gate was confirmed, on Siddeshwar's say-so.
 - Files: api/core/fallback.py (transcribe), api/core/extract.py (extract_from_voice, expand_multipliers, MSG_BAD_VOICE), api/core/schemas.py (Engines.listen), api/main.py (create_check audio, run_check audio, engines.listen), api/tests/test_voice.py (new), api/tests/test_pipeline.py (2 expected engines blocks gain "listen": None)

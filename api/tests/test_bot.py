@@ -155,3 +155,97 @@ def test_card_shows_seconds_stamp():
 @pytest.mark.parametrize("seconds", [None, "fast", True, -1])
 def test_card_without_a_usable_seconds_has_no_stamp(seconds):
     assert "⏱" not in bot.card_text({**RESULT, "seconds": seconds})
+
+
+# ---------------------------------------------------------------- voice notes (D6)
+class FakeVoice:
+    def __init__(self, duration=8, data=b"OggS fake voice", mime_type="audio/ogg", fail=False):
+        self.duration, self.mime_type, self._data, self._fail = duration, mime_type, data, fail
+
+    async def get_file(self):
+        if self._fail:
+            raise RuntimeError("telegram download failed")
+        data = self._data
+
+        class File:
+            async def download_as_bytearray(self):
+                return bytearray(data)
+        return File()
+
+
+def fake_check_api(monkeypatch, check_response):
+    """A fake API: POST /api/checks answers check_response; GET of the MP3 answers audio bytes.
+    Returns the list of POST calls (url, kwargs) so a test can see what the bot sent."""
+    posts = []
+
+    class Client:
+        def __init__(self, timeout):
+            pass
+
+        async def __aenter__(self):
+            return self
+
+        async def __aexit__(self, *a):
+            return False
+
+        async def post(self, url, **kwargs):
+            posts.append((url, kwargs))
+            return check_response
+
+        async def get(self, url):
+            return httpx.Response(200, content=b"ID3fake")
+
+    monkeypatch.setattr(bot, "_http", Client)
+    return posts
+
+
+def voice_update(**voice_kwargs):
+    update = FakeUpdate()
+    update.message.voice = FakeVoice(**voice_kwargs)
+    return update
+
+
+def test_voice_note_is_posted_as_audio_then_card_and_mp3(monkeypatch):
+    posts = fake_check_api(monkeypatch, httpx.Response(200, json=RESULT))
+    update = voice_update()
+    asyncio.run(bot.on_voice(update, None))
+    url, kwargs = posts[0]
+    assert url.endswith("/api/checks")
+    assert kwargs["files"] == {"audio": ("voice.ogg", b"OggS fake voice", "audio/ogg")}
+    assert kwargs["data"] == {"lang": "hi", "source": "telegram"}
+    assert [s[0] for s in update.message.sent] == ["text", "audio"]     # card, then the MP3
+
+
+def test_voice_note_longer_than_a_minute_is_refused_in_hindi(monkeypatch):
+    posts = fake_check_api(monkeypatch, httpx.Response(200, json=RESULT))
+    update = voice_update(duration=61)
+    asyncio.run(bot.on_voice(update, None))
+    assert posts == []                                                   # Whisper never called
+    assert update.message.sent == [("text", bot.MSG_VOICE_TOO_LONG)]
+
+
+def test_voice_note_of_exactly_a_minute_is_accepted(monkeypatch):
+    posts = fake_check_api(monkeypatch, httpx.Response(200, json=RESULT))
+    asyncio.run(bot.on_voice(voice_update(duration=60), None))
+    assert len(posts) == 1
+
+
+def test_voice_note_download_failure_is_a_hindi_message(monkeypatch):
+    posts = fake_check_api(monkeypatch, httpx.Response(200, json=RESULT))
+    update = voice_update(fail=True)
+    asyncio.run(bot.on_voice(update, None))
+    assert posts == [] and update.message.sent == [("text", bot.MSG_BAD_VOICE)]
+
+
+def test_voice_note_unclear_shows_the_api_hindi_text(monkeypatch):
+    detail = {"code": "UNREADABLE", "text_hi": "Awaaz saaf nahi aayi. Dobara bolo, ya photo bhejo."}
+    fake_check_api(monkeypatch, httpx.Response(422, json={"detail": detail}))
+    update = voice_update()
+    asyncio.run(bot.on_voice(update, None))
+    assert update.message.sent == [("text", detail["text_hi"])]
+
+
+def test_voice_note_without_mime_type_is_sent_as_ogg(monkeypatch):
+    posts = fake_check_api(monkeypatch, httpx.Response(200, json=RESULT))
+    asyncio.run(bot.on_voice(voice_update(mime_type=None), None))
+    assert posts[0][1]["files"]["audio"][2] == "audio/ogg"

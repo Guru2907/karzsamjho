@@ -1,7 +1,7 @@
-"""KarzSamjho Telegram bot (long polling). Tasks D1, D3, D4.
+"""KarzSamjho Telegram bot (long polling). Tasks D1, D3, D4, D6.
 
-Raju sends a photo of a loan offer, or pastes an SMS offer. The bot asks the API,
-then replies with:
+Raju sends a photo of a loan offer, pastes an SMS offer, or speaks it (voice note, D6).
+The bot asks the API, then replies with:
   1. one text card (verdict, bold rupee numbers with 4 symbols, lender line, next step);
   2. the Hindi MP3 through sendAudio (no ffmpeg, no sendVoice). If there is no
      audio_url or the download fails, the card goes alone.
@@ -33,9 +33,12 @@ API_TIMEOUT_S = (settings.vision_timeout_s + 2 * settings.read_timeout_s
                  + settings.tts_timeout_s + 9)          # 45 s with the default timeouts
 AUDIO_TIMEOUT_S = 10
 MAX_TEXT_CHARS = 2000  # an SMS offer is short; ignore pasted essays
+MAX_VOICE_S = 60       # a loan offer fits in a minute; longer notes cost Whisper time and quota
 
-MSG_START = ("Namaste! Loan ke offer ki photo bhejo, ya SMS yahan chipkao. "
+MSG_START = ("Namaste! Loan ke offer ki photo bhejo, SMS yahan chipkao, ya bolkar bhejo (voice note). "
              "Main bataunga kitna milega, kitna lautana hoga aur kitna zyada.")
+MSG_BAD_VOICE = "Awaaz saaf nahi aayi. Dobara bolo, ya photo bhejo."
+MSG_VOICE_TOO_LONG = "Awaaz 1 minute se lambi hai. Chhota bolo: sirf loan ki rakam, din aur kitna lautana hai."
 MSG_SERVER_DOWN = "Server abhi band hai, thodi der mein try karo."
 MSG_BAD_PHOTO = "Photo saaf nahi hai, dobara bhejo."
 MSG_BAD_TEXT = "Yeh offer samajh nahi aaya. Loan ka SMS poora chipkao, ya photo bhejo."
@@ -209,6 +212,29 @@ async def on_text(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
         await send_result(update, result)
 
 
+async def on_voice(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
+    """A voice note (D6): Raju speaks the offer. The API listens (Whisper) and reads it like an SMS."""
+    voice = update.message.voice
+    if voice is None:
+        await update.message.reply_text(MSG_SEND_PHOTO)
+        return
+    if (voice.duration or 0) > MAX_VOICE_S:
+        await update.message.reply_text(MSG_VOICE_TOO_LONG)
+        return
+    try:
+        tg_file = await voice.get_file()
+        audio = bytes(await tg_file.download_as_bytearray())
+    except Exception as exc:  # Telegram download problem: ask him to send it again
+        log.warning("voice download failed: %s", type(exc).__name__)
+        await update.message.reply_text(MSG_BAD_VOICE)
+        return
+    result = await ask_api(update, MSG_BAD_VOICE,
+                           files={"audio": ("voice.ogg", audio, voice.mime_type or "audio/ogg")},
+                           data={"lang": "hi", "source": "telegram"})
+    if result:
+        await send_result(update, result)
+
+
 async def on_other(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
     await update.message.reply_text(MSG_SEND_PHOTO)
 
@@ -220,6 +246,7 @@ def main() -> None:
     app = Application.builder().token(settings.telegram_bot_token).build()
     app.add_handler(CommandHandler("start", start))
     app.add_handler(MessageHandler(filters.PHOTO, on_photo))
+    app.add_handler(MessageHandler(filters.VOICE, on_voice))
     app.add_handler(MessageHandler(filters.TEXT & ~filters.COMMAND, on_text))
     app.add_handler(MessageHandler(~filters.COMMAND, on_other))
     log.info("Bot is polling. API: %s. Stop with Ctrl+C.", settings.api_url)

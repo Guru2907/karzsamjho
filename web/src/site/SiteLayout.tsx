@@ -1,7 +1,7 @@
 import { ArrowUpRight, Moon, Sun } from 'lucide-react'
 import { motion, useMotionValueEvent, useReducedMotion, useScroll } from 'motion/react'
-import { useState } from 'react'
-import { Link, NavLink, Outlet } from 'react-router-dom'
+import { useEffect, useState } from 'react'
+import { Link, NavLink, Outlet, useLocation } from 'react-router-dom'
 import { buttonVariants } from '@/components/ui/button'
 import { useTheme } from '@/lib/theme'
 import { NAV } from './shell'
@@ -82,6 +82,10 @@ function SiteFooter() {
 }
 
 export default function SiteLayout() {
+  const { pathname } = useLocation()
+  useEffect(() => {
+    window.scrollTo({ top: 0, behavior: 'instant' })   // a new page starts at its top
+  }, [pathname])
   return (
     <div className="flex min-h-svh flex-col bg-background text-foreground">
       <SiteNav />

@@ -6,9 +6,12 @@ Cases, events, PDF and verify still return sample data (tasks F1 to F5).
 
 Run:  uvicorn api.main:app --host 0.0.0.0 --port 8000 --reload
 """
-import copy
+import hashlib
 import itertools
+import json
+import threading
 from contextlib import asynccontextmanager
+from datetime import datetime
 import logging
 import re
 import statistics
@@ -20,7 +23,7 @@ from fastapi.concurrency import run_in_threadpool
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import FileResponse
 
-from api.core import cache, config, db, extract, maths, speak, verdict
+from api.core import cache, config, db, extract, harass, maths, speak, verdict
 from api.core.config import ensure_dirs
 from api.core.schemas import (Case, CaseIn, CheckResult, Event, EventIn, Stats,
                               VerifyResult)
@@ -265,51 +268,85 @@ def get_audio(check_id: str):
     return FileResponse(path, media_type="audio/mpeg", filename=f"{check_id}.mp3")
 
 
-# ---------------------------------------------------------------- cases (sample data until F1-F5)
-SAMPLE_CASE = {
-    "id": "case_0007",
-    "borrower_name": "Raju (sample)",
-    "lender_name": "QuickCash",
-    "check_id": "chk_0042",
-    "route": "Sachet portal + cybercrime.gov.in / 1930",
-    "opened_at": "2026-11-13T12:00:00+05:30",
-    "day": 1,
-    "events": [
-        {"id": "evt_0001", "at": "2026-11-13T21:40:00+05:30", "channel": "call",
-         "contacted": "borrower", "text": "Paisa do warna ghar aa jayenge.",
-         "rules": ["H1", "H2"], "hash": "a" * 64, "prev_hash": "0" * 64},
-        {"id": "evt_0002", "at": "2026-11-14T10:15:00+05:30", "channel": "whatsapp",
-         "contacted": "family", "text": "Aapke bhai ne loan nahi chukaya.",
-         "rules": ["H3"], "hash": "b" * 64, "prev_hash": "a" * 64},
-    ],
-}
+# ---------------------------------------------------------------- cases and events (real, F2)
+_chain_lock = threading.Lock()        # one event at a time per process, so the chain never forks
+
+
+def event_hash(prev_hash: str, event: dict) -> str:
+    """hash = SHA-256(prev_hash + the event's fields), fields as compact sorted JSON (CLAUDE.md, F2).
+    F4 (verify) recomputes exactly this, so any later edit to a stored event breaks the chain."""
+    fields = {k: event.get(k) for k in ("at", "channel", "contacted", "text", "rules")}
+    body = json.dumps(fields, sort_keys=True, ensure_ascii=False, separators=(",", ":"))
+    return hashlib.sha256((prev_hash + body).encode("utf-8")).hexdigest()
+
+
+def _ist(at: str) -> datetime:
+    """An ISO time; a time without a zone is taken as IST."""
+    when = datetime.fromisoformat(at.replace("Z", "+00:00"))
+    return when if when.tzinfo else when.replace(tzinfo=db.IST)
+
+
+def _with_day(case: dict) -> dict:
+    """Adds the day counter: day 1 is the day the case was opened (IST)."""
+    opened = _ist(case["opened_at"]).astimezone(db.IST).date()
+    today = datetime.now(db.IST).date()
+    return {**case, "day": (today - opened).days + 1}
+
+
+def _rules(event: dict, calls_that_day: int) -> list[str]:
+    """Siddeshwar's harass.label (F1). Until it is merged, or if it fails, the event is still stored
+    (with no rules) so the record and its chain are never lost."""
+    label = getattr(harass, "label", None)
+    if label is None:
+        log.warning("harass.label not available yet (F1): event stored without rules")
+        return []
+    try:
+        return sorted(set(label(event, calls_that_day)))
+    except NotImplementedError:
+        log.warning("harass.label not built yet (F1): event stored without rules")
+        return []
+    except Exception as exc:                                  # never lose the evidence itself
+        log.warning("harass.label failed (%s): event stored without rules", type(exc).__name__)
+        return []
 
 
 @app.post("/api/cases", response_model=Case)
 def create_case(body: CaseIn):
-    case = copy.deepcopy(SAMPLE_CASE)
-    case.update(borrower_name=body.borrower_name, lender_name=body.lender_name,
-                check_id=body.check_id, events=[])
-    return case
+    return _with_day(db.create_case(body.borrower_name, body.lender_name, body.check_id))
 
 
 @app.get("/api/cases", response_model=list[Case])
 def list_cases():
-    return [SAMPLE_CASE]
+    return [_with_day(c) for c in db.list_cases()]
 
 
 @app.get("/api/cases/{case_id}", response_model=Case)
 def get_case(case_id: str):
-    if case_id != SAMPLE_CASE["id"]:
+    case = db.get_case(case_id)
+    if case is None:
         raise HTTPException(404, "Case not found.")
-    return SAMPLE_CASE
+    return _with_day(case)
 
 
 @app.post("/api/cases/{case_id}/events", response_model=Event)
 def add_event(case_id: str, body: EventIn):
-    return {"id": "evt_0003", "at": body.at, "channel": body.channel,
-            "contacted": body.contacted, "text": body.text, "rules": ["H1"],
-            "hash": "c" * 64, "prev_hash": "b" * 64}
+    """Log one threat / message / call: rules H1-H6 (F1), then hash-chained storage (F2)."""
+    if db.get_case(case_id) is None:
+        raise HTTPException(404, "Case not found.")
+    try:
+        when = _ist(body.at)
+    except ValueError:
+        raise HTTPException(422, {"code": "BAD_TIME", "text_hi": "Samay sahi nahi hai. Dobara bhejo."})
+    event = {"at": when.isoformat(timespec="seconds"), "channel": body.channel.strip().lower(),
+             "contacted": body.contacted.strip().lower(), "text": body.text}
+    with _chain_lock:
+        # calls on that date INCLUDING this one (H6 counts the call being logged now)
+        calls = db.calls_on(case_id, event["at"][:10]) + (1 if event["channel"] == "call" else 0)
+        event["rules"] = _rules(event, calls)
+        prev = db.last_event_hash(case_id)
+        stored = db.add_event(case_id, {**event, "prev_hash": prev, "hash": event_hash(prev, event)})
+    log.info("case %s: event %s rules=%s", case_id, stored["id"], stored["rules"])
+    return stored
 
 
 @app.get("/api/cases/{case_id}/evidence.pdf")

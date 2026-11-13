@@ -51,6 +51,9 @@ class Settings:
     db_path: str = field(default_factory=lambda: _s("DB_PATH", "./karzsamjho.db"))
     # Local copy of RBI's directory of digital lending apps (C1, G4); never fetched live.
     rbi_dla_path: str = field(default_factory=lambda: _s("RBI_DLA_PATH", str(ROOT / "api" / "data" / "rbi_dla.csv")))
+    # RBI's NBFC list and the cancelled-registration list (C3, D51); built by scripts/build_ledger.py.
+    rbi_nbfc_path: str = field(default_factory=lambda: _s("RBI_NBFC_PATH", str(ROOT / "api" / "data" / "rbi_nbfc.csv")))
+    watch_list_path: str = field(default_factory=lambda: _s("WATCH_LIST_PATH", str(ROOT / "api" / "data" / "watch_list.csv")))
     cache_dir: str = field(default_factory=lambda: _s("CACHE_DIR", "./cache"))
     audio_dir: str = field(default_factory=lambda: _s("AUDIO_DIR", "./audio"))
     voice_enabled: bool = field(default_factory=lambda: _s("VOICE_ENABLED", "true").lower() == "true")

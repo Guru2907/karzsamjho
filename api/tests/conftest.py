@@ -48,7 +48,9 @@ def empty_rbi_list(monkeypatch, _empty_rbi_csv):
     import dataclasses
     from api.core import config
     monkeypatch.setattr(config, "settings",
-                        dataclasses.replace(config.settings, rbi_dla_path=str(_empty_rbi_csv)))
+                        dataclasses.replace(config.settings, rbi_dla_path=str(_empty_rbi_csv),
+                                            rbi_nbfc_path=str(_empty_rbi_csv.with_name("no_nbfc_list.csv")),
+                                            watch_list_path=str(_empty_rbi_csv.with_name("no_watch_list.csv"))))
 
 
 @pytest.fixture(autouse=True)

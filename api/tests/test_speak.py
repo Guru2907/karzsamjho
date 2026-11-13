@@ -166,3 +166,20 @@ def test_lender_sentences_never_promise_safety_or_accuse():
     for lang, sentences in LENDER_SENTENCES.items():
         for key, text in sentences.items():
             assert not any(word in text.lower() for word in forbidden), (lang, key)
+
+
+# ---- D51: spoken line for a lender on RBI's cancelled-registration list --------------------------------
+def test_cancelled_registration_sentence_replaces_the_list_line():
+    lender = {"match": "NOT_FOUND", "closest": None, "list_date": "2026-11-14",
+              "warning": {"list": "RBI: registration cancelled", "name": "Dhokha Fincap Pvt. Ltd.",
+                          "date": "2026-09-30"}}
+    s = lender_sentence(lender)
+    assert s == ("Dhyaan do: RBI ne Dhokha Fincap Pvt. Ltd. ka NBFC registration radd kiya hai, "
+                 "30 September 2026 ki list ke hisaab se.")
+    assert lender_sentence(lender, "bn") == s            # Hindi until a native speaker approves bn / mr
+    assert not any(w in s.lower() for w in ("illegal", "fake", "fraud", "safe"))
+
+
+def test_cancelled_registration_sentence_without_a_date():
+    s = lender_sentence({"match": None, "warning": {"name": "Dhokha Fincap", "date": None}})
+    assert s == "Dhyaan do: RBI ne Dhokha Fincap ka NBFC registration radd kiya hai."

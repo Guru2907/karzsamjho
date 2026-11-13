@@ -62,6 +62,23 @@ LENDER_SENTENCES = {
 }
 
 
+# D51: the lender is on RBI's cancelled-registration list. Hindi only until a native speaker approves
+# Bengali / Marathi (D7); a fact with its date, never "fraud" or "fake".
+WARNING_SENTENCE_HI = ("Dhyaan do: RBI ne {name} ka NBFC registration radd kiya hai, "
+                       "{date} ki list ke hisaab se.")
+MONTHS = ("January", "February", "March", "April", "May", "June", "July", "August", "September",
+          "October", "November", "December")
+
+
+def _spoken_date(iso: str | None) -> str | None:
+    """'2026-09-30' -> '30 September 2026' (easier to hear than digits)."""
+    try:
+        y, m, d = (int(p) for p in str(iso).split("-"))
+        return f"{d} {MONTHS[m - 1]} {y}"
+    except (ValueError, IndexError):
+        return None
+
+
 def lender_sentence(lender: dict | None, lang: str = "hi") -> str | None:
     """The spoken RBI-directory sentence (task C4), or None when the check was not run (match null).
 
@@ -71,6 +88,12 @@ def lender_sentence(lender: dict | None, lang: str = "hi") -> str | None:
     """
     if not isinstance(lender, dict):
         return None
+    warning = lender.get("warning")
+    if isinstance(warning, dict) and warning.get("name"):          # D51: said instead of the list line
+        name = " ".join(str(warning["name"]).split())[:80]
+        date = _spoken_date(warning.get("date"))
+        sentence = WARNING_SENTENCE_HI.format(name=name, date=date or "RBI")
+        return sentence if date else sentence.replace(", RBI ki list ke hisaab se.", ".")
     match = lender.get("match")
     if match not in ("FOUND", "SIMILAR", "NOT_FOUND"):
         return None

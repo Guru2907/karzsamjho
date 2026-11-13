@@ -96,3 +96,22 @@ def test_api_lender_not_in_rbi_list_wins_over_the_verdict(api, monkeypatch):
     body = api.post("/api/checks", json={"text": "Loan Rs 10000. Repay Rs 10250 in 30 days."}).json()
     assert body["verdict"] == "USUAL"
     assert body["next_step"]["code"] == "NOT_IN_RBI_LIST"
+
+
+# ---- D51: a lender on RBI's cancelled-registration list ---------------------------------------------
+from api.core import next_step as ns  # noqa: E402
+
+WARNING = {"list": "RBI: registration cancelled", "name": "Dhokha Fincap Pvt. Ltd.", "date": "2026-09-30"}
+
+
+def test_cancelled_registration_comes_right_after_pay_first():
+    assert ns.next_step("USUAL", "NOT_FOUND", None, WARNING)["code"] == "ON_WARNING_LIST"
+    assert ns.next_step("VERY_COSTLY", "SIMILAR", None, WARNING)["code"] == "ON_WARNING_LIST"
+    assert ns.next_step("USUAL", "NOT_FOUND", 1499, WARNING)["code"] == "DO_NOT_PAY_FIRST"
+    assert ns.next_step("USUAL", "NOT_FOUND", None, None)["code"] == "NOT_IN_RBI_LIST"
+
+
+def test_cancelled_registration_text_is_a_fact_not_an_accusation():
+    text = ns.next_step("USUAL", "NOT_FOUND", None, WARNING)["text_hi"]
+    assert "ruko" in text and "1930" in text
+    assert not any(w in text.lower() for w in ("illegal", "fake", "fraud", "farzi", "safe"))

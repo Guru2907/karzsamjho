@@ -97,7 +97,7 @@ Waiting until after the review: A3 (database), the cache half of A4, A5, C1 to C
 - Done when: A contradictory ad is flagged; a missing in-hand amount is derived and marked "derived"
 
 ### B5 · `verdict.py` with thresholds in a config file
-- Status: todo
+- Status: review
 - Type: Must
 - Depends on: B3
 - Files: api/core/verdict.py, api/core/config.py

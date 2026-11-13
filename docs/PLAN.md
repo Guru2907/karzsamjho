@@ -3,6 +3,100 @@
 This replaces the earlier split. Decision D25 in docs/DECISIONS.md. If this file and the code disagree, trust the code and fix this file.
 
 
+
+## Handover at 1:20 AM, 14 Nov (D45)
+
+Wave 1 and all of F are merged (40 PRs, 457 tests, main = 8a62070). New split for the rest of the night:
+
+| Person | Owns | Tasks now |
+|---|---|---|
+| **Siddeshwar** (Claude Code) | ALL backend and bot code: `api/` (except `api/data/`), `bot/` | Must: C2, F6. Stretch: D9, D10, B12, D8, C3 (only with data). Stretch of stretch: B13, D11 |
+| **Gurpreet** (Claude Code) | The UI/UX-heavy landing page: `web/src/pages/Landing.tsx`, `web/src/components/landing/`, plus docs and merging | H1, H2, H3 |
+| **Tejaswini** (Antigravity) | The React PWA: everything else in `web/` (Raju card, /check, /cases, manifest) | E2 to E9 |
+| **Anam** (Antigravity) | `api/data/` | G4 (RBI CSV) first, then G2, G8, G3, G1 |
+
+Later, to discuss (NOT a task before the 3:30 AM freeze): onboarding NGOs / non-profits to the web app.
+
+New feature numbers: **B12** photo pay-first must be confirmed by the second reader; **B13** regex backup that knows Bengali / Marathi; **F6** complaint letter addressee follows the route.
+
+### Prompt for Siddeshwar: taking over the backend (D45)
+
+```
+I am Siddeshwar. From 1:20 AM on 14 Nov I own ALL backend and bot code of KarzSamjho (I take over Gurpreet's part, decision D45). Gurpreet now does the landing page (H1-H3); Tejaswini keeps the web app (E). Follow "How to report while working" in CLAUDE.md.
+
+=== READ FIRST (in this order, before planning anything) ===
+1. CLAUDE.md, AGENTS.md
+2. docs/PLAN.md, section "Handover at 1:20 AM (D45)" (ownership, order, my task specs) and section "Night plan" (signatures)
+3. docs/PROGRESS.md "Current status", then `python scripts/show_progress.py 12` (newest progress entries: what Gurpreet built tonight and how it was proven)
+4. docs/DECISIONS.md D26 and D32 to D45 (especially D36 scam warning, D37 mentor feedback, D42 pay-first rule, D43 progress files, D44 English-only PDF, D45 this handover)
+5. docs/TASKS.md: my tasks C2, B12, B13, C3, D8, D9, D10, D11, F6 and their "Done when"
+6. docs/ARCHITECTURE.md "What is built", docs/TESTING.md (tests per file, real runs)
+7. The code I now own, before touching it: api/main.py (run_check, routes, _with_day, chain_ok), api/core/extract.py (parse, extract_from_image / _text / _voice, second_reading, pay_first_in_text, _asks_to_pay, regex_fields), api/core/fallback.py (read_image, read_text, transcribe, speak, ping: one call per engine, temperature 0, timeout, no retry, a 429 moves on), api/core/lender.py, api/core/next_step.py, api/core/db.py, api/core/cache.py, api/core/config.py, api/tests/conftest.py (every test gets a temp database and offline stand-ins for Gemini backups and health pings; tests must never reach the internet)
+
+=== FILES I MAY EDIT ===
+Everything in api/ and bot/, plus .env.example, my progress entry files in docs/progress/, my task statuses in docs/TASKS.md, new rows at the end of docs/DECISIONS.md. NOT web/ (Tejaswini, and Gurpreet for the landing page), NOT api/data/ (Anam), NOT docs/PROGRESS.md (only Gurpreet's status block).
+
+=== WORKFLOW (same as Gurpreet's) ===
+- One task at a time. Before each: say "We are doing <task>: <what it does for Raju>", list the files, how I will prove it.
+- Branch from fresh main (git checkout main; git pull; git checkout -b <area>/<short-name>). If the API is running from this folder with --reload, build in a separate git worktree so the running demo is not restarted.
+- Tests for everything (hand-worked expected values, no internet); `python -m pytest -q` must stay green (457 passed at 1:18 AM); then ONE real run against the real API on a test port (e.g. 8077) with the real keys, and show the output.
+- Commit "<area>: <what changed>"; push; gh pr create; gh pr checks. Never push to main, never merge (Gurpreet merges). No Claude co-author line, no "Generated with Claude Code" line.
+- Docs in the same PR: a NEW progress file docs/progress/YYYY-MM-DD_HHMM_<task>_siddeshwar.md (template in docs/progress/README.md, D43), the task status in TASKS.md, ARCHITECTURE "What is built" if behaviour changed, DEMO.md if the demo changes.
+- If GitHub shows a conflict in a code file: never "Accept both" blindly; merge main into the branch, keep both sides' intent, run all tests, push.
+- Same error twice: stop and tell Gurpreet. FEATURE FREEZE 3:30 AM: after that only bug fixes and wording.
+
+=== ORDER ===
+MUST first: 1. C2   2. F6
+STRETCH (until 3:30 AM): 3. D9   4. D10   5. B12   6. D8   7. C3 (only if Anam's NBFC CSV exists)
+STRETCH OF STRETCH: 8. B13   9. D11
+
+=== TASK SPECS ===
+
+1. C2 (Must) next_step.next_step: exactly ONE next step per check
+   - api/core/next_step.py: next_step(verdict: str, lender_match: str | None, pay_first: float | None = None) -> {"code", "text_hi"}. Fixed Hinglish sentences, written by code, never by AI; never "safe", "illegal", "fake".
+   - First match wins:
+     pay_first set      -> DO_NOT_PAY_FIRST  (reuse main.PAY_FIRST_STEP text: "Paise mat bhejo. Loan se pehle paise maangna dhokha ho sakta hai. Shikayat: 1930 ya cybercrime.gov.in")
+     lender NOT_FOUND   -> NOT_IN_RBI_LIST   ("Yeh app RBI ki list mein nahi mila. Loan lene se pehle bank mitra se poochho. Pareshani ho to sachet.rbi.org.in par batao.")
+     lender SIMILAR     -> CHECK_APP_NAME    ("RBI ki list mein milta-julta naam hai. Download se pehle app ka sahi naam aur website check karo.")
+     verdict CANNOT_SAY -> SEND_CLEARER      ("Saare number saaf nahi padhe gaye. Saaf photo bhejo, ya bank mitra se poochho.")
+     VERY_COSTLY        -> FIND_CHEAPER      ("Yeh loan bahut mehenga hai. Bank, SHG ya cooperative se sasta loan poochho.")
+     COSTLY             -> ASK_BANK_MITRA    ("Loan mehenga hai. Lene se pehle bank mitra se poochho.")
+     USUAL              -> KEEP_PAPERS       ("Kharcha aam loan jaisa hai. Saare kagaz sambhal ke rakho aur EMI time par bharo.")
+     lender null (not checked, e.g. RBI CSV empty) never blocks: fall through to the verdict.
+   - api/main.py run_check: replace `dict(PAY_FIRST_STEP if pay_first else NEXT_STEP)` with next_step.next_step(result_verdict, lender_result["match"], pay_first). Keep the B9 voice warning as it is.
+   - Done when: every verdict x lender match x pay_first combination gives exactly one step (parametrized test), the API result carries it, the bot card shows it; real run: one SMS per verdict.
+
+2. F6 (Must, small) complaint letter addressee follows the route
+   - api/core/evidence.py complaint_draft: today it always opens "To: the Grievance Redressal Officer". Use case["route"] (F5): route containing "grievance officer" -> "To: the Grievance Redressal Officer, <lender>"; route containing "Sachet" -> "To: Sachet portal (RBI) / National Cyber Crime Reporting Portal"; unsure route -> "To: the Grievance Redressal Officer of <lender>, or the Sachet portal (RBI) if the app is not a regulated lender". English only (D44).
+   - Done when: three tests (one per route) + a real PDF for an unlisted lender shows the Sachet addressee.
+
+3. D9 (Stretch) bot network blips: register an Application error handler; telegram.error.NetworkError / TimedOut -> one log line "network blip, retrying"; other errors -> one line with the type; never a full traceback for network errors. Done when: a test calls the handler with a NetworkError and checks one short log line.
+
+4. D10 (Stretch) cached answers: in bot/main.py card_text, when result["cached"] is true show "⏱ pehle se jaancha hua" instead of "⏱ 0.0 sec". Update the test in test_bot.py. DEMO.md checklist item (cached ads show 0.0 sec) gets ticked.
+
+5. B12 (Stretch) photo pay-first must be confirmed
+   - Problem (D42, B9c): for SMS the AI's pay_first needs a pay word in the text; for PHOTOS there is no text, so one AI's word still drops the fee and triggers the warning.
+   - In api/core/extract.py extract_from_image: if the reader returned pay_first, ask the OTHER reader (fallback.read_image(image, PROMPT, engines=(other,), check=parse), like second_reading) and keep pay_first only if the second reading also reports a pay_first within Rs 1; otherwise set pay_first = None and keep the fee. If the other reader fails: keep pay_first = None (no warning without confirmation) and log it. Only costs a call when pay_first is claimed.
+   - Done when: tests (both agree -> warning + fee dropped; second says none -> no warning, fee kept, numbers unchanged; second reader down -> no warning); engines.second_read filled when used.
+
+6. D8 (Stretch) Bengali / Marathi listening
+   - fallback.transcribe(audio_bytes, lang="hi"): Whisper language = lang (hi / bn / mr); the Gemini audio backup prompt names the language. extract.extract_from_voice(audio_bytes, lang="hi") passes it on; DIGITS_PROMPT gets Bengali and Marathi number-word examples ("পাঁচ হাজার" -> 5000, "पाच हजार" -> 5000). main.py passes the form's lang into extract_from_voice. Bot already sends lang.
+   - Done when: tests with fakes for each lang; a real Bengali and a real Marathi voice note give the right numbers (ask a speaker to record them); native-speaker OK noted in the PR.
+
+7. C3 (Stretch, only with data) NBFC list as a second source: if Anam adds api/data/rbi_nbfc.csv (registered NBFCs), lender.py also checks the regulated entity / lender name against it and sets a note "registered NBFC" for the card; never changes FOUND / NOT_FOUND from the DLA list. Skip if the file does not exist by 2:45 AM.
+
+8. B13 (Stretch of stretch) regex backup that knows Bengali / Marathi: extract.regex_fields labels for ঋণ / লোন, ফি, ফেরত, দিন, টাকা and कर्ज, फी, परत, दिवस, रुपये; Bengali digits already parse (Python \d). Done when: the Bengali and Marathi SMS from TESTING.md read correctly with the text model switched off.
+
+9. D11 (Stretch of stretch) card labels in Bengali / Marathi when /bhasha is bn / mr (haath mein / lautana / din / zyada); native-speaker OK first; otherwise skip.
+
+=== THINGS TO KNOW ===
+- K = 0: never show a wrong rupee number as verified. If unsure: "pata nahi chala" / CANNOT_SAY.
+- The RBI CSV (api/data/rbi_dla.csv) is still only a header: lender.match is null on main until Anam's G4 lands; C2 must treat null as "not checked".
+- Groq free tier: ~3 photos/min, ~80/day per account; Gemini 15/min, 500/day. Real runs: few calls, pace them.
+- Bengali / Marathi sentences and warnings (D7, B9) still need a native speaker's OK before the demo.
+- Stop all features at 3:30 AM.
+```
+
 ## Night plan: from 9:00 PM, 13 Nov (D37, D38, D40, D41)
 
 The 7:30 PM review passed. This section replaces the earlier splits for everything still open. **Nobody edits a file outside their own list.** Hard limits: **12:30 AM** all 4 core features pass · **1:00 AM** kill-switch drill · **3:30 AM** feature freeze · **9:00 AM** submission.

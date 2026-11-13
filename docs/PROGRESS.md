@@ -3,9 +3,9 @@
 New progress entries are separate files in docs/progress/ (one per task, D43): see docs/progress/README.md, and `python scripts/show_progress.py` for the newest. This file keeps the shared "Current status" block (updated by Gurpreet) and the history below. Never delete or edit someone else's entry.
 
 ## Current status (Gurpreet updates this block; everyone else writes a file in docs/progress/)
-- Now (12:55 AM, 14 Nov): all 37 PRs merged, main = f9b0c6b, 440 tests pass. Built: photo / SMS / Hindi voice note -> card + voice in hi / bn / mr; second reading; cache; SQLite database; scam (advance-fee) warning in 5 scripts + fee fix; lakh/crore; RBI lender check by name + website, spoken (C1 + C4); harassment cases with H1-H6 rules, hash chain and the English evidence PDF, also from the bot by forwarding (F1, F2, F3, D5); health per engine; Gemini backup for photos, SMS and voice.
+- Now (1:20 AM, 14 Nov): 40 PRs merged, main = 8a62070, 457 tests. Section F complete (rules, hash chain, PDF, verify, one complaint route + day N of 30). Handover (D45): Siddeshwar owns all backend + bot (next: C2, F6); Gurpreet the landing page (H1-H3); Tejaswini the web app (E); Anam the data (G4 first). Built before: photo / SMS / Hindi voice note -> card + voice in hi / bn / mr; second reading; cache; SQLite; scam warning in 5 scripts + fee fix; lakh/crore; RBI lender check by name + website, spoken; health per engine; Gemini backup for photos, SMS and voice.
 - Gates: 2:00 PM [x] · 7:30 PM [x] (review passed) · 12:30 AM [~] features 1, 2, 4 work on main; feature 3 code done but the RBI CSV (G4) is still empty; verify (F4) still a stub · 3:30 AM freeze [ ]
-- Known broken: /api/cases/{id}/verify always answers ok (F4); the PDF says it checks the chain. RBI CSV has only its header, so every lender check says "not checked". No web pages yet (E2-E9). bn/mr sentences and warnings not yet approved by native speakers.
+- Known broken: RBI CSV has only its header, so every lender check says "not checked". No web pages yet (E2-E9). bn/mr sentences and warnings not yet approved by native speakers.
 - Groq photo reads used today on the server account: 0 of about 80 (Gurpreet's own account: about 12, all tests)
 
 ## Entry template (history: new entries use docs/progress/README.md instead)

@@ -4,7 +4,9 @@ How to use: pick one task by ID ("Do task B3"). Status is one of: todo, doing (n
 
 Type: M = must build. S = stretch, only after the 7:30 PM gate on 13 Nov has passed. Nothing new after the 3:30 AM freeze on 14 Nov.
 
-## Right now: the night plan (from 9:00 PM, D38). Owners, order and prompts: docs/PLAN.md "Night plan"
+## Right now: handover at 1:20 AM (D45): Siddeshwar owns all backend + bot (C2, F6, D9, D10, B12, D8, C3, B13, D11); Gurpreet the landing page (H1-H3); Tejaswini the web app (E); Anam the data (G). See docs/PLAN.md "Handover".
+
+## Earlier: the night plan (from 9:00 PM, D38). Owners, order and prompts: docs/PLAN.md "Night plan"
 
 Wave 1 (D40) is DONE and merged (12:50 AM). It was, in order: Gurpreet: B9b, A3, F2, C1, A5, B11. Siddeshwar: F1, C4, F3, D5, then D9, D10, D8, D11. Tejaswini: E2/E3/E9, E6, E4/E5, E8, E7. Anam: G4, G2, G8, G3. Everything else is later; a later task joins wave 1 only if a wave-1 feature would stay incomplete without it.
 
@@ -160,6 +162,20 @@ All changes go through a pull request that Gurpreet merges (D27).
 - Files: api/core/fallback.py, api/tests/test_fallback.py
 - Done when: with Groq failing (429 or no key), a pasted SMS is read by Gemini Flash-Lite (regex only as the last resort) and a Hindi voice note is transcribed by Gemini; engines show "gemini" (Hindi audio test passed at 8:00 PM: 2.4 to 3.1 s, digits right)
 
+### B12 · Photo pay-first must be confirmed by the second reader
+- Status: todo (Siddeshwar, D45)
+- Type: Stretch
+- Depends on: B9, B9c, B6
+- Files: api/core/extract.py, api/tests/test_advance_fee.py
+- Done when: a photo whose first reader claims "pay first" warns (and drops the fee) only if the other reader also reports it within Rs 1; otherwise no warning and the fee is kept; other reader down = no warning (D42 follow-up)
+
+### B13 · Regex backup that knows Bengali / Marathi words
+- Status: todo (Siddeshwar, D45)
+- Type: Stretch of stretch
+- Depends on: B8
+- Files: api/core/extract.py, api/tests/test_extract.py
+- Done when: the Bengali and Marathi SMS in docs/TESTING.md read correctly with the text model switched off
+
 ## C. Lender check and next step
 
 ### C1 · Load `rbi_dla.csv`; `lender.py` with RapidFuzz
@@ -170,7 +186,7 @@ All changes go through a pull request that Gurpreet merges (D27).
 - Done when: A listed app returns FOUND with its lender; a made-up app returns NOT_FOUND; a near-miss spelling returns SIMILAR; a link or website in the SMS/ad is matched against the directory's website column too (D37); wording never says safe, illegal or fake
 
 ### C2 · `next_step.py`
-- Status: todo (Gurpreet; fixed line for now, D26)
+- Status: todo (Siddeshwar, D45) - Must: one next step per verdict x lender match x pay_first
 - Type: Must
 - Depends on: B5, C1
 - Files: api/core/next_step.py
@@ -184,7 +200,7 @@ All changes go through a pull request that Gurpreet merges (D27).
 - Done when: FOUND / SIMILAR / NOT_FOUND each add one fixed sentence to the voice (Hindi; bn/mr after the native-speaker OK); nothing is added when lender.match is null; never "safe", "illegal" or "fake"
 
 ### C3 · NBFC list as a second source
-- Status: todo (Gurpreet, stretch)
+- Status: todo (Siddeshwar, D45) - stretch; only if Anam adds api/data/rbi_nbfc.csv
 - Type: Stretch
 - Depends on: C1
 - Files: api/core/lender.py
@@ -243,28 +259,28 @@ All changes go through a pull request that Gurpreet merges (D27).
 - Done when: With lang bn or mr, the same check returns the MP3 in that language (bn-IN-TanishaaNeural, mr-IN-AarohiNeural), numbers match the card; a native speaker approved each sentence. Templates in docs/PLAN.md. Last; only after the 7:30 gate
 
 ### D8 · Bengali/Marathi listening (voice notes in those languages)
-- Status: todo (Siddeshwar)
+- Status: todo (Siddeshwar) - stretch, D45 order 6
 - Type: Stretch
 - Depends on: D6, D7
 - Files: bot/main.py, api/core/speak.py (Siddeshwar); a small change in fallback.py / extract.py only with Gurpreet's OK
 - Done when: a Bengali and a Marathi voice note with /bhasha set give the right numbers on the card
 
 ### D9 · Bot tidy: one short line on a network blip
-- Status: todo (Siddeshwar)
+- Status: todo (Siddeshwar) - stretch, D45 order 3
 - Type: Stretch
 - Depends on: D1
 - Files: bot/main.py
 - Done when: a dropped Telegram connection logs one line ("network blip, retrying"), not a traceback, and the bot keeps working
 
 ### D10 · Cached answers say "pehle se jaancha hua" instead of "0.0 sec"
-- Status: todo (Siddeshwar)
+- Status: todo (Siddeshwar) - stretch, D45 order 4
 - Type: Stretch
 - Depends on: A4
 - Files: bot/main.py
 - Done when: a result with cached: true shows "⏱ pehle se jaancha hua" on the card
 
 ### D11 · Card text in Bengali/Marathi too
-- Status: todo (Siddeshwar)
+- Status: todo (Siddeshwar) - stretch of stretch; native-speaker OK first
 - Type: Stretch of stretch
 - Depends on: D7
 - Files: bot/main.py
@@ -381,6 +397,13 @@ All changes go through a pull request that Gurpreet merges (D27).
 - Files: api/core/next_step.py
 - Done when: Regulated lender → grievance officer route with "Day N of 30"; unlisted app → Sachet + cybercrime route
 
+### F6 · Complaint letter addressee follows the route
+- Status: todo (Siddeshwar, D45)
+- Type: Must (small)
+- Depends on: F3, F5
+- Files: api/core/evidence.py, api/tests/test_evidence.py
+- Done when: grievance-officer route -> letter to the lender's Grievance Redressal Officer; Sachet route -> letter to the Sachet portal / National Cyber Crime Reporting Portal; unsure route -> both; English only (D44)
+
 ## G. Testing and data
 
 ### G1 · 30 synthetic offers with expected answers (before the event)
@@ -443,21 +466,21 @@ All changes go through a pull request that Gurpreet merges (D27).
 ## H. Landing page
 
 ### H1 · Split hero with the real card in a phone frame; top bar with theme toggle
-- Status: todo (Tejaswini, stretch)
+- Status: todo (Gurpreet, D45)
 - Type: Stretch
 - Depends on: E2
 - Files: web/src/pages/Landing.tsx
 - Done when: Looks right in light and dark, on phone and laptop
 
 ### H2 · Live numbers from `/api/stats`
-- Status: todo (Tejaswini, stretch)
+- Status: todo (Gurpreet, D45)
 - Type: Stretch
 - Depends on: A5, H1
 - Files: web/src/pages/Landing.tsx
 - Done when: Numbers change after a new check
 
 ### H3 · Story, how it works, who it helps, limits, footer
-- Status: todo (Tejaswini, stretch)
+- Status: todo (Gurpreet, D45)
 - Type: Stretch
 - Depends on: H1
 - Files: web/src/pages/Landing.tsx

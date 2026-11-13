@@ -21,6 +21,14 @@ Every agent session and every person adds an entry here at the end of each task,
 
 ## Log
 
+### 13 Nov 2026, 7:50 PM · B9 warning in Bengali and Marathi · agent for Gurpreet
+- Did: the "Savdhaan!" advance-fee warning was Hinglish only, so with /bhasha set to Bengali or Marathi that voice read Hindi words with a Bengali/Marathi accent (found in Gurpreet's live test). Now the warning is in the voice's own language and script (drafts, need the native-speaker OK like D32).
+- Files: api/main.py, api/tests/test_advance_fee.py
+- Proof: `pytest -q` 266 passed (3 new: hi / bn / mr warning; no "Savdhaan" in bn/mr). Sample MP3s made for the native check.
+- Status in docs/TASKS.md: B9 stays review
+- Next: native speakers approve the bn/mr sentences and warnings.
+- Broken / risks: voice-note INPUT is still Hindi only (Whisper language "hi"); Bengali speech is not understood.
+
 ### 13 Nov 2026, 7:24 PM · D7 bot side (PR 4 of 4 for D6 + D7) · agent for Siddeshwar
 - Did: bot/main.py /bhasha: three inline buttons (Hindi, বাংলা, मराठी), the choice kept in context.chat_data["lang"] and sent as `lang` with every photo, pasted SMS and voice note; default Hindi. Card text stays Hinglish. /start mentions /bhasha.
 - Files: bot/main.py, api/tests/test_bot.py (11 new tests), docs/PROGRESS.md, docs/TASKS.md

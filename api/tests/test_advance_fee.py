@@ -124,3 +124,22 @@ def test_api_normal_offer_has_no_warning(client, monkeypatch, tmp_path):
     body = client.post("/api/checks", json={"text": "Loan Rs 5000. Fee Rs 500. Repay Rs 5600 in 7 days."}).json()
     assert body["next_step"]["code"] == "ASK_BANK_MITRA"
     assert not body["speech_text_hi"].startswith("Savdhaan")
+
+
+@pytest.mark.parametrize("lang, starts", [
+    ("hi", "Savdhaan! Yeh offer loan dene se pehle aapse 1499 rupaye"),
+    ("bn", "সাবধান! এই অফার লোন দেওয়ার আগেই আপনার কাছ থেকে 1499 টাকা"),
+    ("mr", "सावधान! ही ऑफर कर्ज देण्याआधीच तुमच्याकडून 1499 रुपये"),
+])
+def test_warning_is_in_the_voice_language(client, monkeypatch, tmp_path, lang, starts):
+    import dataclasses
+    from api import main
+    from api.core import config
+    monkeypatch.setattr(config, "settings", dataclasses.replace(
+        config.settings, audio_dir=str(tmp_path / "a"), cache_dir=str(tmp_path / "c"), voice_enabled=False))
+    monkeypatch.setattr(main, "CHECKS", {})
+    model_down(monkeypatch)
+    body = client.post("/api/checks", json={"text": SCAM2, "lang": lang}).json()
+    assert body["speech_text_hi"].startswith(starts)
+    if lang != "hi":
+        assert "Savdhaan" not in body["speech_text_hi"]          # no Hinglish read by a bn/mr voice

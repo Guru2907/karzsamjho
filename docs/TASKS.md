@@ -222,7 +222,7 @@ All changes go through a pull request that Gurpreet merges (D27).
 - Done when: A pasted SMS returns a reply
 
 ### D5 · Bot: forward a message → harassment event; send the PDF back
-- Status: todo (Siddeshwar)
+- Status: review (Siddeshwar): forward or /log -> case event -> Hindi rules -> PDF; real PDF needs F2 + endpoint
 - Type: Must
 - Depends on: F2, F3
 - Files: bot/main.py

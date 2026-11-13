@@ -28,7 +28,8 @@ Helper's browser (PWA)  ──► web/ (Vite)  ─┼──► FastAPI api/main.
 | Cache by SHA-256 (photos) | yes: one JSON per photo in CACHE_DIR, survives a restart; a repeat makes no AI call; a missing MP3 is made again with edge-tts only | cache.py, main.py |
 | Lender match | not yet: `lender.match` is null and the card hides the line (D26) | lender.py, task C1 |
 | Next step | one fixed line: "Loan lene se pehle bank mitra se poochho." (D26) | main.py; next_step.py is task C2 |
-| Harassment log, PDF, verify | sample data | tasks F1 to F5 |
+| Harassment cases + events | yes: real cases in SQLite; each event gets rules from harass.label (F1) and hash = SHA-256(prev_hash + fields), first prev = 64 zeros; day counter (F2) | main.py, db.py |
+| PDF, verify, complaint route | not yet (F3, F4, F5) | |
 
 No card -> `422 {"detail": {"code": "NOT_A_LOAN" | "UNREADABLE", "text_hi": "..."}}`; the bot and web page show `text_hi` as it is (D26).
 

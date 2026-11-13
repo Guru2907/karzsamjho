@@ -124,7 +124,7 @@ def test_api_normal_offer_has_no_warning(client, monkeypatch, tmp_path):
     monkeypatch.setattr(main, "CHECKS", {})
     model_down(monkeypatch)
     body = client.post("/api/checks", json={"text": "Loan Rs 5000. Fee Rs 500. Repay Rs 5600 in 7 days."}).json()
-    assert body["next_step"]["code"] == "ASK_BANK_MITRA"
+    assert body["next_step"]["code"] == "FIND_CHEAPER"        # VERY_COSTLY: fee on a 7-day loan (C2)
     assert not body["speech_text_hi"].startswith("Savdhaan")
 
 
@@ -233,10 +233,80 @@ def test_real_pay_first_from_the_ai_still_counts(monkeypatch, text, amount):
     assert extract.extract_from_text(text)["fields"]["pay_first"] == amount
 
 
-def test_photo_still_trusts_the_ai_known_limit(monkeypatch):
+def test_photo_pay_first_when_both_readers_say_the_same(monkeypatch):
     def read_image(image_bytes, prompt, engines=("qwen", "gemini"), check=None):
         raw = json.dumps({"is_loan_ad": True, "principal": 5000, "fees": 500, "pay_first": 500})
-        return raw, "qwen", 1.0
+        return raw, engines[0], 1.0
     monkeypatch.setattr(fallback, "read_image", read_image)
     f = extract.extract_from_image(b"jpeg")["fields"]
     assert f["pay_first"] == 500 and f["fees"] is None
+
+
+# ---------------------------------------------------------------- B12: photo pay-first confirmed
+AD = {"is_loan_ad": True, "principal": 5000, "fees": 500, "repay_total": 5600, "tenure_days": 7}
+
+
+def two_readers(monkeypatch, first, second):
+    """qwen answers `first`; gemini answers `second` (a dict, or an Exception = engine down)."""
+    calls = []
+
+    def read_image(image_bytes, prompt, engines=("qwen", "gemini"), check=None):
+        name = engines[0]
+        calls.append(name)
+        reply = first if name == "qwen" else second
+        if isinstance(reply, Exception):
+            raise reply
+        raw = reply if isinstance(reply, str) else json.dumps(reply)
+        if check:
+            check(raw)
+        return raw, name, 1.0
+    monkeypatch.setattr(fallback, "read_image", read_image)
+    return calls
+
+
+@pytest.mark.parametrize("second_amount", [500, 500.6])            # within Rs 1 counts as the same
+def test_b12_both_readers_agree_warning_and_fee_dropped(monkeypatch, second_amount):
+    calls = two_readers(monkeypatch, {**AD, "pay_first": 500}, {**AD, "pay_first": second_amount})
+    read = extract.extract_from_image(b"jpeg")
+    assert read["fields"]["pay_first"] == 500 and read["fields"]["fees"] is None
+    assert read["engines"] == {"read": "qwen", "second_read": "gemini"}
+    assert calls == ["qwen", "gemini"]
+
+
+@pytest.mark.parametrize("second", [{**AD, "pay_first": None}, {**AD, "pay_first": 1499}])
+def test_b12_second_reader_disagrees_no_warning_fee_kept(monkeypatch, second):
+    two_readers(monkeypatch, {**AD, "pay_first": 500}, second)
+    read = extract.extract_from_image(b"jpeg")
+    f = read["fields"]
+    assert f["pay_first"] is None
+    assert (f["principal"], f["fees"], f["repay_total"], f["tenure_days"]) == (5000, 500, 5600, 7)  # unchanged
+    assert read["engines"]["second_read"] == "gemini"
+
+
+@pytest.mark.parametrize("second", [fallback.EngineError("down"), "not json at all"])
+def test_b12_second_reader_down_means_no_warning(monkeypatch, second):
+    two_readers(monkeypatch, {**AD, "pay_first": 500}, second)
+    read = extract.extract_from_image(b"jpeg")
+    assert read["fields"]["pay_first"] is None and read["fields"]["fees"] == 500
+    assert read["engines"]["second_read"] is None
+
+
+def test_b12_no_claim_no_extra_call(monkeypatch):
+    calls = two_readers(monkeypatch, AD, AssertionError("must not be called"))
+    read = extract.extract_from_image(b"jpeg")
+    assert calls == ["qwen"] and read["engines"]["second_read"] is None and read["fields"]["fees"] == 500
+
+
+def test_b12_api_unconfirmed_photo_claim_gives_honest_numbers(client, monkeypatch, tmp_path):
+    import dataclasses
+    from api import main
+    from api.core import config
+    monkeypatch.setattr(config, "settings", dataclasses.replace(
+        config.settings, audio_dir=str(tmp_path / "a"), cache_dir=str(tmp_path / "c"), voice_enabled=False))
+    monkeypatch.setattr(main, "CHECKS", {})
+    two_readers(monkeypatch, {**AD, "pay_first": 500}, {**AD, "pay_first": None})
+    body = client.post("/api/checks", files={"image": ("ad.jpg", b"jpeg", "image/jpeg")},
+                       data={"lang": "hi", "source": "test"}).json()
+    assert not body["speech_text_hi"].startswith("Savdhaan")
+    assert body["next_step"]["code"] != "DO_NOT_PAY_FIRST"
+    assert body["numbers"]["in_hand"]["value"] == 4500 and body["numbers"]["extra"]["value"] == 1100

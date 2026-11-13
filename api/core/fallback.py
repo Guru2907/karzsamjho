@@ -220,23 +220,29 @@ def _audio_mime(audio_bytes: bytes) -> str:
     return "audio/mpeg"
 
 
-def _call_whisper(audio_bytes: bytes) -> str:
+# D8: the language spoken in the voice note (the /bhasha choice). Whisper takes ISO codes.
+SPOKEN_LANGUAGE = {"hi": "Hindi", "bn": "Bengali", "mr": "Marathi"}
+
+
+def _call_whisper(audio_bytes: bytes, lang: str = "hi") -> str:
     client = Groq(api_key=settings.groq_api_key, timeout=settings.stt_timeout_s, max_retries=0)
     resp = client.audio.transcriptions.create(
         file=("voice.ogg", audio_bytes), model=settings.groq_stt_model,
-        language="hi", temperature=0, response_format="json")
+        language=lang if lang in SPOKEN_LANGUAGE else "hi", temperature=0, response_format="json")
     return (getattr(resp, "text", "") or "").strip()
 
 
-def _call_gemini_audio(audio_bytes: bytes) -> str:
+def _call_gemini_audio(audio_bytes: bytes, lang: str = "hi") -> str:
     """Gemini Flash-Lite listens to the voice note: the backup when Whisper fails (B11).
-    Tested 13 Nov 8 PM: Hindi speech in 2.4 to 3.1 s, numbers written as digits."""
+    Tested 13 Nov 8 PM: Hindi speech in 2.4 to 3.1 s, numbers written as digits.
+    D8: the prompt names the expected language (Hindi / Bengali / Marathi)."""
+    language = SPOKEN_LANGUAGE.get(lang, "Hindi")
     client = _gemini_client(settings.read_timeout_s)       # keep a reference: a dropped client closes
     resp = client.models.generate_content(
         model=settings.gemini_model,
         contents=[genai_types.Part.from_bytes(data=audio_bytes, mime_type=_audio_mime(audio_bytes)),
-                  "Write down exactly what is said in this audio, in the language spoken. "
-                  "Output only the words, nothing else."],
+                  f"The speaker is probably speaking {language}. Write down exactly what is said "
+                  "in this audio, in the language spoken. Output only the words, nothing else."],
         config=genai_types.GenerateContentConfig(temperature=0))
     return (resp.text or "").strip()
 
@@ -245,10 +251,10 @@ _LISTENERS = {"whisper": ("_call_whisper", "groq_api_key"),
               "gemini": ("_call_gemini_audio", "gemini_api_key")}
 
 
-def transcribe(audio_bytes: bytes) -> tuple[str, str, float]:
+def transcribe(audio_bytes: bytes, lang: str = "hi") -> tuple[str, str, float]:
     """Voice note (Telegram OGG) -> (transcript, engine, seconds). Task D6; Gemini backup B11.
 
-    Whisper first (language "hi"), then Gemini Flash-Lite; each once, temperature 0, a timeout,
+    Whisper first (language = lang: "hi", "bn" or "mr", D8), then Gemini Flash-Lite; each once, temperature 0, a timeout,
     no retries; a 429, an error or an empty transcript moves on. Raises EngineError when both fail.
     Logs engine, seconds and the transcript LENGTH, never what was said.
     """
@@ -260,7 +266,7 @@ def transcribe(audio_bytes: bytes) -> tuple[str, str, float]:
             continue
         start = time.perf_counter()
         try:
-            text = globals()[fn_name](audio_bytes)
+            text = globals()[fn_name](audio_bytes, lang)
             if not text:
                 raise EngineError(f"{name} returned no text")
         except Exception as exc:
@@ -268,7 +274,7 @@ def transcribe(audio_bytes: bytes) -> tuple[str, str, float]:
                         name, _why(exc), time.perf_counter() - start)
             continue
         seconds = round(time.perf_counter() - start, 2)
-        log.info("transcribe: engine=%s ok seconds=%.2f chars=%d", name, seconds, len(text))
+        log.info("transcribe: engine=%s lang=%s ok seconds=%.2f chars=%d", name, lang, seconds, len(text))
         return text, name, seconds
     raise EngineError("listener failed (tried whisper, gemini)")
 

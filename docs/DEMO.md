@@ -37,7 +37,7 @@ Stage roles (to be assigned): presenter · phone · laptop · technical answers.
 - [ ] Final numbers filled from docs/TESTING.md
 - [ ] Speaker paired, phone at 100%, hotspot ready
 - [x] Seconds stamp for LIVE 1: the Telegram card now ends with "⏱ 3.9 sec" (time from photo received to answer, measured by the API)
-- [ ] Cached ads answer in 0.0 s, so the card shows "⏱ 0.0 sec". Decide before the pitch: run the demo ads fresh (about 4 s), or have the card say the answer was already checked (Siddeshwar, bot/main.py)
+- [x] Cached ads: the card now says "⏱ pehle se jaancha hua" (checked before) instead of "⏱ 0.0 sec" (D10, 1:59 AM). To show the real speed ("⏱ 3.2 sec"), clear the cache folder before the pitch so the first send is a fresh read
 - [ ] Optional LIVE moment (B9): paste "Your loan is approved. Pay ₹1,499 processing fee to release funds." -> the voice starts "Savdhaan! ... Paise mat bhejo"
 - [ ] LIVE 2 lender line: built (C1 + C4); needs Anam's real RBI CSV (G4), otherwise it says nothing ("not checked")
 - [x] Verify (F4): /api/cases/<id>/verify recomputes the chain; a hand-edited entry makes it ok:false (proven 1:01 AM). Optional live moment: show ok:true, edit one entry, show ok:false

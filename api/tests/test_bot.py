@@ -152,6 +152,19 @@ def test_card_shows_seconds_stamp():
     assert lines.index("⏱ <b>3.9 sec</b>") == lines.index("⚠️ <b>₹1,200 zyada</b>") + 1
 
 
+def test_cached_answer_says_checked_before_not_zero_seconds():          # D10
+    card = bot.card_text({**RESULT, "seconds": 0.0, "cached": True})
+    assert "⏱ <b>pehle se jaancha hua</b>" in card
+    assert "0.0 sec" not in card
+    lines = card.split("\n")
+    assert lines.index("⏱ <b>pehle se jaancha hua</b>") == lines.index("⚠️ <b>₹1,200 zyada</b>") + 1
+
+
+def test_fresh_answer_still_shows_its_seconds():                          # D10
+    card = bot.card_text({**RESULT, "seconds": 4.2, "cached": False})
+    assert "⏱ <b>4.2 sec</b>" in card and "pehle se" not in card
+
+
 @pytest.mark.parametrize("seconds", [None, "fast", True, -1])
 def test_card_without_a_usable_seconds_has_no_stamp(seconds):
     assert "⏱" not in bot.card_text({**RESULT, "seconds": seconds})

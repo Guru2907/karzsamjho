@@ -273,7 +273,7 @@ All changes go through a pull request that Gurpreet merges (D27).
 - Done when: a dropped Telegram connection logs one line ("network blip, retrying"), not a traceback, and the bot keeps working
 
 ### D10 · Cached answers say "pehle se jaancha hua" instead of "0.0 sec"
-- Status: todo (Siddeshwar) - stretch, D45 order 4
+- Status: review (Siddeshwar, D45): cached: true -> "⏱ pehle se jaancha hua"; real run 1:59 AM, ai_ad3 sent twice: 3.2 sec, then "pehle se jaancha hua"
 - Type: Stretch
 - Depends on: A4
 - Files: bot/main.py

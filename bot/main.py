@@ -153,7 +153,9 @@ def card_text(result: dict) -> str:
         f"⚠️ <b>{extra_txt}</b>",
     ]
     seconds = result.get("seconds")
-    if isinstance(seconds, (int, float)) and not isinstance(seconds, bool) and seconds >= 0:
+    if result.get("cached") is True:                  # D10: a repeat photo, answered from the cache
+        lines.append("⏱ <b>pehle se jaancha hua</b>")  # "checked before", not a puzzling "0.0 sec"
+    elif isinstance(seconds, (int, float)) and not isinstance(seconds, bool) and seconds >= 0:
         lines.append(f"⏱ <b>{seconds:.1f} sec</b>")      # how fast Raju got the answer (DEMO LIVE 1)
     lender = lender_line(result.get("lender"))
     next_step = (result.get("next_step") or {}).get("text_hi")

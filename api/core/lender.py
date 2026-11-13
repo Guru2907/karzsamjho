@@ -3,9 +3,10 @@
 Compares against a local copy of RBI's public directory of digital lending apps:
 api/data/rbi_dla.csv (columns dla_name, regulated_entity, website, list_date; website may be empty).
 No live call to RBI. Matching:
-- name: RapidFuzz WRatio of the app / lender name read from the ad against each app name AND each
-  regulated entity; generic words (loan, app, pvt, ltd...) are also stripped and the better score kept.
-  >= lender_found_score FOUND, >= lender_similar_score SIMILAR, else NOT_FOUND (thresholds in config).
+- name: whole-name similarity (RapidFuzz ratio) of the app / lender name read from the ad against each
+  app name AND each regulated entity, after removing generic words (loan, app, pvt, ltd...); no partial
+  or word-order matching (see _score). >= lender_found_score FOUND, >= lender_similar_score SIMILAR,
+  else NOT_FOUND (thresholds in config).
 - website: a link in the SMS / ad whose domain equals a listed app's website -> FOUND.
   A FOUND name with a link to a DIFFERENT domain than that app's website -> SIMILAR (a possible clone).
 If the directory file is empty, or nothing was read to check, match is None ("not checked", D26).
@@ -36,12 +37,21 @@ def _compact(name: str) -> str:
 
 
 def _score(query: str, candidate: str) -> float:
-    if not query or not candidate:
+    """Whole-name similarity of the cleaned names, 0-100.
+
+    With RBI's real list (1,222 apps) a partial or word-order score (WRatio) said "found" for invented
+    names ("Kanak Credit" -> "Cred", "Tez Kanak" -> an app named "NA"), so only whole names count:
+    the same cleaned name = 100; a name under 4 letters counts only when it is exactly the same;
+    otherwise plain fuzz.ratio of the two cleaned names.
+    """
+    a, b = _compact(query or ""), _compact(candidate or "")
+    if not a or not b:
         return 0.0
-    plain = fuzz.WRatio(query, candidate, processor=utils.default_process)
-    a, b = _compact(query), _compact(candidate)
-    compact = fuzz.ratio(a, b) if len(a) >= 3 and len(b) >= 3 else 0.0
-    return max(plain, compact)
+    if a == b:
+        return 100.0
+    if min(len(a), len(b)) < 4:
+        return 0.0
+    return fuzz.ratio(a, b)
 
 
 def _site(value: str | None) -> str | None:

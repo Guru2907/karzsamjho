@@ -29,7 +29,7 @@
   },
   {
     "id": "lender_not_found",
-    "text": "ZapCash Loan: Instant cash loan of ₹8,000 with zero collateral. Processing fee ₹800, receive ₹7,200. Repay ₹9,000 in 30 days. Link: https://example.com/x",
+    "text": "Gullak Go Loan: Instant cash loan of ₹8,000 with zero collateral. Processing fee ₹800, receive ₹7,200. Repay ₹9,000 in 30 days. Link: https://example.com/x",
     "expected": {
       "is_loan_ad": true,
       "principal": 8000,

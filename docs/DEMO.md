@@ -40,6 +40,8 @@ Stage roles (to be assigned): presenter · phone · laptop · technical answers.
 - [x] Cached ads: the card now says "⏱ pehle se jaancha hua" (checked before) instead of "⏱ 0.0 sec" (D10, 1:59 AM). To show the real speed ("⏱ 3.2 sec"), clear the cache folder before the pitch so the first send is a fresh read
 - [ ] Optional LIVE moment (B9): paste "Your loan is approved. Pay ₹1,499 processing fee to release funds." -> the voice starts "Savdhaan! ... Paise mat bhejo"
 - [ ] LIVE 2 lender line: built (C1 + C4); needs Anam's real RBI CSV (G4), otherwise it says nothing ("not checked")
+- [ ] LIVE 2 with RBI's real list (G4, 4:30 AM, D49): paste the 3 SMS in api/data/offers/lender_demo.json: "KreditBee ..." -> found, linked to the lender, list date; "KreditBea ..." -> "similar name, check the exact name"; "Gullak Go Loan ..." -> not found. Matching is whole-name only, so invented names are never "found".
+- [ ] Printed ads: ZapCash and EasyRupee are REAL apps in RBI's list, so ai_ad3 and ai_ad2 are renamed to the invented "Jaldi Gullak" and "Galla Go" (both not found). Never show a made-up costly ad under a real app's name. Print only the renamed ads.
 - [x] Verify (F4): /api/cases/<id>/verify recomputes the chain; a hand-edited entry makes it ok:false (proven 1:01 AM). Optional live moment: show ok:true, edit one entry, show ok:false
 - [ ] LIVE 2 needs the lender check (C1) and next step (C2); C2 is built (1:31 AM): the card's 👉 line now follows the verdict, e.g. the Raju ad (VERY_COSTLY) says "Yeh loan bahut mehenga hai. Bank, SHG ya cooperative se sasta loan poochho." The RBI line still needs Anam's CSV (G4)
 

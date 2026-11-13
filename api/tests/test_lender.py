@@ -108,3 +108,47 @@ def test_check_result_carries_the_lender_match(client, directory, monkeypatch, t
     assert body["lender"]["list_date"] == "2026-11-10"
     for word in ("safe", "illegal", "fake"):
         assert word not in json.dumps(body["lender"]).lower()
+
+
+# ---- RBI's real directory (api/data/rbi_dla.csv, built by scripts/build_ledger.py, G4) --------------
+# Public data from rbi.org.in. These tests only check the match TYPE, so a newer list keeps them valid
+# unless an app is added or removed. They guard against the partial-match bug: invented names must never
+# come back FOUND (the worst mistake this check can make on stage).
+REAL_LIST = config.ROOT / "api" / "data" / "rbi_dla.csv"
+
+
+@pytest.fixture
+def real_list(monkeypatch):
+    if REAL_LIST.stat().st_size < 1000:
+        pytest.skip("RBI's real list is not in api/data/rbi_dla.csv")
+    monkeypatch.setattr(config, "settings", dataclasses.replace(config.settings, rbi_dla_path=str(REAL_LIST)))
+
+
+@pytest.mark.parametrize("name, match", [
+    ("KreditBee", "FOUND"),
+    ("Kredit Bee Loan App", "FOUND"),      # generic words removed
+    ("KreditBea", "SIMILAR"),              # one letter changed
+    # invented names that the old partial matching wrongly called FOUND or SIMILAR
+    ("Tez Kanak", "NOT_FOUND"),
+    ("Kanak Credit", "NOT_FOUND"),
+    ("Phatafat Kosh", "NOT_FOUND"),
+    ("Zxqv Paisa", "NOT_FOUND"),
+    # the demo ads' names (D49): must stay NOT_FOUND
+    ("SmartEMI", "NOT_FOUND"),
+    ("Galla Go", "NOT_FOUND"),
+    ("Jaldi Gullak", "NOT_FOUND"),
+])
+def test_real_rbi_list_bands(real_list, name, match):
+    assert lender.match_lender(name)["match"] == match
+
+
+def test_real_rbi_list_play_store_link(real_list):
+    r = lender.match_lender(None, "Download https://play.google.com/store/apps/details?id=com.kreditbee.android")
+    assert r["match"] == "FOUND" and r["closest"].lower().startswith("kreditbee")
+
+
+def test_real_rbi_list_has_no_placeholder_names(real_list):
+    rows, list_date = lender.directory()
+    names = {r["dla_name"].strip().lower() for r in rows}
+    assert not names & {"na", "n.a.", "nil", "nill", "none", "not applicable", "0", "1"}
+    assert list_date and len(rows) > 1000

@@ -1,0 +1,8 @@
+# G4 + C1 · RBI's real list: stricter matching, cleaner data, safe demo names (Phase A)
+- When: 14 Nov 2026, 4:30 AM IST · Who: agent for Gurpreet (on Anam's branch data/lender-ledger, PR #54)
+- Did: with RBI's real list, the old partial matching said FOUND for invented names ("Kanak Credit" -> Cred, "Tez Kanak" -> an app named "NA") and two printed demo ads were real apps (ZapCash, EasyRupee). Fixes: (A1) build_ledger.py drops placeholder app names (NA, nil, 0-5...) and removes "(FORMERLY ...)/(MERGED WITH ...)" from lender names; (A2) lender.py matches whole cleaned names only, cut-offs 92 / 80 (config); (A3) tests on the real list; (A4) every test starts with an empty RBI list (conftest), so data updates cannot break maths or voice tests; demo SMS 3 renamed to "Gullak Go"; D49.
+- Files: scripts/build_ledger.py, api/data/rbi_dla.csv (rebuilt: 2,794 rows, 1,210 apps), api/core/lender.py, api/core/config.py, api/tests/conftest.py, api/tests/test_lender.py, api/data/offers/lender_demo.json, docs/DEMO.md, docs/DECISIONS.md (D49)
+- Proof: pytest 583 passed. Real pipeline run (gpt-oss-20b) on the demo SMS: KreditBee -> FOUND (Kreditbee, ADITYA BIRLA CAPITAL LIMITED), KreditBea -> SIMILAR 88.9, Gullak Go Loan -> NOT_FOUND 50; voice sentences correct. Rebuilding the CSVs twice gives no change.
+- Status in docs/TASKS.md: G4 stays review (Anam); C1 matching changed, needs Siddeshwar's look
+- Next: Anam regenerates ai_ad2 / ai_ad3 as "Galla Go" / "Jaldi Gullak"; Phase B (NBFC + cancelled-registration line) after #54 merges.
+- Broken / risks: KreditBee is listed under 15 lenders; the voice names the first one in the file. The cancelled-registration demo SMS (Alok Auto Credit) says "not found" until Phase B.

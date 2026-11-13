@@ -89,6 +89,28 @@ def _extract_website(link_cell: str) -> str:
     return url
 
 
+# Placeholder "names" RBI's sheet carries where an app name should be (seen: 0-5, NA, nil, NONE...).
+_JUNK_DLA = {"na", "n a", "nil", "nill", "none", "not applicable", "not available", "nan", "null", "tbd"}
+# Notes inside a lender's name that only make it long when spoken: "(FORMERLY ...)", "(MERGED WITH ...)".
+_ENTITY_NOTE_RE = re.compile(
+    r"\s*\((?:[^()]|\([^()]*\))*?\b(?:formerly|old name|earlier|previously|erstwhile|merged with|"
+    r"now known|amalgamated)\b(?:[^()]|\([^()]*\))*\)", re.I)
+
+
+def _is_junk_dla(name: str) -> bool:
+    """True for placeholders that are not app names: digits only, 'NA', 'nil', 'not applicable'..."""
+    plain = re.sub(r"[^a-z0-9 ]", " ", name.lower())
+    plain = " ".join(plain.split())
+    return not plain or plain.isdigit() or plain in _JUNK_DLA
+
+
+def _short_entity(name: str) -> str:
+    """'ADITYA BIRLA CAPITAL LIMITED (MERGED WITH ADITYA BIRLA FINANCE LIMITED)' -> 'ADITYA BIRLA CAPITAL LIMITED'.
+    Only notes about old / merged names are removed; '(INDIA)' or '(P)' stay."""
+    short = _ENTITY_NOTE_RE.sub("", name).strip(" ,-")
+    return short or name
+
+
 def build_rbi_dla(list_date: str) -> int:
     wb = openpyxl.load_workbook(RAW / "rbi_dla.xlsx", data_only=True)
     ws = wb["Digital Lending App"]
@@ -135,10 +157,10 @@ def build_rbi_dla(list_date: str) -> int:
 
         # carry down entity name (merged cells)
         if entity:
-            last_entity = entity
+            last_entity = _short_entity(entity)
         regulated_entity = last_entity
 
-        if not dla:
+        if not dla or _is_junk_dla(dla):
             continue
 
         website = _extract_website(link)

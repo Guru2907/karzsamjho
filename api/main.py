@@ -19,7 +19,7 @@ from fastapi.concurrency import run_in_threadpool
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import FileResponse
 
-from api.core import cache, config, extract, maths, speak, verdict
+from api.core import cache, config, extract, lender, maths, speak, verdict
 from api.core.config import ensure_dirs
 from api.core.schemas import (Case, CaseIn, CheckResult, Event, EventIn, Stats,
                               VerifyResult)
@@ -151,6 +151,12 @@ async def run_check(image: bytes | None = None, text: str | None = None,
 
     check_id = f"chk_{next(_ids):04d}"
     sentence = speak.speech_text(numbers, lang)          # bn / mr: that language's sentence (D7)
+    # C1 (D37): is the app / lender in RBI's directory? Name from the ad, plus any link in the SMS.
+    lender_result = lender.match_lender(fields["app_name"] or fields["lender_name"], text)
+    say_lender = getattr(speak, "lender_sentence", None)          # C4 (Siddeshwar): spoken too
+    lender_line = say_lender(lender_result, lang) if say_lender else None
+    if lender_line:
+        sentence = sentence + " " + lender_line
     pay_first = fields.get("pay_first")
     if pay_first:                                    # B9: the warning comes first, then the numbers
         warning = PAY_FIRST_WARNINGS.get(lang, PAY_FIRST_WARNING)    # same language as the voice
@@ -167,8 +173,7 @@ async def run_check(image: bytes | None = None, text: str | None = None,
         "verdict": result_verdict,
         "numbers": numbers,
         "unverified": unverified,
-        "lender": {"name_read": fields["app_name"] or fields["lender_name"], "match": None,
-                   "score": None, "closest": None, "list_date": None},
+        "lender": lender_result,
         "next_step": dict(PAY_FIRST_STEP if pay_first else NEXT_STEP),
         "speech_text_hi": sentence,
         "audio_url": audio_url,

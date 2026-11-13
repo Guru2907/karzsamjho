@@ -1,0 +1,41 @@
+[
+  {
+    "id": "scam1",
+    "text": "Congratulations! Your personal loan of ₹5,00,000 is pre-approved. Apply now and get instant disbursal.",
+    "expected": {
+      "is_loan_ad": true,
+      "principal": 500000,
+      "fees": null,
+      "in_hand": 500000,
+      "repay_total": null,
+      "tenure_days": null,
+      "extra": null
+    }
+  },
+  {
+    "id": "scam2",
+    "text": "Urgent! Your loan is approved. Pay ₹1,499 processing fee to release funds. Contact us immediately.",
+    "expected": {
+      "is_loan_ad": true,
+      "principal": null,
+      "fees": 1499,
+      "in_hand": null,
+      "repay_total": null,
+      "tenure_days": null,
+      "extra": null
+    }
+  },
+  {
+    "id": "scam3",
+    "text": "Guaranteed ₹5 lakh loan without documents. Pay refundable insurance charges of ₹1,200 now.",
+    "expected": {
+      "is_loan_ad": true,
+      "principal": 500000,
+      "fees": 1200,
+      "in_hand": 498800,
+      "repay_total": null,
+      "tenure_days": null,
+      "extra": null
+    }
+  }
+]

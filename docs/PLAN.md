@@ -3,7 +3,7 @@
 This replaces the earlier split. Decision D25 in docs/DECISIONS.md. If this file and the code disagree, trust the code and fix this file.
 
 
-## Night plan: from 9:00 PM, 13 Nov (D37, D38, D39)
+## Night plan: from 9:00 PM, 13 Nov (D37, D38, D40, D41)
 
 The 7:30 PM review passed. This section replaces the earlier splits for everything still open. **Nobody edits a file outside their own list.** Hard limits: **12:30 AM** all 4 core features pass · **1:00 AM** kill-switch drill · **3:30 AM** feature freeze · **9:00 AM** submission.
 
@@ -40,7 +40,6 @@ Everyone may add their own entry to `docs/PROGRESS.md` and set their own task st
 | D | D9 bot tidy: one short line instead of a traceback on a network blip | S | Siddeshwar | none | after 12:30 |
 | D | D10 cached ads show "⏱ 0.0 sec": wording ("pehle se jaancha hua") | S | Siddeshwar | none | after 12:30 |
 | D | D11 card text in Bengali/Marathi too | SS | Siddeshwar | D7 | if time |
-| D | D12 WhatsApp via Twilio (D39 conditions) | SS | Siddeshwar | everything else | if time, before 3:30 |
 | E | E2 Raju card · E3 + E9 /check (photo, SMS, audio, states) | M | Tejaswini | none | 10:00 PM |
 | E | E6 home-screen app (manifest, icons) | M | Tejaswini | E3 | 10:30 PM |
 | E | E4 /cases · E5 /cases/:id (timeline, rules, PDF, verify) | M | Tejaswini | F2 shape | 12:00 AM |
@@ -67,6 +66,16 @@ Everyone may add their own entry to `docs/PROGRESS.md` and set their own task st
 
 Critical path: **A3 -> F2 -> F3 + F4 -> D5** (feature 4) and **G4 -> C1 -> C2 + C4 + F5** (feature 3).
 
+### Order decided by Gurpreet at 9:10 PM (D40): wave 1 first
+| Person | Wave 1 (now, in this order) | Later |
+|---|---|---|
+| Gurpreet | B9b -> A3 -> F2 (unblocks Siddeshwar's F3, D5) -> C1 (unblocks his C4) -> A5 -> B11 | C2, F4, F5, G6, G7, G5, I5 |
+| Siddeshwar | MUST first: F1 -> C4 -> F3 -> D5; then STRETCH: D9 -> D10 -> D8 -> D11 | (WhatsApp dropped, D41) |
+| Tejaswini | E2/E3/E9 -> E6 -> E4/E5 -> E8 -> E7 | H1-H3 |
+| Anam | G4 -> G2 -> G8 -> G3 | G1, I1, I3 |
+
+Rule for adding work: a "later" task moves into wave 1 only if a wave-1 feature would stay incomplete without it (that is why F2 and C1 are in Gurpreet's wave 1).
+
 ### New agreed signatures (night)
 ```python
 # api/core/lender.py (Gurpreet), C1
@@ -90,14 +99,14 @@ def lender_sentence(lender: dict, lang: str = "hi") -> str | None
 
 ### Prompt for Gurpreet (Claude Code)
 ```
-I am Gurpreet, the lead. Read CLAUDE.md, docs/PLAN.md section "Night plan", docs/PROGRESS.md (top) and docs/DECISIONS.md D36 to D39. Follow "How to report while working" and my workflow: before each task say "We are doing <task>", one branch + one PR per task, I merge; no Claude co-author line. The API runs from this folder with --reload, so build in a separate git worktree and never restart my running servers.
-My tasks, in order: B9b, A3, C1 (name + website domain, D37 wording), C2, F2, F4, F5, A5, B11, then G6, G7, G5 checks, I5.
+I am Gurpreet, the lead. Read CLAUDE.md, docs/PLAN.md section "Night plan", docs/PROGRESS.md (top) and docs/DECISIONS.md D36 to D41. Follow "How to report while working" and my workflow: before each task say "We are doing <task>", one branch + one PR per task, I merge; no Claude co-author line. The API runs from this folder with --reload, so build in a separate git worktree and never restart my running servers.
+My tasks, in order (D40 wave 1): B9b, A3, F2, C1 (name + website domain, D37 wording), A5, B11. Later: C2, F4, F5, G6, G7, G5 checks, I5.
 Only my files (Night plan table). Tests for everything; a real run for each feature; update TASKS, PROGRESS, DECISIONS, DEMO in the same PR.
 ```
 
 ### Prompt for Siddeshwar (Claude Code)
 ```
-I am Siddeshwar. Read AGENTS.md, CLAUDE.md, docs/PLAN.md sections "After the review" and "Night plan", docs/PROGRESS.md (top) and docs/DECISIONS.md D32 to D39. Follow "How to report while working" in CLAUDE.md.
+I am Siddeshwar. Read AGENTS.md, CLAUDE.md, docs/PLAN.md sections "After the review" and "Night plan", docs/PROGRESS.md (top) and docs/DECISIONS.md D32 to D41. Follow "How to report while working" in CLAUDE.md.
 
 FILES I MAY EDIT: bot/main.py, api/core/speak.py, api/core/harass.py, api/core/evidence.py, api/core/maths.py, api/core/verdict.py, their tests in api/tests/, my PROGRESS entry and my task statuses. Nothing else; Gurpreet owns main.py, db.py, lender.py, next_step.py, extract.py, fallback.py, config.py, schemas.py.
 
@@ -109,14 +118,13 @@ MUST (by 12:30 AM), in this order:
 3. F3 evidence.py: mask() and build_pdf(case), ENGLISH only. Timeline, rules with their basis (RBI circular on recovery agents, 12 Aug 2022), hashes, masked 12-digit numbers ("XXXX XXXX 1234"), complaint draft, route, "Day N of 30". Tests: masked; PDF starts with %PDF.
 4. D5 bot: a forwarded message (or a message after /log) -> POST /api/cases once per chat (remember the id) -> POST /api/cases/{id}/events (at = original message time, channel "telegram", contacted "borrower", text) -> GET /api/cases/{id}/evidence.pdf -> reply_document. Hindi messages only.
 
-STRETCH (only after the 12:30 AM gate passes):
+STRETCH (right after 1 to 4 are merged; D40):
 5. D9 bot tidy: register an error handler; a network blip logs one line ("network blip, retrying"), not a traceback.
 6. D10 cached results (cached: true) show "⏱ pehle se jaancha hua" instead of "0.0 sec".
 7. D8 Bengali/Marathi listening: Whisper language from the chat's /bhasha choice (needs a tiny fallback.py/extract.py change: ask Gurpreet first), plus bn/mr number words in the digits step.
 
 STRETCH OF STRETCH (only if everything above is done, and before 3:30 AM):
 8. D11 card text in Bengali/Marathi (native-speaker OK first).
-9. D12 WhatsApp via Twilio sandbox, under D39: a separate entry point that reuses POST /api/checks; needs a public tunnel; never replaces Telegram; stop at 3:30 AM even if unfinished.
 ```
 
 ### Prompt for Tejaswini (Antigravity, web)
@@ -152,6 +160,7 @@ I am Anam, doing the KarzSamjho test data. Read only AGENTS.md, api/data/README.
 1. G4 FIRST (needed by 9:30 PM for the lender check): RBI's public directory of digital lending apps (search rbi.org.in for "digital lending apps"). Save api/data/rbi_dla.csv with the header dla_name,regulated_entity,website,list_date (website = the app's website or Play Store link if the list has it, else empty; list_date = the list's date as YYYY-MM-DD in every row). Write the source URL and download date in api/data/README.md. If the full list cannot be fetched, copy at least 30 real rows and say it is partial. PR: "data: RBI digital lending apps directory".
 2. G2 by 10:30 PM: api/data/harassment/samples.json, 10 items {"id", "at" (ISO time +05:30), "channel" (call|sms|whatsapp|telegram|visit), "contacted" (borrower|family|employer|contacts), "text", "expected_rules"}. Cover H1 to H6 at least once (H6 = 5 calls on one date); one polite 11 AM reminder with no rule; one with a made-up 12-digit number. Show me each sample and its rules before writing; I confirm.
 3. G8 by 10:45 PM: add 2 more SMS offers to api/data/offers/sms_offers.json (one Hinglish EMI offer, one with "5 lakh" written in words), same shape incl. "pay_first". I confirm the numbers.
+(Order D40: G4, G2, G8, G3 now; G1, I1, I3 later.)
 4. G3 by 11:00 PM: print ai_ad1/2/3.png in colour, 2 copies each, and hand them to Gurpreet (no code).
 5. G1 by 11:30 PM: more test offers (aim 30 in total) in api/data/offers/ with answers.json, covering: fee upfront, plain, EMI with/without total, in-hand printed, days missing, contradicting, blurry photo, not a loan, weekly wording, "lakh", advance-fee scam. Expected numbers confirmed by me.
 6. I1 / I3: 3 mentor questions for round 2; screen-record the full demo as the backup video by 3:00 AM (keep it on your laptop, do not commit it).

@@ -21,12 +21,20 @@ Every agent session and every person adds an entry here at the end of each task,
 
 ## Log
 
+### 13 Nov 2026, 9:15 PM · WhatsApp skipped · agent for Gurpreet
+- Did: the lead skipped WhatsApp: D41 reverses D39, D12 dropped, CLAUDE.md and AGENTS.md list WhatsApp as plain out of scope again; removed from Siddeshwar's prompt.
+- Files: CLAUDE.md, AGENTS.md, docs/PLAN.md, TASKS.md, DECISIONS.md (D41), PROGRESS.md
+- Proof: docs only.
+- Status in docs/TASKS.md: D12 = dropped
+- Next: wave 1 (D40).
+- Broken / risks: none.
+
 ### 13 Nov 2026, 9:00 PM · 7:30 PM gate passed + night plan · agent for Gurpreet
 - Did: ticked the 7:30 PM gate (the review passed); recorded the mentor's feedback (D37: lender check by name + website, spoken, never "safe"); night owners by group exactly as the lead assigned (D38); WhatsApp only as stretch-of-stretch D12 (D39); new tasks C4, D8 to D12; owners on every open task; prompts for Gurpreet, Siddeshwar, Tejaswini and Anam in docs/PLAN.md "Night plan"; stale lines fixed (test counts, ARCHITECTURE, DEMO LIVE 2, CLAUDE.md/AGENTS.md WhatsApp note).
 - Files: CLAUDE.md, AGENTS.md, docs/PLAN.md, TASKS.md, DECISIONS.md, PROGRESS.md, ARCHITECTURE.md, TESTING.md, START_HERE.md, DEMO.md
 - Proof: docs only; `pytest -q` 266 passed on main (611cb0a).
 - Status in docs/TASKS.md: owners on every open task
-- Next: Gurpreet B9b then A3; Siddeshwar F1; Anam G4 (RBI CSV) first; Tejaswini E2/E3/E9.
+- Next (D40 wave 1): Gurpreet B9b, A3, F2, C1, A5, B11; Siddeshwar F1, C4, F3, D5 then D9, D10, D8, D11; Anam G4, G2, G8, G3; Tejaswini E2/E3/E9, E6, E4/E5, E8, E7.
 - Broken / risks: no web PR yet; the RBI CSV blocks C1, C2, F5; A3 blocks F2 and the rest of feature 4.
 
 ### 13 Nov 2026, 7:50 PM · B9 warning in Bengali and Marathi · agent for Gurpreet

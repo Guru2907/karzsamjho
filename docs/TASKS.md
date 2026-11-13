@@ -6,6 +6,8 @@ Type: M = must build. S = stretch, only after the 7:30 PM gate on 13 Nov has pas
 
 ## Right now: the night plan (from 9:00 PM, D38). Owners, order and prompts: docs/PLAN.md "Night plan"
 
+Wave 1 (D40), in order. Gurpreet: B9b, A3, F2, C1, A5, B11. Siddeshwar: F1, C4, F3, D5, then D9, D10, D8, D11. Tejaswini: E2/E3/E9, E6, E4/E5, E8, E7. Anam: G4, G2, G8, G3. Everything else is later; a later task joins wave 1 only if a wave-1 feature would stay incomplete without it.
+
 ## Earlier: the 7:30 PM review (re-plan at 4:50 PM, D25)
 
 Owners, order, target times and signatures are in docs/PLAN.md. In scope tonight:
@@ -269,7 +271,7 @@ All changes go through a pull request that Gurpreet merges (D27).
 - Done when: with /bhasha bn or mr the card labels are in that language (native-speaker OK first)
 
 ### D12 · WhatsApp via Twilio sandbox (D39)
-- Status: todo (Siddeshwar)
+- Status: dropped (lead, 9:15 PM, D41): WhatsApp stays out of scope (D11)
 - Type: Stretch of stretch
 - Depends on: every Must and Stretch task passed
 - Files: a new bot/whatsapp.py (Siddeshwar); reuses POST /api/checks

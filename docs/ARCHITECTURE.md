@@ -26,7 +26,7 @@ Helper's browser (PWA)  ──► web/ (Vite)  ─┼──► FastAPI api/main.
 | Bengali + Marathi voice, /bhasha | yes: bn-IN-TanishaaNeural, mr-IN-AarohiNeural; card stays Hinglish; sentences await the native-speaker OK (D7, D32) | speak.py, bot/main.py |
 | Results stored | yes: SQLite file (DB_PATH, default ./karzsamjho.db); survives a restart; main.py keeps a fast in-memory copy (A3) | db.py, main.py |
 | Cache by SHA-256 (photos) | yes: one JSON per photo in CACHE_DIR, survives a restart; a repeat makes no AI call; a missing MP3 is made again with edge-tts only | cache.py, main.py |
-| Lender match | not yet: `lender.match` is null and the card hides the line (D26) | lender.py, task C1 |
+| Lender match | yes: app/lender name (RapidFuzz, generic words stripped) + any website or Play Store link in the SMS, against the local copy of RBI's directory api/data/rbi_dla.csv; a listed name with a different link = SIMILAR (possible clone); empty directory = null (not checked); spoken via C4 when present (C1, D37) | lender.py, main.py |
 | Next step | one fixed line: "Loan lene se pehle bank mitra se poochho." (D26) | main.py; next_step.py is task C2 |
 | Harassment cases + events | yes: real cases in SQLite; each event gets rules from harass.label (F1) and hash = SHA-256(prev_hash + fields), first prev = 64 zeros; day counter (F2) | main.py, db.py |
 | PDF, verify, complaint route | not yet (F3, F4, F5) | |

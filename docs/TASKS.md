@@ -163,7 +163,7 @@ All changes go through a pull request that Gurpreet merges (D27).
 ## C. Lender check and next step
 
 ### C1 · Load `rbi_dla.csv`; `lender.py` with RapidFuzz
-- Status: todo (Gurpreet; name + website domain, D37)
+- Status: review (Gurpreet): name + website match, clone check, list date; proven with a made-up directory + real AI (12:20 AM); real RBI CSV (G4) still missing
 - Type: Must
 - Depends on: A1, G4
 - Files: api/core/lender.py, api/data/rbi_dla.csv, api/tests/test_lender.py
@@ -177,7 +177,7 @@ All changes go through a pull request that Gurpreet merges (D27).
 - Done when: Every verdict maps to exactly one next step
 
 ### C4 · Speak the lender result (mentor feedback, D37)
-- Status: todo (Siddeshwar)
+- Status: review (Siddeshwar): speak.lender_sentence, hi exact, bn/mr drafts for the native-speaker OK; main.py wiring by Gurpreet
 - Type: Must
 - Depends on: C1 (shape only)
 - Files: api/core/speak.py, api/tests/test_speak.py (Siddeshwar); api/main.py adds the sentence after the numbers (Gurpreet)
@@ -222,7 +222,7 @@ All changes go through a pull request that Gurpreet merges (D27).
 - Done when: A pasted SMS returns a reply
 
 ### D5 · Bot: forward a message → harassment event; send the PDF back
-- Status: todo (Siddeshwar)
+- Status: review (Siddeshwar): forward or /log -> case event -> Hindi rules -> PDF; real PDF needs F2 + endpoint
 - Type: Must
 - Depends on: F2, F3
 - Files: bot/main.py
@@ -347,7 +347,7 @@ All changes go through a pull request that Gurpreet merges (D27).
 ## F. Evidence and harassment
 
 ### F1 · `harass.py`: rules H1–H6, text labelling with keyword backup
-- Status: todo (Siddeshwar)
+- Status: review (Siddeshwar): H1-H6, AI + keyword safety net, 10/10 real samples
 - Type: Must
 - Depends on: A4
 - Files: api/core/harass.py, api/tests/test_harass.py
@@ -361,7 +361,7 @@ All changes go through a pull request that Gurpreet merges (D27).
 - Done when: Each event stores its hash and the previous hash
 
 ### F3 · `evidence.py`: PDF with timeline, rules, hashes, masking, complaint draft
-- Status: todo (Siddeshwar)
+- Status: review (Siddeshwar): build_pdf + mask + hash helpers; endpoint wiring in main.py by Gurpreet
 - Type: Must
 - Depends on: F2
 - Files: api/core/evidence.py

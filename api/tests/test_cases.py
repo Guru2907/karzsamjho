@@ -125,3 +125,26 @@ def test_list_cases_newest_first(client):
     new_case(client)
     second = new_case(client)
     assert client.get("/api/cases").json()[0]["id"] == second["id"]
+
+
+# ---------------------------------------------------------------- the evidence PDF route (F3 wired)
+def test_evidence_pdf_route(client, fake_label):
+    case = new_case(client)
+    log_event(client, case["id"], "2026-11-13T21:40:00+05:30", "Paisa do warna, Aadhaar 1234 5678 9012")
+    r = client.get(f"/api/cases/{case['id']}/evidence.pdf")
+    assert r.status_code == 200 and r.headers["content-type"] == "application/pdf"
+    assert r.content.startswith(b"%PDF") and len(r.content) > 1000
+    assert client.get("/api/cases/case_9999/evidence.pdf").status_code == 404
+
+
+def test_evidence_pdf_masks_and_has_every_event(client, fake_label, monkeypatch):
+    from api.core import evidence
+    seen = {}
+    real = evidence.build_pdf
+    monkeypatch.setattr(evidence, "build_pdf", lambda case, **kw: (seen.update(case=case), real(case, compress=False))[1])
+    case = new_case(client)
+    log_event(client, case["id"], "2026-11-13T21:40:00+05:30", "Paisa do warna, Aadhaar 1234 5678 9012")
+    log_event(client, case["id"], "2026-11-14T10:00:00+05:30", "Kal tak bhejo")
+    body = client.get(f"/api/cases/{case['id']}/evidence.pdf").content
+    assert len(seen["case"]["events"]) == 2 and seen["case"]["day"] == 1
+    assert b"1234 5678 9012" not in body                              # the 12-digit number is masked

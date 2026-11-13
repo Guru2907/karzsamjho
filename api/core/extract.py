@@ -44,6 +44,7 @@ never calculate, add, subtract or guess a number;
 use null for anything not clearly written; is_loan_ad is false for anything that is not a loan offer."""
 
 DEVANAGARI_DIGITS = str.maketrans("०१२३४५६७८९", "0123456789")
+BENGALI_DIGITS = str.maketrans("০১২৩৪৫৬৭৮৯", "0123456789")
 _NUMBER = re.compile(r"\d[\d,]*(?:\.\d+)?")
 # A number with an optional Indian unit after it: "5 lakh", "1.5 lac", "2 crore", "50 hazaar", "5k" (B10).
 _UNITS = (("crore", 1e7), ("cr", 1e7), ("करोड़", 1e7), ("करोड", 1e7),
@@ -405,7 +406,6 @@ _MULTIPLIER_VALUE = {"hazaar": 1000, "hazar": 1000, "hajar": 1000, "हज़ा
                      "thousand": 1000, "lakh": 100000, "lac": 100000, "लाख": 100000,
                      "sau": 100, "सौ": 100, "hundred": 100,
                      "হাজার": 1000, "লাখ": 100000, "শো": 100, "शे": 100}
-BENGALI_DIGITS = str.maketrans("০১২৩৪৫৬৭৮৯", "0123456789")
 
 
 def expand_multipliers(text: str) -> str:

@@ -3,10 +3,10 @@
 Read this whole file before doing anything. If a request conflicts with it, stop and ask the human.
 
 ## Context protocol (do this every session, so nothing is lost)
-1. At the start of a session, read in this order: CLAUDE.md (this file), docs/PROGRESS.md (latest entries at the top), docs/DECISIONS.md, and the task you are given in docs/TASKS.md. Read docs/ARCHITECTURE.md, docs/TESTING.md, docs/DEMO.md or docs/RUNBOOK.md only when the task touches them.
+1. At the start of a session, read in this order: CLAUDE.md (this file), docs/PROGRESS.md (current status) and the newest files in docs/progress/ (`python scripts/show_progress.py`), docs/DECISIONS.md, and the task you are given in docs/TASKS.md. Read docs/ARCHITECTURE.md, docs/TESTING.md, docs/DEMO.md or docs/RUNBOOK.md only when the task touches them.
 2. Before coding, say in 3 lines: which task, which files you will touch, how you will prove it works.
 3. At the end of every task, before the commit:
-   - add an entry at the TOP of docs/PROGRESS.md using the template there (what changed, files, test output summary, what is next, anything broken);
+   - add a NEW file in docs/progress/ named YYYY-MM-DD_HHMM_<task>_<person>.md using the template in docs/progress/README.md (what changed, files, test output summary, what is next, anything broken). Do not edit docs/PROGRESS.md: only Gurpreet updates its status block (D43);
    - set the task's Status in docs/TASKS.md (review when ready for checking; done only after someone else checked it);
    - if you made or were told a decision that changes how others work, add it to docs/DECISIONS.md;
    - if a demo-visible flow changed, update docs/DEMO.md in the same commit.
@@ -35,7 +35,8 @@ docs/
   START_HERE.md      setup steps for people (lead + teammates)
   TASKS.md           every task with ID, status, files, done-when
   PREP.md            what was prepared before 11:30 AM on 13 Nov (25% rule)
-  PROGRESS.md        running log, newest first (agents append after every task)
+  PROGRESS.md        current status (lead) + history before 14 Nov 12:55 AM
+  progress/          one file per progress entry (D43); scripts/show_progress.py prints the newest
   DECISIONS.md       decisions and why (append only)
   ARCHITECTURE.md    how the parts fit, data flow, fallback ladder
   TESTING.md         test plan, K = 0 rule, kill-switch drill, results

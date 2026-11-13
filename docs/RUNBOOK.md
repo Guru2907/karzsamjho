@@ -39,6 +39,8 @@ Health check: open http://localhost:8000/api/health (add `?fresh=true` to re-che
 | Old checks gone | Checks are in `karzsamjho.db` (A3). If it was deleted or DB_PATH changed, old checks are gone; new ones still work. Never delete it before the demo |
 | A photo says "Photo saaf nahi hai" | Both readers failed or nothing readable; check the API log for `read_image: engine=... failed (...)` lines (type and status only) |
 | A photo keeps giving an old answer | It is cached by its exact bytes (A4). To read it fresh, stop the API and delete that photo's file in `cache/` (or the whole folder). Never delete `audio/` while cached results point at it; a missing MP3 is made again anyway |
+| What did the team do last? | `python scripts/show_progress.py` (newest progress entries, D43) |
+| Evidence PDF missing in the bot | The API must be running; check http://localhost:8000/api/cases/<id>/evidence.pdf in a browser |
 | How many Groq photo reads are left? | API log lines `read_image: engine=qwen ok ... remaining_tokens=... remaining_requests=...` |
 
 ## Network switch-over

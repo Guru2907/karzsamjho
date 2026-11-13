@@ -7,6 +7,11 @@ This replaces the earlier split. Decision D25 in docs/DECISIONS.md. If this file
 
 The 7:30 PM review passed. This section replaces the earlier splits for everything still open. **Nobody edits a file outside their own list.** Hard limits: **12:30 AM** all 4 core features pass · **1:00 AM** kill-switch drill · **3:30 AM** feature freeze · **9:00 AM** submission.
 
+### Status at 12:55 AM, 14 Nov
+- **Wave 1 done and merged** (37 PRs on main, 440 tests): Gurpreet A3, F2, B9b, C1, A5, B11 (+ B9c fee fix, evidence PDF route); Siddeshwar F1, F3, D5, C4 (+ D6, D7 earlier).
+- **Not yet:** F4 verify (the PDF promises it), C2, F5, G6, G7; Anam's RBI CSV (G4) and harassment samples (G2); Tejaswini's web pages (E); D8 to D11 stretch.
+- **Progress entries are now one file each in docs/progress/ (D43).** The prompts below say so.
+
 ### Mentor feedback (7:30 PM review, D37)
 1. Cross-check the lender: is the app/bank in **RBI's directory**? Use the name **and** the website/link in the message or ad.
 2. Raju cannot read, so the lender result must be **spoken**, not only shown on the card.
@@ -20,7 +25,7 @@ The 7:30 PM review passed. This section replaces the earlier splits for everythi
 | **Tejaswini** (Antigravity, web) | `web/src/`, `web/public/`, `web/index.html` |
 | **Anam** (Antigravity, data) | `api/data/` |
 
-Everyone may add their own entry to `docs/PROGRESS.md` and set their own task status in `docs/TASKS.md`.
+Everyone adds their own progress entry as a NEW file in `docs/progress/` (D43; never edit docs/PROGRESS.md) and sets their own task status in `docs/TASKS.md`.
 
 ### Tasks by group (M = must, S = stretch, SS = stretch of stretch)
 | Group | Task | Type | Owner | Needs | Target |
@@ -99,16 +104,16 @@ def lender_sentence(lender: dict, lang: str = "hi") -> str | None
 
 ### Prompt for Gurpreet (Claude Code)
 ```
-I am Gurpreet, the lead. Read CLAUDE.md, docs/PLAN.md section "Night plan", docs/PROGRESS.md (top) and docs/DECISIONS.md D36 to D41. Follow "How to report while working" and my workflow: before each task say "We are doing <task>", one branch + one PR per task, I merge; no Claude co-author line. The API runs from this folder with --reload, so build in a separate git worktree and never restart my running servers.
+I am Gurpreet, the lead. Read CLAUDE.md, docs/PLAN.md section "Night plan", the newest docs/progress/ files (python scripts/show_progress.py) and docs/DECISIONS.md D36 to D43. Follow "How to report while working" and my workflow: before each task say "We are doing <task>", one branch + one PR per task, I merge; no Claude co-author line. The API runs from this folder with --reload, so build in a separate git worktree and never restart my running servers.
 My tasks, in order (D40 wave 1): B9b, A3, F2, C1 (name + website domain, D37 wording), A5, B11. Later: C2, F4, F5, G6, G7, G5 checks, I5.
-Only my files (Night plan table). Tests for everything; a real run for each feature; update TASKS, PROGRESS, DECISIONS, DEMO in the same PR.
+Only my files (Night plan table). Tests for everything; a real run for each feature; update TASKS, DECISIONS, DEMO and add a docs/progress/ file in the same PR.
 ```
 
 ### Prompt for Siddeshwar (Claude Code)
 ```
-I am Siddeshwar. Read AGENTS.md, CLAUDE.md, docs/PLAN.md sections "After the review" and "Night plan", docs/PROGRESS.md (top) and docs/DECISIONS.md D32 to D41. Follow "How to report while working" in CLAUDE.md.
+I am Siddeshwar. Read AGENTS.md, CLAUDE.md, docs/PLAN.md sections "After the review" and "Night plan", the newest docs/progress/ files (python scripts/show_progress.py) and docs/DECISIONS.md D32 to D43. Follow "How to report while working" in CLAUDE.md.
 
-FILES I MAY EDIT: bot/main.py, api/core/speak.py, api/core/harass.py, api/core/evidence.py, api/core/maths.py, api/core/verdict.py, their tests in api/tests/, my PROGRESS entry and my task statuses. Nothing else; Gurpreet owns main.py, db.py, lender.py, next_step.py, extract.py, fallback.py, config.py, schemas.py.
+FILES I MAY EDIT: bot/main.py, api/core/speak.py, api/core/harass.py, api/core/evidence.py, api/core/maths.py, api/core/verdict.py, their tests in api/tests/, my progress entry file in docs/progress/ and my task statuses. Nothing else; Gurpreet owns main.py, db.py, lender.py, next_step.py, extract.py, fallback.py, config.py, schemas.py.
 
 WORKFLOW: one task at a time; say "We are doing <task>"; pytest -q (show output); pull main; branch; commit "<area>: <what changed>"; push; gh pr create; gh pr checks. Never push to main, never merge. No Claude co-author line. Tell Gurpreet when a PR is ready.
 
@@ -512,7 +517,7 @@ D7: Bengali and Marathi voice
 TESTS (no internet, no keys; copy the fakes from the existing tests): transcribe ok / fails -> EngineError; extract_from_voice with fake transcribe + fake read_text (words -> digits) gives the right fields and listen="whisper"; Whisper down -> 422 UNREADABLE with the Hindi text; POST /api/checks with an "audio" field end to end; speech_text bn and mr for row 1 of the PLAN.md table (3800 / 5000 / 7 / 1200) and for an unclear check; make_audio passes the right voice; image_key("hi") equals plain sha256 and bn differs; the bot voice handler posts an "audio" field; /bhasha stores the language.
 Then one real run of each: a recorded Hindi voice note, and the same photo with lang bn and lang mr (listen to both MP3s).
 
-WORKFLOW: one task at a time. Before each say "We are doing D6" (or D7). Then: pytest -q (show output); pull main; branch d6-voice-notes / d7-bn-mr; commit "<area>: <what changed>"; push; gh pr create; gh pr checks. Never push to main, never merge (Gurpreet merges). No Claude co-author line. Add your entry at the top of docs/PROGRESS.md and set D6/D7 to review in docs/TASKS.md in the same PR. Stop all features at 3:30 AM.
+WORKFLOW: one task at a time. Before each say "We are doing D6" (or D7). Then: pytest -q (show output); pull main; branch d6-voice-notes / d7-bn-mr; commit "<area>: <what changed>"; push; gh pr create; gh pr checks. Never push to main, never merge (Gurpreet merges). No Claude co-author line. Add your entry at the newest docs/progress/ files (python scripts/show_progress.py) and set D6/D7 to review in docs/TASKS.md in the same PR. Stop all features at 3:30 AM.
 After D6 and D7: F1, F3, D5 from docs/PLAN.md (musts for the 12:30 AM gate).
 ```
 
@@ -521,7 +526,7 @@ After D6 and D7: F1, F3, D5 from docs/PLAN.md (musts for the 12:30 AM gate).
 (Superseded for D6 and D7 by the D6 + D7 prompt above, D35; still valid for F1, F3, D5.)
 
 ```
-I am Siddeshwar. Read AGENTS.md, CLAUDE.md, then docs/PLAN.md section "After the review", then the top of docs/PROGRESS.md and docs/DECISIONS.md D28 to D34. Follow "How to report while working" in CLAUDE.md.
+I am Siddeshwar. Read AGENTS.md, CLAUDE.md, then docs/PLAN.md section "After the review", then the newest docs/progress/ files (python scripts/show_progress.py) and docs/DECISIONS.md D28 to D34. Follow "How to report while working" in CLAUDE.md.
 
 You may edit ONLY: bot/main.py, api/core/speak.py, api/core/harass.py, api/core/evidence.py, api/core/maths.py, api/core/verdict.py, their tests in api/tests/, plus your own entry in docs/PROGRESS.md and your task statuses in docs/TASKS.md. Gurpreet owns every other file (main.py, schemas.py, config.py, fallback.py, cache.py, db.py, lender.py, next_step.py, extract.py). If you need a change there, stop and tell me.
 
@@ -558,7 +563,7 @@ T4 by 6:45 PM: bot/main.py (tasks D3, D4): add a verdict line to the card; after
 
 Use the signatures and the "Rules inside the maths" section of docs/PLAN.md exactly; Gurpreet's code calls them at 6:30 PM. Use the hand-worked table in docs/PLAN.md (rows 1 to 10, plus the cross-check, verdict-edge, speech and audio cases) as your tests, with those exact values. No test may call the internet.
 
-Hard stop 7:00 PM. In each PR, add an entry at the top of docs/PROGRESS.md and set the task to "review" in docs/TASKS.md (those two doc files are the only exception to the file list).
+Hard stop 7:00 PM. In each PR, add an entry at the newest docs/progress/ files (python scripts/show_progress.py) and set the task to "review" in docs/TASKS.md (those two doc files are the only exception to the file list).
 
 Start by telling me in 3 lines which task you are on, which files you will touch and how you will prove it works. Then begin T1.
 ```
@@ -566,7 +571,7 @@ Start by telling me in 3 lines which task you are on, which files you will touch
 ### For the PWA teammate (Antigravity)
 
 ```
-Read AGENTS.md, CLAUDE.md and docs/PLAN.md first, then the top of docs/PROGRESS.md and decisions D25 to D27 in docs/DECISIONS.md.
+Read AGENTS.md, CLAUDE.md and docs/PLAN.md first, then the newest docs/progress/ files (python scripts/show_progress.py) and decisions D25 to D27 in docs/DECISIONS.md.
 
 YOUR FILES. You may edit ONLY:
 - anything inside web/src/
@@ -620,7 +625,7 @@ BEFORE EACH PULL REQUEST
 - Look at /check at 400 px wide and at laptop width, in light and dark.
 - On a phone over wifi: take a photo, see the card, play the audio. In Chrome, "Add to home screen" must open the app without the browser bar.
 
-HANDING OVER. One pull request per step (3 in total). Never push to main and never merge. For each: pull main, make a branch, commit as "web: <what changed>", push, open a pull request, and tell Gurpreet. In the same pull request, add a short entry at the top of docs/PROGRESS.md and set the task status to "review" in docs/TASKS.md (E2 for step 1; E3 and E9 for step 2; E6 and E7 for step 3). Those two lines are the only docs you may touch.
+HANDING OVER. One pull request per step (3 in total). Never push to main and never merge. For each: pull main, make a branch, commit as "web: <what changed>", push, open a pull request, and tell Gurpreet. In the same pull request, add a short entry at the newest docs/progress/ files (python scripts/show_progress.py) and set the task status to "review" in docs/TASKS.md (E2 for step 1; E3 and E9 for step 2; E6 and E7 for step 3). Those two lines are the only docs you may touch.
 Before each step, tell me in 3 lines what you will build, which files you will touch and how you will check it.
 ```
 

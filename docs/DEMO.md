@@ -13,7 +13,7 @@ Stage roles (to be assigned): presenter · phone · laptop · technical answers.
 | 1:00-1:10 | Solution | "Send a photo. Hear the cost in rupees, in your language." |
 | 1:10-2:00 | LIVE 1: Snap & hear | Phone photographs printed ad 1 in Telegram; speaker plays the Hindi; hold up the card and the seconds stamp |
 | 2:00-2:20 | LIVE 2: Next step | The card AND the voice say "found / not found in RBI's list" (+ the bank behind it and the list date, D37) + one next step; laptop shows helper view with the maths. Never "safe" or "illegal" |
-| 2:20-3:05 | LIVE 3: Harassment log | Forward a threat timed 9:40 PM; case page shows H1 + H2; PDF opens; draft letter; "Day 1 of 30" |
+| 2:20-3:05 | LIVE 3: Harassment log | In Telegram, forward a threat timed 9:40 PM (or /log + paste): the bot answers with H1 + H2 in Hindi and sends the evidence PDF (timeline, masked numbers, hash chain, complaint draft, "Day 1 of 30"). The case page needs Tejaswini's E5 |
 | 3:05-3:30 | Before / after | Before: learns the cost after a week, screenshots scattered. After: hears it in T s; evidence in under a minute |
 | 3:30-4:05 | Proof and limits | Measured 30-offer result incl. misses. "Synthetic ads. We can't stop someone borrowing. We tell him the cost first." |
 | 4:05-4:25 | How it's built | One picture: "The AI reads, plain code does the maths, a second model re-reads when numbers disagree." No jargon |
@@ -39,6 +39,8 @@ Stage roles (to be assigned): presenter · phone · laptop · technical answers.
 - [x] Seconds stamp for LIVE 1: the Telegram card now ends with "⏱ 3.9 sec" (time from photo received to answer, measured by the API)
 - [ ] Cached ads answer in 0.0 s, so the card shows "⏱ 0.0 sec". Decide before the pitch: run the demo ads fresh (about 4 s), or have the card say the answer was already checked (Siddeshwar, bot/main.py)
 - [ ] Optional LIVE moment (B9): paste "Your loan is approved. Pay ₹1,499 processing fee to release funds." -> the voice starts "Savdhaan! ... Paise mat bhejo"
+- [ ] LIVE 2 lender line: built (C1 + C4); needs Anam's real RBI CSV (G4), otherwise it says nothing ("not checked")
+- [ ] Verify (F4) before showing the hash chain: today /verify always says ok
 - [ ] LIVE 2 needs the lender check (C1) and next step (C2); tonight the card has no RBI line and one fixed next step (D26)
 
 ## Never say

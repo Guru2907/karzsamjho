@@ -1,8 +1,8 @@
 """KarzSamjho API. Every route in the CLAUDE.md contract exists here.
 
-Checks are REAL (task A7): photo or text -> extract -> maths -> verdict -> Hindi voice.
-Results live in memory until the database (A3) arrives, so they are lost on restart.
-Cases, events, PDF and verify still return sample data (tasks F1 to F5).
+Checks are real (A7): photo, text or voice note -> extract -> maths -> verdict -> lender -> voice.
+Stored in SQLite (A3, db.py). Cases and events are real with a hash chain (F2); the evidence PDF
+comes from evidence.py (F3). Still a stub: verify (F4).
 
 Run:  uvicorn api.main:app --host 0.0.0.0 --port 8000 --reload
 """

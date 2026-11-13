@@ -4,6 +4,35 @@ This replaces the earlier split. Decision D25 in docs/DECISIONS.md. If this file
 
 
 
+
+## Public website + palette (D46, D47), 1:45 AM, 14 Nov
+
+**Feature freeze is now 5:00 AM** for everyone (D46). It overrides every "3:30 AM" in the older sections below.
+
+Gurpreet builds a public website for NGOs, bank mitras and judges in the same app as the PWA:
+
+| | Public website (Gurpreet) | PWA (Tejaswini) |
+|---|---|---|
+| Routes | `/`, `/how`, `/partners`, custom 404 | `/check`, `/cases`, `/cases/:id` |
+| Layout | `web/src/site/SiteLayout.tsx` (own nav + footer) | the app `TopBar` (no link to `/`) |
+| Files | `web/src/site/`, `web/src/pages/Landing.tsx`, `How.tsx`, `Partners.tsx`, `NotFound.tsx` | the rest of `web/src/`, `web/public/manifest.json` |
+| Motion | the `motion` library | none (CLAUDE.md rule stays) |
+| Colours | the same tokens in `web/src/index.css`: cream, near-black, burnt orange | the same tokens |
+
+Order: W1 palette tokens + two layouts + hero preview -> W2 Home -> W3 `/how` -> W4 `/partners` -> W5 404, QR, polish. Tasks H1 to H7 in docs/TASKS.md.
+
+### Note for Tejaswini (paste into her agent)
+
+```
+Update from Gurpreet (D46, D47). Read docs/PLAN.md section "Public website + palette" first.
+1. Freeze is now 5:00 AM.
+2. Pull main BEFORE your next push: Gurpreet changes web/src/App.tsx (two layouts, new routes), web/src/index.css (palette tokens), web/src/components/TopBar.tsx (no Home link) and web/package.json. Do not edit App.tsx routes for /, /how, /partners or anything in web/src/site/.
+3. Colours: cream + near-black + burnt orange now come from the tokens. Use ONLY token classes (bg-background, text-foreground, bg-primary, text-primary-foreground, border-border, text-muted-foreground, bg-card). Never write a colour like #fff, bg-white, text-black or bg-orange-500. Keep the card's own meaning colours (green in hand, blue to repay, red extra, amber COSTLY) as they are.
+4. No animation library in the PWA (the motion library is for the public website only).
+5. manifest.json: "start_url": "/check", "scope": "/". The PWA never links to "/".
+6. Raju mode (E7): turn it on when the address has ?mode=raju (the website's QR opens /check?mode=raju), and remember it in localStorage.
+```
+
 ## Handover at 1:20 AM, 14 Nov (D45)
 
 Wave 1 and all of F are merged (40 PRs, 457 tests, main = 8a62070). New split for the rest of the night:
@@ -15,7 +44,7 @@ Wave 1 and all of F are merged (40 PRs, 457 tests, main = 8a62070). New split fo
 | **Tejaswini** (Antigravity) | The React PWA: everything else in `web/` (Raju card, /check, /cases, manifest) | E2 to E9 |
 | **Anam** (Antigravity) | `api/data/` | G4 (RBI CSV) first, then G2, G8, G3, G1 |
 
-Later, to discuss (NOT a task before the 3:30 AM freeze): onboarding NGOs / non-profits to the web app.
+Later, to discuss (NOT a task before the 5:00 AM freeze): onboarding NGOs / non-profits to the web app.
 
 New feature numbers: **B12** photo pay-first must be confirmed by the second reader; **B13** regex backup that knows Bengali / Marathi; **F6** complaint letter addressee follows the route.
 
@@ -43,11 +72,11 @@ Everything in api/ and bot/, plus .env.example, my progress entry files in docs/
 - Commit "<area>: <what changed>"; push; gh pr create; gh pr checks. Never push to main, never merge (Gurpreet merges). No Claude co-author line, no "Generated with Claude Code" line.
 - Docs in the same PR: a NEW progress file docs/progress/YYYY-MM-DD_HHMM_<task>_siddeshwar.md (template in docs/progress/README.md, D43), the task status in TASKS.md, ARCHITECTURE "What is built" if behaviour changed, DEMO.md if the demo changes.
 - If GitHub shows a conflict in a code file: never "Accept both" blindly; merge main into the branch, keep both sides' intent, run all tests, push.
-- Same error twice: stop and tell Gurpreet. FEATURE FREEZE 3:30 AM: after that only bug fixes and wording.
+- Same error twice: stop and tell Gurpreet. FEATURE FREEZE 5:00 AM: after that only bug fixes and wording.
 
 === ORDER ===
 MUST first: 1. C2   2. F6
-STRETCH (until 3:30 AM): 3. D9   4. D10   5. B12   6. D8   7. C3 (only if Anam's NBFC CSV exists)
+STRETCH (until 5:00 AM): 3. D9   4. D10   5. B12   6. D8   7. C3 (only if Anam's NBFC CSV exists)
 STRETCH OF STRETCH: 8. B13   9. D11
 
 === TASK SPECS ===
@@ -94,7 +123,7 @@ STRETCH OF STRETCH: 8. B13   9. D11
 - The RBI CSV (api/data/rbi_dla.csv) is still only a header: lender.match is null on main until Anam's G4 lands; C2 must treat null as "not checked".
 - Groq free tier: ~3 photos/min, ~80/day per account; Gemini 15/min, 500/day. Real runs: few calls, pace them.
 - Bengali / Marathi sentences and warnings (D7, B9) still need a native speaker's OK before the demo.
-- Stop all features at 3:30 AM.
+- Stop all features at 5:00 AM.
 ```
 
 ## Night plan: from 9:00 PM, 13 Nov (D37, D38, D40, D41)

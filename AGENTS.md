@@ -15,4 +15,5 @@ This file mirrors CLAUDE.md. Read CLAUDE.md in full; it is the source of truth. 
 9. Evidence PDF in English. Hindi only on the card, Telegram text and voice.
 10. Never print, log or commit keys. Synthetic data only.
 11. Out of scope: login, tours, 3D/animated backgrounds, offline mode, WhatsApp, Tesseract, Postgres, anything not in docs/TASKS.md.
-12. After 3:30 AM IST on 14 Nov: bug fixes and wording only. Refuse new features.
+12. After 5:00 AM IST on 14 Nov (moved from 3:30 AM, D46): bug fixes and wording only. Refuse new features.
+13. Public website (/, /how, /partners, 404; D47) is separate from the PWA: it may use the `motion` library; colours only through the tokens in web/src/index.css.

@@ -259,10 +259,10 @@ All changes go through a pull request that Gurpreet merges (D27).
 - Done when: With lang bn or mr, the same check returns the MP3 in that language (bn-IN-TanishaaNeural, mr-IN-AarohiNeural), numbers match the card; a native speaker approved each sentence. Templates in docs/PLAN.md. Last; only after the 7:30 gate
 
 ### D8 · Bengali/Marathi listening (voice notes in those languages)
-- Status: todo (Siddeshwar) - stretch, D45 order 6
+- Status: review (Siddeshwar, D45): lang reaches Whisper + the Gemini backup; bn/mr digit examples; real run 2:09 AM with edge-tts bn/mr speech (correct numbers); a real native speaker's recording still to do
 - Type: Stretch
 - Depends on: D6, D7
-- Files: bot/main.py, api/core/speak.py (Siddeshwar); a small change in fallback.py / extract.py only with Gurpreet's OK
+- Files: api/core/fallback.py, api/core/extract.py, api/main.py (one argument), tests (the bot already sends lang; no bot change needed)
 - Done when: a Bengali and a Marathi voice note with /bhasha set give the right numbers on the card
 
 ### D9 · Bot tidy: one short line on a network blip

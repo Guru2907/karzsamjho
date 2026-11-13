@@ -239,7 +239,7 @@ def listeners(monkeypatch, whisper=None, gemini=None):
     calls = []
 
     def make(name, outcome):
-        def call(audio_bytes):
+        def call(audio_bytes, lang="hi"):
             calls.append(name)
             if isinstance(outcome, Exception):
                 raise outcome

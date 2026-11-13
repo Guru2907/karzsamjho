@@ -383,9 +383,11 @@ def extract_from_text(text: str) -> dict:
 
 
 # ---------------------------------------------------------------- voice note (task D6)
-DIGITS_PROMPT = """Rewrite this Hindi/Hinglish message with every number written in full digits.
+DIGITS_PROMPT = """Rewrite this Hindi/Hinglish, Bengali or Marathi message with every number written in full digits.
 Examples: "paanch hazaar" -> 5000, "पांच हजार" -> 5000, "chhe hazaar" -> 6000, "saat din" -> 7 din,
 "सात दिन" -> 7 दिन, "barah sau" -> 1200, "dedh lakh" -> 150000.
+Bengali: "পাঁচ হাজার" -> 5000, "ছয় হাজার" -> 6000, "সাত দিন" -> 7 দিন, "বারোশো" -> 1200, "দেড় লাখ" -> 150000.
+Marathi: "पाच हजार" -> 5000, "सहा हजार" -> 6000, "सात दिवस" -> 7 दिवस, "बाराशे" -> 1200, "दीड लाख" -> 150000.
 The word "saath"/"साथ" next to "din"/"दिन" means seven (7).
 Change nothing else: keep every other word as it is, do not add or calculate anything.
 Return only the rewritten message.
@@ -396,11 +398,14 @@ MESSAGE:
 # "6 हजार" -> 6000, "1.5 lakh" -> 150000, "12 सौ" -> 1200: the multiplier word turned into
 # digits by code, like weeks -> days (D31), so the "drop unwritten numbers" rule sees 6000.
 _MULTIPLIERS = re.compile(
-    r"(\d+(?:\.\d+)?)\s*(hazaar|hazar|hajar|हज़ार|हजार|thousand|lakh|lac|लाख|sau|सौ|hundred)",
+    r"(\d+(?:\.\d+)?)\s*(hazaar|hazar|hajar|हज़ार|हजार|thousand|lakh|lac|लाख|sau|सौ|hundred"
+    r"|হাজার|লাখ|শো|शे)(?!\w)",                     # D8: Bengali + Marathi; never inside a longer word
     re.IGNORECASE)
 _MULTIPLIER_VALUE = {"hazaar": 1000, "hazar": 1000, "hajar": 1000, "हज़ार": 1000, "हजार": 1000,
                      "thousand": 1000, "lakh": 100000, "lac": 100000, "लाख": 100000,
-                     "sau": 100, "सौ": 100, "hundred": 100}
+                     "sau": 100, "सौ": 100, "hundred": 100,
+                     "হাজার": 1000, "লাখ": 100000, "শো": 100, "शे": 100}
+BENGALI_DIGITS = str.maketrans("০১২৩৪৫৬৭৮৯", "0123456789")
 
 
 def expand_multipliers(text: str) -> str:
@@ -408,7 +413,7 @@ def expand_multipliers(text: str) -> str:
     def full(m: re.Match) -> str:
         value = float(m.group(1)) * _MULTIPLIER_VALUE[m.group(2).lower()]
         return str(int(value)) if value == int(value) else str(value)
-    return _MULTIPLIERS.sub(full, text.translate(DEVANAGARI_DIGITS))
+    return _MULTIPLIERS.sub(full, text.translate(DEVANAGARI_DIGITS).translate(BENGALI_DIGITS))
 
 
 def _has_text(raw: str) -> None:
@@ -417,15 +422,16 @@ def _has_text(raw: str) -> None:
         raise ValueError("empty rewrite")
 
 
-def extract_from_voice(audio_bytes: bytes) -> dict:
+def extract_from_voice(audio_bytes: bytes, lang: str = "hi") -> dict:
     """Voice note -> fields, like a pasted SMS (D6, D22, D33).
 
     Whisper writes down what was said; gpt-oss-20b turns number words into digits (if that
     fails, the raw transcript is used); then extract_from_text reads it, including its rule
     that drops any number not written in the text. engines["listen"] = "whisper".
+    D8: lang ("hi", "bn", "mr", the /bhasha choice) tells the listener which language to expect.
     """
     try:
-        transcript, listen, _ = fallback.transcribe(audio_bytes)
+        transcript, listen, _ = fallback.transcribe(audio_bytes, lang)
     except fallback.EngineError:
         raise Unreadable(MSG_BAD_VOICE)
     try:

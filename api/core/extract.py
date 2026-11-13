@@ -22,6 +22,7 @@ AMOUNT_KEYS = ("principal", "in_hand", "repay_total", "emi_amount")   # at least
 MSG_NOT_A_LOAN = "Yeh loan ka offer nahi lagta. Loan ke offer ki photo ya message bhejo."
 MSG_BAD_PHOTO = "Photo saaf nahi hai, dobara bhejo."
 MSG_BAD_TEXT = "Message samajh nahi aaya. Poora loan wala message dobara bhejo."
+MSG_BAD_VOICE = "Awaaz saaf nahi aayi. Dobara bolo, ya photo bhejo."
 
 PROMPT = """You read Indian loan advertisements and loan SMS messages for a person who cannot read.
 Return ONLY one JSON object, no other text, with exactly these keys:
@@ -275,3 +276,62 @@ def extract_from_text(text: str) -> dict:
         raise NotALoan()
     _check_loan(fields, MSG_BAD_TEXT)
     return {"fields": fields, "engines": {"read": engine, "second_read": None}}
+
+
+# ---------------------------------------------------------------- voice note (task D6)
+DIGITS_PROMPT = """Rewrite this Hindi/Hinglish message with every number written in full digits.
+Examples: "paanch hazaar" -> 5000, "पांच हजार" -> 5000, "chhe hazaar" -> 6000, "saat din" -> 7 din,
+"सात दिन" -> 7 दिन, "barah sau" -> 1200, "dedh lakh" -> 150000.
+The word "saath"/"साथ" next to "din"/"दिन" means seven (7).
+Change nothing else: keep every other word as it is, do not add or calculate anything.
+Return only the rewritten message.
+
+MESSAGE:
+"""
+
+# "6 हजार" -> 6000, "1.5 lakh" -> 150000, "12 सौ" -> 1200: the multiplier word turned into
+# digits by code, like weeks -> days (D31), so the "drop unwritten numbers" rule sees 6000.
+_MULTIPLIERS = re.compile(
+    r"(\d+(?:\.\d+)?)\s*(hazaar|hazar|hajar|हज़ार|हजार|thousand|lakh|lac|लाख|sau|सौ|hundred)",
+    re.IGNORECASE)
+_MULTIPLIER_VALUE = {"hazaar": 1000, "hazar": 1000, "hajar": 1000, "हज़ार": 1000, "हजार": 1000,
+                     "thousand": 1000, "lakh": 100000, "lac": 100000, "लाख": 100000,
+                     "sau": 100, "सौ": 100, "hundred": 100}
+
+
+def expand_multipliers(text: str) -> str:
+    """Digits followed by a multiplier word become one number: "6 हजार" -> "6000"."""
+    def full(m: re.Match) -> str:
+        value = float(m.group(1)) * _MULTIPLIER_VALUE[m.group(2).lower()]
+        return str(int(value)) if value == int(value) else str(value)
+    return _MULTIPLIERS.sub(full, text.translate(DEVANAGARI_DIGITS))
+
+
+def _has_text(raw: str) -> None:
+    """check= for read_text: an empty reply counts as a failure of that engine."""
+    if not (raw or "").strip():
+        raise ValueError("empty rewrite")
+
+
+def extract_from_voice(audio_bytes: bytes) -> dict:
+    """Voice note -> fields, like a pasted SMS (D6, D22, D33).
+
+    Whisper writes down what was said; gpt-oss-20b turns number words into digits (if that
+    fails, the raw transcript is used); then extract_from_text reads it, including its rule
+    that drops any number not written in the text. engines["listen"] = "whisper".
+    """
+    try:
+        transcript, listen, _ = fallback.transcribe(audio_bytes)
+    except fallback.EngineError:
+        raise Unreadable(MSG_BAD_VOICE)
+    try:
+        digits_text, _, _ = fallback.read_text(DIGITS_PROMPT + transcript, check=_has_text)
+        digits_text = digits_text.strip()
+    except fallback.EngineError:
+        digits_text = transcript
+    try:
+        result = extract_from_text(expand_multipliers(digits_text))
+    except Unreadable:
+        raise Unreadable(MSG_BAD_VOICE)
+    result["engines"]["listen"] = listen
+    return result

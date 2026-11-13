@@ -33,6 +33,7 @@ class Engines(BaseModel):
     read: Optional[str] = None
     second_read: Optional[str] = None
     speak: Optional[str] = None
+    listen: Optional[str] = None          # "whisper" for a voice note (D33); additive
 
 
 class CheckResult(BaseModel):

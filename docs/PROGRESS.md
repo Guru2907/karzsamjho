@@ -21,6 +21,14 @@ Every agent session and every person adds an entry here at the end of each task,
 
 ## Log
 
+### 13 Nov 2026, 7:16 PM · D6 server side (PR 1 of 4 for D6 + D7) · agent for Siddeshwar
+- Did: voice note -> card. fallback.transcribe (Groq Whisper, hi, temp 0, timeout, no retries; logs length only). extract.extract_from_voice: Whisper -> gpt-oss "numbers in digits" (D22; raw transcript if it fails) -> code expands "6 हजार" -> 6000 -> extract_from_text. Engines.listen. POST /api/checks takes form field `audio`; no cache, no second reading. Started before the 7:30 gate was confirmed, on Siddeshwar's say-so.
+- Files: api/core/fallback.py (transcribe), api/core/extract.py (extract_from_voice, expand_multipliers, MSG_BAD_VOICE), api/core/schemas.py (Engines.listen), api/main.py (create_check audio, run_check audio, engines.listen), api/tests/test_voice.py (new), api/tests/test_pipeline.py (2 expected engines blocks gain "listen": None)
+- Proof: `pytest -q` 192 passed (23 new). Real run x3 (edge-tts voice saying "paanch hazaar ka loan, saat din mein chhe hazaar lautana" -> real Whisper + gpt-oss + edge-tts): 5000 / 6000 / 7 din / 1000 extra, VERY_COSTLY, MP3, 5.7 to 9.9 s, 3 of 3 correct.
+- Status in docs/TASKS.md: D6 = doing (server side in review; bot side is PR 2)
+- Next: PR 2 bot voice handler (bot/main.py), then D7 (PR 3 server, PR 4 /bhasha).
+- Broken / risks: real Whisper heard "saath" for "saat" (D22) and the rewrite once left "6 हजार" half-converted; both now handled (prompt examples + code expansion). Voice notes cost 1 Whisper + 2 gpt-oss calls each.
+
 ### 13 Nov 2026, 7:05 PM · D6 + D7 handed to Siddeshwar · agent for Gurpreet
 - Did: D6 and D7 now belong to Siddeshwar in full (D35), with the exact functions he may change in Gurpreet's files, what his agent must read and check in the installed libraries, specs, tests, and a paste-ready prompt (docs/PLAN.md).
 - Files: docs/PLAN.md, docs/TASKS.md, docs/DECISIONS.md (D35), docs/PROGRESS.md

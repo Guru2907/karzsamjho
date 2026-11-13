@@ -86,8 +86,10 @@ def _no_card(code: str, text_hi: str) -> HTTPException:
     return HTTPException(422, {"code": code, "text_hi": text_hi})
 
 
-async def run_check(image: bytes | None = None, text: str | None = None) -> dict:
-    """One check, start to finish. The AI only reads; every number below is plain Python."""
+async def run_check(image: bytes | None = None, text: str | None = None,
+                    audio: bytes | None = None) -> dict:
+    """One check, start to finish. The AI only reads; every number below is plain Python.
+    A voice note (audio, D6) is read like a pasted SMS: no cache, no second reading."""
     start = time.perf_counter()
     key = cache.image_key(image) if image is not None else None
     if key:
@@ -97,6 +99,8 @@ async def run_check(image: bytes | None = None, text: str | None = None) -> dict
     try:
         if image is not None:
             read = await run_in_threadpool(extract.extract_from_image, image)
+        elif audio is not None:
+            read = await run_in_threadpool(extract.extract_from_voice, audio)
         else:
             read = await run_in_threadpool(extract.extract_from_text, text)
     except extract.NotALoan as exc:
@@ -144,7 +148,8 @@ async def run_check(image: bytes | None = None, text: str | None = None) -> dict
         "speech_text_hi": sentence,
         "audio_url": audio_url,
         "engines": {"read": engines["read"], "second_read": engines["second_read"],
-                    "speak": "edge-tts" if audio_url else None},
+                    "speak": "edge-tts" if audio_url else None,
+                    "listen": engines.get("listen")},
         "seconds": round(time.perf_counter() - start, 1),
         "cached": False,
     }
@@ -162,7 +167,7 @@ async def run_check(image: bytes | None = None, text: str | None = None) -> dict
 
 @app.post("/api/checks", response_model=CheckResult)
 async def create_check(request: Request):
-    """Form field `image` (a photo) or `text`, or JSON {text}; plus lang, source."""
+    """Form field `image` (a photo), `audio` (a voice note) or `text`, or JSON {text}; plus lang, source."""
     content_type = request.headers.get("content-type", "")
     if content_type.startswith(("multipart/form-data", "application/x-www-form-urlencoded")):
         form = await request.form()
@@ -172,9 +177,15 @@ async def create_check(request: Request):
             if not image:
                 raise _no_card("UNREADABLE", extract.MSG_BAD_PHOTO)
             return await run_check(image=image)
+        voice = form.get("audio")                     # a Telegram voice note, OGG (D6, D33)
+        if voice is not None and hasattr(voice, "read"):
+            audio = await voice.read()
+            if not audio:
+                raise _no_card("UNREADABLE", extract.MSG_BAD_VOICE)
+            return await run_check(audio=audio)
         if form.get("text"):
             return await run_check(text=str(form["text"]))
-        raise HTTPException(422, "Send a form field named 'image' or 'text'.")
+        raise HTTPException(422, "Send a form field named 'image', 'audio' or 'text'.")
     if content_type.startswith("application/json"):
         body = await request.json()
         if not isinstance(body, dict) or not body.get("text"):

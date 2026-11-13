@@ -81,7 +81,8 @@ def test_photo_row1_full_answer(client, env, monkeypatch):
                             "per_day": (171, "computed"), "apr_simple": (1647, "computed")}
     assert body["unverified"] == []
     assert body["speech_text_hi"] == SENTENCE_ROW1 and env == [SENTENCE_ROW1]
-    assert body["engines"] == {"read": "qwen", "second_read": None, "speak": "edge-tts"}
+    assert body["engines"] == {"read": "qwen", "second_read": None, "speak": "edge-tts",
+                              "listen": None}
     assert body["lender"]["match"] is None and body["lender"]["name_read"] == "PaisaTurant"
     assert body["next_step"]["code"] == "ASK_BANK_MITRA"
     assert body["audio_url"] == f"/api/audio/{body['id']}.mp3"
@@ -226,7 +227,8 @@ def test_invented_in_hand_is_caught_by_the_second_reader(client, env, monkeypatc
     calls = two_readers(monkeypatch, {**ROW1, "in_hand": 4000}, ROW1)
     body = post_photo(client).json()
     assert calls == ["qwen", "gemini"]
-    assert body["engines"] == {"read": "qwen", "second_read": "gemini", "speak": "edge-tts"}
+    assert body["engines"] == {"read": "qwen", "second_read": "gemini", "speak": "edge-tts",
+                              "listen": None}
     assert values(body)["in_hand"] == (3800, "derived")        # worked out from 5000 - 1200
     assert body["verdict"] == "VERY_COSTLY" and body["unverified"] == []
     assert body["speech_text_hi"] == SENTENCE_ROW1

@@ -182,3 +182,61 @@ def test_empty_text_is_unreadable():
     with pytest.raises(extract.Unreadable) as err:
         extract.extract_from_text("   ")
     assert err.value.text_hi == extract.MSG_BAD_TEXT
+
+
+# ---------------------------------------------------------------- second reading (B6)
+ROW1_FIELDS = {**{k: None for k in extract.FIELD_KEYS}, "is_loan_ad": True, "principal": 5000.0,
+               "fees": 1200.0, "repay_total": 5000.0, "tenure_days": 7.0}
+
+
+def first_read(engine="qwen", **changes):
+    return {"fields": {**ROW1_FIELDS, **changes}, "engines": {"read": engine, "second_read": None}}
+
+
+def other_reader(monkeypatch, reply):
+    asked = []
+
+    def read_image(image_bytes, prompt, engines=("qwen", "gemini"), check=None):
+        asked.append(engines)
+        if isinstance(reply, Exception):
+            raise reply
+        if check:
+            check(reply)
+        return reply, engines[0], 4.5
+    monkeypatch.setattr(fallback, "read_image", read_image)
+    return asked
+
+
+def test_second_reading_catches_an_invented_in_hand(monkeypatch):
+    # PLAN.md: Qwen invented in_hand 4000; Gemini sees no in_hand. Disputed = ["in_hand"].
+    asked = other_reader(monkeypatch, GEMINI_REAL)
+    result, disputed = extract.second_reading(b"jpeg", first_read(in_hand=4000.0), ["principal", "fees", "in_hand"])
+    assert disputed == ["in_hand"]
+    assert asked == [("gemini",)]                               # only the OTHER reader
+    assert result["engines"] == {"read": "qwen", "second_read": "gemini"}
+
+
+def test_second_reading_agreed_fields_are_not_disputed(monkeypatch):
+    other_reader(monkeypatch, '{"is_loan_ad": true, "principal": 5000, "fees": 1200, "in_hand": 4000, '
+                              '"repay_total": "5000.5", "tenure_days": "7 days"}')
+    _, disputed = extract.second_reading(b"jpeg", first_read(in_hand=4000.0), ["principal", "fees", "in_hand"])
+    assert disputed == []                                       # within Rs 1 counts as agreeing
+
+
+def test_second_reading_after_gemini_asks_qwen(monkeypatch):
+    asked = other_reader(monkeypatch, QWEN_REAL)
+    result, _ = extract.second_reading(b"jpeg", first_read("gemini"), ["repay_total"])
+    assert asked == [("qwen",)] and result["engines"]["second_read"] == "qwen"
+
+
+def test_second_reading_disagreeing_repay(monkeypatch):
+    other_reader(monkeypatch, QWEN_REAL.replace('"Rs 5000",   "emi_amount"', '"Rs 6000",   "emi_amount"'))
+    _, disputed = extract.second_reading(b"jpeg", first_read("gemini"), ["repay_total"])
+    assert disputed == ["repay_total"]
+
+
+def test_second_reader_down_keeps_the_problem_fields(monkeypatch):
+    other_reader(monkeypatch, fallback.EngineError("gemini down"))
+    result, disputed = extract.second_reading(b"jpeg", first_read(in_hand=4000.0), ["principal", "fees", "in_hand"])
+    assert disputed == ["principal", "fees", "in_hand"]
+    assert result["engines"]["second_read"] is None

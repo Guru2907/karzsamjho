@@ -105,7 +105,7 @@ All changes go through a pull request that Gurpreet merges (D27).
 - Done when: Changing a threshold changes the verdict without touching code
 
 ### B6 · Second reading by the other reader on mismatch
-- Status: todo
+- Status: review (Gurpreet)
 - Type: Must
 - Depends on: B1, B4
 - Files: api/core/extract.py

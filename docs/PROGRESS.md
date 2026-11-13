@@ -3,10 +3,10 @@
 Every agent session and every person adds an entry here at the end of each task, before committing. Never delete or edit someone else's entry. Keep each entry under 12 lines.
 
 ## Current status (update this block when a gate passes or the plan changes)
-- Now: re-planned at 4:50 PM (D25); no product code yet. Everyone follows docs/PLAN.md: photo or text -> card + Hindi voice, with second reading, merged and tested by 7:00 PM, rehearsal 7:00 to 7:30 PM. Harassment, lender, database and cache wait until after the review.
+- Now (5:45 PM): the whole backend pipeline incl. second reading works on Gurpreet's laptop (PRs #2 #5 #8 #9 #10 + Siddeshwar's #3 #4 #6, bot #7); nothing merged to main yet. Everyone follows docs/PLAN.md: photo or text -> card + Hindi voice, with second reading, merged and tested by 7:00 PM, rehearsal 7:00 to 7:30 PM. Harassment, lender, database and cache wait until after the review.
 - Gates: 2:00 PM [x] · 7:30 PM [ ] · 12:30 AM [ ] · 3:30 AM freeze [ ]
 - Known broken: (none yet)
-- Groq photo reads used today on the server account: 0 of about 80 (Gurpreet's own account: 3)
+- Groq photo reads used today on the server account: 0 of about 80 (Gurpreet's own account: 4)
 
 ## Entry template (copy, fill, paste at the top of the log below)
 ```
@@ -20,6 +20,14 @@ Every agent session and every person adds an entry here at the end of each task,
 ```
 
 ## Log
+
+### 13 Nov 2026, 5:45 PM · L5 second reading (B6) · agent for Gurpreet
+- Did: `extract.second_reading`: when cross_check fails on a photo, the OTHER reader (Gemini after Qwen, Qwen after Gemini) reads it again; number fields differing by more than Rs 1, or seen by only one reader, are disputed and set aside before the maths. Other reader down -> the failed sum's fields become unverified. Text never gets a second reading. Only runs on a mismatch (not on every photo).
+- Files: api/core/extract.py, api/main.py, api/tests/test_extract.py, api/tests/test_pipeline.py
+- Proof: `pytest -q` 131 passed (12 new: invented in_hand caught, agreed within Rs 1, Gemini-first asks Qwen, disagreeing repay, reader down, self-contradicting ad, text). Real run: synthetic ad "loan 5000, fee 1200, you get 4000" -> Qwen 2.08 s, mismatch, Gemini 3.51 s agrees -> CANNOT_SAY, in-hand unverified, "saaf nahi padhe gaye" voice, 7.5 s total.
+- Status in docs/TASKS.md: B6 = review
+- Next: rehearsal prep: server laptop, demo bot, printed ads (data teammate), bot PR #7 against the real API.
+- Broken / risks: none new. Merge order for Gurpreet: #2, #5, #8, #3, #4, #6, #9, #10, then #7.
 
 ### 13 Nov 2026, 5:55 PM · L4 join the parts in POST /api/checks (A7) · agent for Gurpreet
 - Did: POST /api/checks is real: photo or text -> extract -> cross_check -> fill_gaps -> compute -> decide -> speech_text -> make_audio; results kept in memory; GET /api/checks, /api/checks/{id}, /api/audio/{id}.mp3 and /api/stats read them. No card -> 422 {code, text_hi} (D26). lender.match is null. Form text (urlencoded) accepted too. Merged Siddeshwar's maths, verdict and speak branches into this branch to wire against them.

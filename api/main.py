@@ -65,25 +65,34 @@ async def run_check(image: bytes | None = None, text: str | None = None) -> dict
     except extract.Unreadable as exc:
         raise _no_card("UNREADABLE", exc.text_hi)
 
-    fields, engines = read["fields"], read["engines"]
     disputed: list[str] = []
-    problems = maths.cross_check(fields)
-    # L5 adds the second reading here: if problems and a photo, the other reader reads it
-    # again and the fields they disagree on go into `disputed`. Until then (and for text,
-    # always) fill_gaps treats every sum that does not add up as unverified.
-    if problems:
-        log.info("cross-check: sums do not add up for %s", problems)
+    problems = maths.cross_check(read["fields"])
+    if problems and image is not None:
+        # The sums do not add up: the OTHER reader reads the photo again (B6). Fields the two
+        # disagree on are disputed. For text there is no second reader; fill_gaps then
+        # treats every sum that does not add up as unverified.
+        log.info("cross-check: sums do not add up for %s; second reading", problems)
+        read, disputed = await run_in_threadpool(extract.second_reading, image, read, problems)
+        log.info("second reading by %s: disputed %s", read["engines"]["second_read"], disputed)
+    engines = read["engines"]
+    # Disputed values are set aside before any maths. A sum that still fails after that
+    # means the ad contradicts itself (fill_gaps then marks those numbers unverified too).
+    fields = {k: None if k in disputed else v for k, v in read["fields"].items()}
+    still_wrong = maths.cross_check(fields)
 
     numbers = maths.compute(maths.fill_gaps(fields, disputed))
     numbers = {k: numbers[k] for k in NUMBER_ORDER}
-    fees = None if "fees" in disputed or "fees" in problems else fields["fees"]
+    fees = None if "fees" in disputed or "fees" in still_wrong else fields["fees"]
     result_verdict = verdict.decide(numbers, fees)
 
     check_id = f"chk_{next(_ids):04d}"
     sentence = speak.speech_text(numbers)
     audio_url = await speak.make_audio(check_id, sentence)
+    # Names shown as "couldn't verify": every unverified number, plus any raw field that was
+    # disputed or contradicts itself, unless the card still has a verified number of that name.
     unverified = sorted({k for k, v in numbers.items() if v["status"] == "unverified"}
-                        | set(disputed) | set(problems))
+                        | {k for k in set(disputed) | set(still_wrong)
+                           if k not in numbers or numbers[k]["status"] == "unverified"})
 
     result = {
         "id": check_id,

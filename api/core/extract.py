@@ -161,6 +161,40 @@ def extract_from_image(image_bytes: bytes) -> dict:
     return {"fields": fields, "engines": {"read": engine, "second_read": None}}
 
 
+OTHER_READER = {"qwen": "gemini", "gemini": "qwen"}
+
+
+def disputed_fields(first: dict, second: dict, tolerance: float = 1.0) -> list[str]:
+    """Number fields the two readings disagree on: values more than Rs 1 apart,
+    or one reader saw a number and the other saw none."""
+    out = []
+    for key in NUMBER_KEYS:
+        a, b = first.get(key), second.get(key)
+        if (a is None) != (b is None) or (a is not None and abs(a - b) > tolerance):
+            out.append(key)
+    return out
+
+
+def second_reading(image_bytes: bytes, first: dict, problems: list[str]) -> tuple[dict, list[str]]:
+    """The numbers do not add up, so the OTHER reader reads the photo again (task B6).
+
+    -> (first with engines.second_read filled, names of disputed fields).
+    If the other reader fails: second_read stays None and disputed = problems,
+    so the fields in the failed sum become "couldn't verify".
+    """
+    other = OTHER_READER.get(first["engines"]["read"])
+    if other is None:
+        return first, list(problems)
+    try:
+        raw, engine, _ = fallback.read_image(image_bytes, PROMPT, engines=(other,), check=parse)
+        second = parse(raw)
+    except Exception:   # EngineError, or a reply that will not parse: no second opinion
+        return first, list(problems)
+    result = {"fields": dict(first["fields"]),
+              "engines": {**first["engines"], "second_read": engine}}
+    return result, disputed_fields(first["fields"], second)
+
+
 # ---------------------------------------------------------------- text
 def _numbers_in(text: str) -> set[float]:
     return {float(n.replace(",", "")) for n in _NUMBER.findall(text.translate(DEVANAGARI_DIGITS))}

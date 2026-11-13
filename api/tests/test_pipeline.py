@@ -191,3 +191,91 @@ def test_get_list_and_stats(client, env, monkeypatch):
 def test_audio_only_for_known_safe_ids(client, env):
     assert client.get("/api/audio/chk_9999.mp3").status_code == 404
     assert client.get("/api/audio/..%2F..%2F.env.mp3").status_code == 404
+
+
+# ---------------------------------------------------------------- second reading (B6)
+def two_readers(monkeypatch, qwen, gemini):
+    """Qwen and Gemini give different replies; follows the engine order like fallback does."""
+    calls = []
+
+    def read_image(image_bytes, prompt, engines=("qwen", "gemini"), check=None):
+        for name in engines:
+            reply = {"qwen": qwen, "gemini": gemini}[name]
+            calls.append(name)
+            if isinstance(reply, Exception):
+                continue
+            raw = json.dumps(reply)
+            if check:
+                check(raw)
+            return raw, name, 1.0
+        raise fallback.EngineError("all down")
+    monkeypatch.setattr(fallback, "read_image", read_image)
+    return calls
+
+
+def test_numbers_add_up_no_second_reading(client, env, monkeypatch):
+    calls = two_readers(monkeypatch, ROW1, ROW1)
+    body = post_photo(client).json()
+    assert calls == ["qwen"] and body["engines"]["second_read"] is None
+
+
+def test_invented_in_hand_is_caught_by_the_second_reader(client, env, monkeypatch):
+    calls = two_readers(monkeypatch, {**ROW1, "in_hand": 4000}, ROW1)
+    body = post_photo(client).json()
+    assert calls == ["qwen", "gemini"]
+    assert body["engines"] == {"read": "qwen", "second_read": "gemini", "speak": "edge-tts"}
+    assert values(body)["in_hand"] == (3800, "derived")        # worked out from 5000 - 1200
+    assert body["verdict"] == "VERY_COSTLY" and body["unverified"] == []
+    assert body["speech_text_hi"] == SENTENCE_ROW1
+
+
+def test_both_readers_see_a_contradicting_ad(client, env, monkeypatch):
+    two_readers(monkeypatch, {**ROW1, "in_hand": 4000}, {**ROW1, "in_hand": 4000})
+    body = post_photo(client).json()
+    assert body["engines"]["second_read"] == "gemini"
+    assert body["verdict"] == "CANNOT_SAY"
+    assert body["numbers"]["in_hand"]["status"] == "unverified"
+    assert {"in_hand", "principal", "fees"} <= set(body["unverified"])
+
+
+def test_second_reader_down_means_cannot_say(client, env, monkeypatch):
+    two_readers(monkeypatch, {**ROW1, "in_hand": 4000}, fallback.EngineError("gemini down"))
+    body = post_photo(client).json()
+    assert body["engines"]["second_read"] is None
+    assert body["verdict"] == "CANNOT_SAY"
+    assert body["numbers"]["in_hand"]["status"] == "unverified"
+
+
+def test_readers_disagree_on_repay(client, env, monkeypatch):
+    emi = {"is_loan_ad": True, "principal": 20000, "emi_amount": 2000, "emi_count": 12,
+           "tenure_days": 360}
+    two_readers(monkeypatch, {**emi, "repay_total": 25000}, {**emi, "repay_total": 24000})
+    body = post_photo(client).json()
+    # 2000 x 12 = 24000 is derived again once the disputed printed total is set aside
+    assert values(body)["repay_total"] == (24000, "derived")
+    assert "repay_total" not in body["unverified"]
+    assert body["verdict"] == "USUAL"
+
+
+def test_qwen_429_then_mismatch_asks_qwen_second(client, env, monkeypatch):
+    calls = []
+
+    def read_image(image_bytes, prompt, engines=("qwen", "gemini"), check=None):
+        calls.append(engines)
+        if engines == ("qwen", "gemini"):        # first read: Qwen 429 -> Gemini answers
+            return json.dumps({**ROW1, "in_hand": 4000}), "gemini", 4.0
+        return json.dumps(ROW1), engines[0], 1.0
+    monkeypatch.setattr(fallback, "read_image", read_image)
+    body = post_photo(client).json()
+    assert calls == [("qwen", "gemini"), ("qwen",)]
+    assert body["engines"]["read"] == "gemini" and body["engines"]["second_read"] == "qwen"
+
+
+def test_text_never_gets_a_second_reading(client, env, monkeypatch):
+    text_reader(monkeypatch, {"is_loan_ad": True, "principal": 5000, "fees": 500, "in_hand": 4000,
+                              "repay_total": 5600, "tenure_days": 7})
+    called = []
+    monkeypatch.setattr(fallback, "read_image", lambda *a, **k: called.append(1))
+    body = client.post("/api/checks", json={"text": "Loan Rs 5000. Fee Rs 500. You get Rs 4000. "
+                                                    "Repay Rs 5600 in 7 days."}).json()
+    assert called == [] and body["verdict"] == "CANNOT_SAY"

@@ -84,6 +84,15 @@ PAY_FIRST_STEP = {"code": "DO_NOT_PAY_FIRST",
                              "Shikayat: 1930 ya cybercrime.gov.in"}
 PAY_FIRST_WARNING = ("Savdhaan! Yeh offer loan dene se pehle aapse {amount} rupaye maang raha hai. "
                      "Loan se pehle paise maangna dhokha ho sakta hai. Paise mat bhejo.")
+# The same warning in the voice's own language and script (bn / mr voices cannot read Hinglish).
+# Drafts: a native speaker approves them like the D7 sentences (D32).
+PAY_FIRST_WARNINGS = {
+    "hi": PAY_FIRST_WARNING,
+    "bn": ("সাবধান! এই অফার লোন দেওয়ার আগেই আপনার কাছ থেকে {amount} টাকা চাইছে। "
+           "লোনের আগে টাকা চাওয়া প্রতারণা হতে পারে। টাকা পাঠাবেন না।"),
+    "mr": ("सावधान! ही ऑफर कर्ज देण्याआधीच तुमच्याकडून {amount} रुपये मागत आहे. "
+           "कर्जाआधी पैसे मागणे फसवणूक असू शकते. पैसे पाठवू नका."),
+}
 NUMBER_ORDER = ("in_hand", "repay_total", "tenure_days", "extra", "per_day", "apr_simple")
 
 
@@ -144,7 +153,8 @@ async def run_check(image: bytes | None = None, text: str | None = None,
     sentence = speak.speech_text(numbers, lang)          # bn / mr: that language's sentence (D7)
     pay_first = fields.get("pay_first")
     if pay_first:                                    # B9: the warning comes first, then the numbers
-        sentence = PAY_FIRST_WARNING.format(amount=int(round(pay_first))) + " " + sentence
+        warning = PAY_FIRST_WARNINGS.get(lang, PAY_FIRST_WARNING)    # same language as the voice
+        sentence = warning.format(amount=int(round(pay_first))) + " " + sentence
     audio_url = await speak.make_audio(check_id, sentence, lang)
     # Names shown as "couldn't verify": every unverified number, plus any raw field that was
     # disputed or contradicts itself, unless the card still has a verified number of that name.

@@ -1,14 +1,14 @@
-# PROGRESS.md: running log (newest entry at the top)
+# PROGRESS.md: current status + history
 
-Every agent session and every person adds an entry here at the end of each task, before committing. Never delete or edit someone else's entry. Keep each entry under 12 lines.
+New progress entries are separate files in docs/progress/ (one per task, D43): see docs/progress/README.md, and `python scripts/show_progress.py` for the newest. This file keeps the shared "Current status" block (updated by Gurpreet) and the history below. Never delete or edit someone else's entry.
 
-## Current status (update this block when a gate passes or the plan changes)
-- Now (9:00 PM): the 7:30 PM review passed. On main (23 PRs, 266 tests): photo / SMS / Hindi voice note -> card + voice in hi / bn / mr, second reading, cache, advance-fee warning, lakh/crore. Night plan with owners and prompts: docs/PLAN.md "Night plan" (D37 mentor feedback, D38 owners, D39 WhatsApp). Critical path: A3 -> F2 -> F3/F4 -> D5 and G4 -> C1 -> C2/C4/F5.
-- Gates: 2:00 PM [x] · 7:30 PM [x] (review passed) · 12:30 AM [ ] · 3:30 AM freeze [ ]
-- Known broken: none in code. Missing: web pages (Tejaswini, no PR yet), RBI CSV (Anam), database, lender check, harassment log. bn/mr sentences await the native-speaker OK.
-- Groq photo reads used today on the server account: 0 of about 80 (Gurpreet's own account: 6)
+## Current status (Gurpreet updates this block; everyone else writes a file in docs/progress/)
+- Now (12:55 AM, 14 Nov): all 37 PRs merged, main = f9b0c6b, 440 tests pass. Built: photo / SMS / Hindi voice note -> card + voice in hi / bn / mr; second reading; cache; SQLite database; scam (advance-fee) warning in 5 scripts + fee fix; lakh/crore; RBI lender check by name + website, spoken (C1 + C4); harassment cases with H1-H6 rules, hash chain and the English evidence PDF, also from the bot by forwarding (F1, F2, F3, D5); health per engine; Gemini backup for photos, SMS and voice.
+- Gates: 2:00 PM [x] · 7:30 PM [x] (review passed) · 12:30 AM [~] features 1, 2, 4 work on main; feature 3 code done but the RBI CSV (G4) is still empty; verify (F4) still a stub · 3:30 AM freeze [ ]
+- Known broken: /api/cases/{id}/verify always answers ok (F4); the PDF says it checks the chain. RBI CSV has only its header, so every lender check says "not checked". No web pages yet (E2-E9). bn/mr sentences and warnings not yet approved by native speakers.
+- Groq photo reads used today on the server account: 0 of about 80 (Gurpreet's own account: about 12, all tests)
 
-## Entry template (copy, fill, paste at the top of the log below)
+## Entry template (history: new entries use docs/progress/README.md instead)
 ```
 ### <time IST> · <task ID(s)> · <person or "agent for <person>">
 - Did: <one or two lines>
@@ -19,7 +19,7 @@ Every agent session and every person adds an entry here at the end of each task,
 - Broken / risks: <anything another person must know, or "none">
 ```
 
-## Log
+## Log (history until 14 Nov 2026, 12:55 AM; frozen, newest first; new entries are files in docs/progress/)
 
 ### 14 Nov 2026, 12:25 AM · B9c fix: a false scam warning dropped the fee · agent for Gurpreet
 - Did: found in the C1 run: the AI marked a normal "Loan Rs 5000 approved. Fee Rs 500" as pay-first, so the voice warned and in-hand showed 5000 instead of 4500. Now parse() never drops a fee; for text the AI's pay_first counts only if the sentence with that amount has a pay word (D42); the fee leaves the maths only once pay-first is accepted. Photos unchanged (AI only, known limit).

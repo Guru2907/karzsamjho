@@ -81,9 +81,11 @@ Start the API first. You only need the parts your task touches (web-only work = 
 - http://localhost:8000/api/health shows `"api":"up"` and your keys as `true`
 - Send a loan ad photo or paste a loan SMS to your bot in Telegram: the ₹ card comes back, then a Hindi MP3
 - Send something that is not a loan: a polite Hindi "Yeh loan ka offer nahi lagta" and no card
-- Tests: `.venv\Scripts\python -m pytest -q` (266 passed on main at 9:00 PM, 13 Nov)
+- Forward a threat (or `/log` then the message): the rules it breaks come back in Hindi, then the evidence PDF
+- http://localhost:8000/api/health: each engine (Groq, Gemini, edge-tts) up or down, and the database
+- Tests: `.venv\Scripts\python -m pytest -q` (440 passed on main at 12:55 AM, 14 Nov)
 
-Checks are **real** since 6:00 PM, 13 Nov (photo/text -> AI reads -> Python maths -> verdict -> Hindi voice). Still sample data: cases, events, evidence PDF, verify. The `/check` page still shows the old placeholder until the PWA work (E2, E3, E9) is merged. Results are stored in a SQLite file (`karzsamjho.db`, not committed), so they survive an API restart (A3).
+Everything is **real** on main (14 Nov, 12:55 AM): checks (photo / SMS / Hindi voice note), the RBI lender check, harassment cases with rules, hash chain and the evidence PDF. Still a stub: verify (F4). The `/check` page shows the old placeholder until Tejaswini's web PRs (E2, E3, E9) are merged. Results are in a SQLite file (`karzsamjho.db`, not committed), so they survive an API restart (A3).
 
 ---
 
@@ -92,10 +94,10 @@ Checks are **real** since 6:00 PM, 13 Nov (photo/text -> AI reads -> Python math
 1. **Get the latest:** `git checkout main` then `git pull`
 2. **New branch:** `git checkout -b b3-maths` (task ID + short name)
 3. **Tell your agent:**
-   > Read CLAUDE.md, docs/PROGRESS.md and docs/DECISIONS.md, then do task B3.
+   > Read CLAUDE.md, docs/PROGRESS.md, the newest docs/progress/ entries and docs/DECISIONS.md, then do task B3.
 4. Read its plan → approve → let it code → **read the diff** → **run it**.
 5. Before committing, check the agent:
-   - added an entry at the **top** of `docs/PROGRESS.md`
+   - added a **new file** in `docs/progress/` (template in `docs/progress/README.md`); it does NOT edit `docs/PROGRESS.md`
    - set the task's Status in `docs/TASKS.md` (review)
    - added to `docs/DECISIONS.md` if something was decided
 6. Commit code **and** docs together, push, open a pull request:
@@ -108,9 +110,9 @@ Checks are **real** since 6:00 PM, 13 Nov (photo/text -> AI reads -> Python math
    - Gurpreet merges with **"Create a merge commit"** (never squash) and ticks **"Merge without waiting for requirements to be met"** (D28).
    - If your task builds on a branch that is not merged yet, start your branch from that branch and say "merge after #N" in the PR.
 
-**Merge conflict in PROGRESS.md?** Normal (two people added entries at the top). Keep both entries, delete the `<<<<<<<`, `=======`, `>>>>>>>` lines, commit.
+**Merge conflict?** In `docs/TASKS.md`: keep both sides ("Accept both changes"). In any code file (`.py`, `.tsx`): stop and ask Gurpreet; never "Accept both" on code. `docs/PROGRESS.md` should no longer conflict, because entries are separate files (D43).
 
-**The "Current status" block** at the top of PROGRESS.md: updated by the lead, or by whoever passes a gate.
+**The "Current status" block** at the top of PROGRESS.md: updated only by Gurpreet. Everyone else writes a file in `docs/progress/`.
 
 ---
 

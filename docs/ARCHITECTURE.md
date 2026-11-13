@@ -12,7 +12,7 @@ Helper's browser (PWA)  ──► web/ (Vite)  ─┼──► FastAPI api/main.
 - The bot and the web app are thin: they send a photo, text or event, and show what comes back.
 - All logic is in api/core/. Only fallback.py talks to outside services.
 
-## What is built (13 Nov, 6:30 PM)
+## What is built (14 Nov, 12:55 AM)
 | Step | Built? | Where |
 |---|---|---|
 | Read photo (Qwen -> Gemini), read text (gpt-oss-20b -> regex) | yes | fallback.py, extract.py |
@@ -29,7 +29,11 @@ Helper's browser (PWA)  ──► web/ (Vite)  ─┼──► FastAPI api/main.
 | Lender match | yes: app/lender name (RapidFuzz, generic words stripped) + any website or Play Store link in the SMS, against the local copy of RBI's directory api/data/rbi_dla.csv; a listed name with a different link = SIMILAR (possible clone); empty directory = null (not checked); spoken via C4 when present (C1, D37) | lender.py, main.py |
 | Next step | one fixed line: "Loan lene se pehle bank mitra se poochho." (D26) | main.py; next_step.py is task C2 |
 | Harassment cases + events | yes: real cases in SQLite; each event gets rules from harass.label (F1) and hash = SHA-256(prev_hash + fields), first prev = 64 zeros; day counter (F2) | main.py, db.py |
-| PDF, verify, complaint route | not yet (F3, F4, F5) | |
+| Evidence PDF | yes: built fresh from the database by evidence.build_pdf (F3), served at /api/cases/{id}/evidence.pdf; English, 12-digit numbers masked, hash chain, complaint draft | evidence.py, main.py |
+| Bot harassment log | yes: forward a message (or /log) -> case event -> Hindi rules -> PDF in the chat (D5) | bot/main.py |
+| Verify | not yet: always answers ok (F4) | main.py |
+| Complaint route + day counter | day counter yes (F2); the PDF lists every route that may apply until F5 picks one | evidence.py; F5 |
+| Health | yes: each engine up/down (free pings, cached 60 s), database state, can_read_photos / can_speak (A5) | fallback.ping, main.py |
 
 No card -> `422 {"detail": {"code": "NOT_A_LOAN" | "UNREADABLE", "text_hi": "..."}}`; the bot and web page show `text_hi` as it is (D26).
 

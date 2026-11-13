@@ -2,7 +2,7 @@
 
 This file mirrors CLAUDE.md. Read CLAUDE.md in full; it is the source of truth. The short version:
 
-0. Every session: read CLAUDE.md, then docs/PROGRESS.md (top entries) and docs/DECISIONS.md. After every task: add an entry at the top of docs/PROGRESS.md, update the task Status in docs/TASKS.md, and log decisions in docs/DECISIONS.md. Never delete others' entries.
+0. Every session: read CLAUDE.md, then docs/PROGRESS.md (status) and the newest docs/progress/ files (`python scripts/show_progress.py`) and docs/DECISIONS.md. After every task: add a NEW file in docs/progress/ (template in docs/progress/README.md; never edit PROGRESS.md, D43), update the task Status in docs/TASKS.md, and log decisions in docs/DECISIONS.md. Never delete others' entries.
 
 1. Product: a photo of a loan offer -> Hindi voice + card with the real cost; harassment -> evidence PDF. User is Raju, who cannot read loan terms.
 2. Work on one task from docs/TASKS.md at a time. Plan first, small diff, touch only the listed files, run the tests, show the output.

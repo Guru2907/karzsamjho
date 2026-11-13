@@ -9,10 +9,10 @@ Built by Team Y2K Devs at COLOSSUS 3.0 (13-14 Nov 2026), FinTech track.
 **New here? Read [docs/START_HERE.md](docs/START_HERE.md) first.**
 
 ## What it does
-- **Snap & hear:** photo (or pasted SMS) in Telegram -> Hindi voice + a simple card
+- **Snap & hear:** photo, pasted SMS or a Hindi voice note in Telegram -> a simple card + voice in Hindi, Bengali or Marathi; warns when an offer asks for money before the loan
 - **Rupee receipt:** in hand, to repay, days, extra; maths in code, never by AI
-- **Official next step:** is the app in RBI's directory of digital lending apps? Then one next action
-- **Harassment log:** threats and calls -> RBI recovery-rule matches -> evidence PDF + complaint draft
+- **Official next step:** is the app in RBI's directory of digital lending apps (by name and by website)? Spoken as well as shown, with the list date; then one next action
+- **Harassment log:** forward a threat to the bot -> RBI recovery-rule matches (H1-H6) -> hash-chained record -> evidence PDF + complaint draft
 
 ## How it works
 A vision model reads the photo; plain Python checks the numbers and does the maths; a second model re-reads when numbers disagree; anything unclear is reported as "couldn't verify". See docs/ARCHITECTURE.md.
@@ -28,7 +28,7 @@ A vision model reads the photo; plain Python checks the numbers and does the mat
 See docs/START_HERE.md for setup and docs/RUNBOOK.md for fixes.
 
 ## Results
-See docs/TESTING.md (filled in during the event with measured numbers, misses included).
+440 automated tests (no internet needed; CI on every pull request). Measured real runs, misses included: docs/TESTING.md. Team progress: `python scripts/show_progress.py`.
 
 ## Limits
 Synthetic test data only. "Not found in RBI's directory" does not mean illegal. Not tested with real users yet.

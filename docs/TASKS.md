@@ -1,12 +1,12 @@
 # TASKS.md: KarzSamjho task list
 
-How to use: pick one task by ID ("Do task B3"). Status is one of: todo, doing (name), review, done. Change the Status line when you start, when it is ready for checking, and when someone else has checked it. Read CLAUDE.md first. Touch only the files listed. A task is finished only when its "Done when" is true on the main branch and someone who did not build it has checked it.
+How to use: pick one task by ID ("Do task B3"). Status is one of: todo, doing (name), review, done. Change the Status line when you start, when it is ready for checking, and when someone else has checked it. Read CLAUDE.md first. Touch only the files listed. A task is finished only when its "Done when" is true on the main branch and someone who did not build it has checked it. Progress entries: one new file per task in docs/progress/ (D43).
 
 Type: M = must build. S = stretch, only after the 7:30 PM gate on 13 Nov has passed. Nothing new after the 3:30 AM freeze on 14 Nov.
 
 ## Right now: the night plan (from 9:00 PM, D38). Owners, order and prompts: docs/PLAN.md "Night plan"
 
-Wave 1 (D40), in order. Gurpreet: B9b, A3, F2, C1, A5, B11. Siddeshwar: F1, C4, F3, D5, then D9, D10, D8, D11. Tejaswini: E2/E3/E9, E6, E4/E5, E8, E7. Anam: G4, G2, G8, G3. Everything else is later; a later task joins wave 1 only if a wave-1 feature would stay incomplete without it.
+Wave 1 (D40) is DONE and merged (12:50 AM). It was, in order: Gurpreet: B9b, A3, F2, C1, A5, B11. Siddeshwar: F1, C4, F3, D5, then D9, D10, D8, D11. Tejaswini: E2/E3/E9, E6, E4/E5, E8, E7. Anam: G4, G2, G8, G3. Everything else is later; a later task joins wave 1 only if a wave-1 feature would stay incomplete without it.
 
 ## Earlier: the 7:30 PM review (re-plan at 4:50 PM, D25)
 
@@ -222,7 +222,7 @@ All changes go through a pull request that Gurpreet merges (D27).
 - Done when: A pasted SMS returns a reply
 
 ### D5 · Bot: forward a message → harassment event; send the PDF back
-- Status: review (Siddeshwar): forward or /log -> case event -> Hindi rules -> PDF; real PDF needs F2 + endpoint
+- Status: review (Siddeshwar): forward or /log -> case event -> Hindi rules -> PDF; the PDF route is live since #37
 - Type: Must
 - Depends on: F2, F3
 - Files: bot/main.py
@@ -361,14 +361,14 @@ All changes go through a pull request that Gurpreet merges (D27).
 - Done when: Each event stores its hash and the previous hash
 
 ### F3 · `evidence.py`: PDF with timeline, rules, hashes, masking, complaint draft
-- Status: review (Siddeshwar): build_pdf + mask + hash helpers; endpoint wiring in main.py by Gurpreet
+- Status: review (Siddeshwar): build_pdf + mask + hash helpers; served at /api/cases/{id}/evidence.pdf since #37 (Gurpreet); real PDF checked 12:35 AM
 - Type: Must
 - Depends on: F2
 - Files: api/core/evidence.py
 - Done when: A forwarded message becomes a PDF in under 60 seconds; a 12-digit number is masked
 
 ### F4 · Verify endpoint
-- Status: todo (Gurpreet)
+- Status: todo (Gurpreet) - urgent: the evidence PDF tells readers /verify checks the chain, but it still always answers ok
 - Type: Must
 - Depends on: F2
 - Files: api/main.py

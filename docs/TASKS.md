@@ -487,21 +487,21 @@ All changes go through a pull request that Gurpreet merges (D27).
 - Done when: Present; if time is short, these are the first to drop
 
 ### H4 · `/partners`: the page for NGOs and bank mitras
-- Status: todo (Gurpreet, D47)
+- Status: review (Gurpreet): /partners: who it is for, what a helper gets, the commission idea labelled "proposed pilot model, not built yet", link to the app and the public repo; no forms, no login
 - Type: Stretch
 - Depends on: H1
 - Files: web/src/pages/Partners.tsx, web/src/site/
 - Done when: who it helps, what a partner does, the bank-mitra commission idea labelled as a proposed pilot (not built), a mail-link call to action; no forms, no login
 
 ### H5 · `/how`: how it works, proof and limits
-- Status: todo (Gurpreet, D47)
+- Status: review (Gurpreet): /how: three jobs kept apart, the five lines of maths with the demo numbers, the fallback table, measured numbers, six limits
 - Type: Stretch
 - Depends on: H1
 - Files: web/src/pages/How.tsx, web/src/site/
 - Done when: "the AI reads, Python calculates, a second AI re-checks" in 3 steps; test count and measured seconds from docs/TESTING.md; limits (synthetic ads, no real users yet, "not found" is never "illegal")
 
 ### H6 · Custom 404 page
-- Status: todo (Gurpreet, D47)
+- Status: review (Gurpreet): custom 404 in the site's style, shows the address it could not find, links home and to the app
 - Type: Stretch
 - Depends on: H1
 - Files: web/src/pages/NotFound.tsx

@@ -26,7 +26,7 @@ Stage roles (to be assigned): presenter · phone · laptop · technical answers.
 3. Voice fails -> "the card works without audio", move on.
 4. Network gone -> backup video from the matching point; keep talking.
 5. Nobody types live. Speaker paired and charged.
-6. Landing page is not in the 5 minutes; open only if asked about NGOs or design.
+6. The public website (/, /how, /partners) is not in the 5 minutes; open it only if asked about NGOs, design or how it works. If shown: scroll Home slowly (the phone story plays on scroll), then /how section 02 for the maths. The bank-mitra commission on /partners is a proposal, say so.
 7. Over 5:00 in rehearsal -> cut words, don't speed up.
 
 ## Demo assets checklist

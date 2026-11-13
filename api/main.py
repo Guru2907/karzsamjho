@@ -57,9 +57,9 @@ def _first_free_id() -> int:
 _ids = itertools.count(_first_free_id())
 
 
-async def _from_cache(key: str, start: float) -> dict | None:
+async def _from_cache(key: str, start: float, lang: str = "hi") -> dict | None:
     """A repeated photo: the stored result, no AI call. Makes the MP3 again only if it is gone
-    (edge-tts is not an AI reader)."""
+    (edge-tts is not an AI reader), in the same language (D7: never a Hindi MP3 for bn / mr)."""
     hit = cache.get(key)
     if hit is None:
         return None
@@ -69,7 +69,7 @@ async def _from_cache(key: str, start: float) -> dict | None:
         return None                                   # an old or broken entry is a miss
     mp3 = Path(config.settings.audio_dir) / f"{result['id']}.mp3"
     if config.settings.voice_enabled and (not result["audio_url"] or not mp3.is_file()):
-        result["audio_url"] = await speak.make_audio(result["id"], result["speech_text_hi"])
+        result["audio_url"] = await speak.make_audio(result["id"], result["speech_text_hi"], lang)
         result["engines"]["speak"] = "edge-tts" if result["audio_url"] else None
         cache.put(key, result)
     result.update(cached=True, seconds=round(time.perf_counter() - start, 1))
@@ -87,19 +87,25 @@ PAY_FIRST_WARNING = ("Savdhaan! Yeh offer loan dene se pehle aapse {amount} rupa
 NUMBER_ORDER = ("in_hand", "repay_total", "tenure_days", "extra", "per_day", "apr_simple")
 
 
+def _lang(value) -> str:
+    """The voice language asked for: "hi", "bn" or "mr" (D7, D33). Anything else -> "hi"."""
+    lang = str(value or "hi").strip().lower()
+    return lang if lang in config.LANGS else "hi"
+
+
 def _no_card(code: str, text_hi: str) -> HTTPException:
     """The agreed 'no card' answer (D26): 422 with a Hindi message the user sees as it is."""
     return HTTPException(422, {"code": code, "text_hi": text_hi})
 
 
 async def run_check(image: bytes | None = None, text: str | None = None,
-                    audio: bytes | None = None) -> dict:
+                    audio: bytes | None = None, lang: str = "hi") -> dict:
     """One check, start to finish. The AI only reads; every number below is plain Python.
     A voice note (audio, D6) is read like a pasted SMS: no cache, no second reading."""
     start = time.perf_counter()
-    key = cache.image_key(image) if image is not None else None
+    key = cache.image_key(image, lang) if image is not None else None
     if key:
-        hit = await _from_cache(key, start)
+        hit = await _from_cache(key, start, lang)
         if hit:
             return hit
     try:
@@ -135,11 +141,11 @@ async def run_check(image: bytes | None = None, text: str | None = None,
     result_verdict = verdict.decide(numbers, fees)
 
     check_id = f"chk_{next(_ids):04d}"
-    sentence = speak.speech_text(numbers)
+    sentence = speak.speech_text(numbers, lang)          # bn / mr: that language's sentence (D7)
     pay_first = fields.get("pay_first")
     if pay_first:                                    # B9: the warning comes first, then the numbers
         sentence = PAY_FIRST_WARNING.format(amount=int(round(pay_first))) + " " + sentence
-    audio_url = await speak.make_audio(check_id, sentence)
+    audio_url = await speak.make_audio(check_id, sentence, lang)
     # Names shown as "couldn't verify": every unverified number, plus any raw field that was
     # disputed or contradicts itself, unless the card still has a verified number of that name.
     unverified = sorted({k for k, v in numbers.items() if v["status"] == "unverified"}
@@ -180,26 +186,27 @@ async def create_check(request: Request):
     content_type = request.headers.get("content-type", "")
     if content_type.startswith(("multipart/form-data", "application/x-www-form-urlencoded")):
         form = await request.form()
+        lang = _lang(form.get("lang"))
         upload = form.get("image")
         if upload is not None and hasattr(upload, "read"):
             image = await upload.read()
             if not image:
                 raise _no_card("UNREADABLE", extract.MSG_BAD_PHOTO)
-            return await run_check(image=image)
+            return await run_check(image=image, lang=lang)
         voice = form.get("audio")                     # a Telegram voice note, OGG (D6, D33)
         if voice is not None and hasattr(voice, "read"):
             audio = await voice.read()
             if not audio:
                 raise _no_card("UNREADABLE", extract.MSG_BAD_VOICE)
-            return await run_check(audio=audio)
+            return await run_check(audio=audio, lang=lang)
         if form.get("text"):
-            return await run_check(text=str(form["text"]))
+            return await run_check(text=str(form["text"]), lang=lang)
         raise HTTPException(422, "Send a form field named 'image', 'audio' or 'text'.")
     if content_type.startswith("application/json"):
         body = await request.json()
         if not isinstance(body, dict) or not body.get("text"):
             raise HTTPException(422, "Send JSON like {\"text\": \"...\"}.")
-        return await run_check(text=str(body["text"]))
+        return await run_check(text=str(body["text"]), lang=_lang(body.get("lang")))
     raise HTTPException(415, "Send multipart form data (image) or JSON (text).")
 
 

@@ -21,6 +21,14 @@ Every agent session and every person adds an entry here at the end of each task,
 
 ## Log
 
+### 13 Nov 2026, 7:22 PM · D7 server side (PR 3 of 4 for D6 + D7) · agent for Siddeshwar
+- Did: Bengali + Marathi voice. config: tts_voice_bn / tts_voice_mr + tts_voice(lang) and LANGS; .env.example TTS_VOICE_BN / TTS_VOICE_MR. fallback.speak(voice=None). speak.speech_text(numbers, lang) with the bn / mr sentences copied from docs/PLAN.md; make_audio(check_id, text, lang). cache.image_key(image, lang): Hindi key unchanged, bn / mr differ. main: lang read from form or JSON (hi / bn / mr, else hi) and passed to the cache key, speech_text, make_audio and _from_cache (one extra argument there, so a cached bn photo is never re-voiced in Hindi).
+- Files: api/core/config.py, .env.example, api/core/fallback.py (speak), api/core/speak.py, api/core/cache.py (image_key), api/main.py (_lang, _from_cache lang, run_check lang, create_check), api/tests/test_lang.py (new, 22 tests)
+- Proof: `pytest -q` 220 passed. Real run: synthetic ad -> real Qwen -> 3800 / 5000 / 7 / 1200 VERY_COSTLY; lang bn -> bn-IN-TanishaaNeural MP3 (6.0 s), lang mr -> mr-IN-AarohiNeural MP3 (5.0 s). Whisper listen-back: bn numbers all correct (as words); mr 3800 and 1200 correct, "7 दिवसांत 5000" came back garbled.
+- Status in docs/TASKS.md: D7 = doing (server side in review; waiting for native-speaker approval; bot /bhasha next)
+- Next: a Bengali and a Marathi speaker listen to both MP3s and approve the sentences; PR 4 /bhasha in the bot.
+- Broken / risks: DO NOT MERGE before native-speaker approval (D32). The Marathi "7 दिवसांत 5000" part needs a human ear. _from_cache is outside the D35 list (one argument).
+
 ### 13 Nov 2026, 7:35 PM · B9 advance-fee warning + B10 lakh/crore · agent for Gurpreet
 - Did: the reader also copies `pay_first` (money asked before the loan); a code rule backs it up for SMS; such a check gets next step DO_NOT_PAY_FIRST and the voice starts "Savdhaan! ... Paise mat bhejo"; a pay-first scam with no loan numbers now answers instead of "samajh nahi aaya". "5 lakh", "2 crore", "50 hazaar", "5k" become rupees (AI path, regex path, and the invented-number check). CLAUDE.md reader field list updated (D36).
 - Files: api/core/extract.py, api/main.py, api/tests/test_advance_fee.py (new), CLAUDE.md, docs/TASKS.md (B9, B10 new), DECISIONS.md (D36), ARCHITECTURE.md, TESTING.md, DEMO.md

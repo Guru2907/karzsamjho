@@ -84,7 +84,7 @@ def test_photo_row1_full_answer(client, env, monkeypatch):
     assert body["engines"] == {"read": "qwen", "second_read": None, "speak": "edge-tts",
                               "listen": None}
     assert body["lender"]["match"] is None and body["lender"]["name_read"] == "PaisaTurant"
-    assert body["next_step"]["code"] == "ASK_BANK_MITRA"
+    assert body["next_step"]["code"] == "FIND_CHEAPER"        # VERY_COSTLY -> cheaper loan (C2)
     assert body["audio_url"] == f"/api/audio/{body['id']}.mp3"
     audio = client.get(body["audio_url"])
     assert audio.status_code == 200 and audio.headers["content-type"] == "audio/mpeg"

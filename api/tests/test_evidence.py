@@ -156,3 +156,42 @@ def test_hash_matches_the_f2_definition_in_main_py():
     body = json.dumps(fields, sort_keys=True, ensure_ascii=False, separators=(",", ":"))
     assert evidence.event_hash("0" * 64, ev) == hashlib.sha256(("0" * 64 + body).encode("utf-8")).hexdigest()
     assert evidence.event_hash("0" * 64, {**ev, "id": "evt_9999"}) == ev["hash"]   # the id is not hashed
+
+
+# ---------------------------------------------------------------- F6: the letter follows the route
+from api.core import next_step  # noqa: E402  (the real F5 route sentences, so both stay in sync)
+
+ADDRESSEE = {
+    "FOUND": "To: the Grievance Redressal Officer, QuickCash",
+    "NOT_FOUND": "To: Sachet portal (RBI) / National Cyber Crime Reporting Portal",
+    "SIMILAR": ("To: the Grievance Redressal Officer of QuickCash, or the Sachet portal (RBI) "
+                "if the app is not a regulated lender"),
+}
+
+
+@pytest.mark.parametrize("match", ["FOUND", "NOT_FOUND", "SIMILAR"])
+def test_letter_addressee_follows_the_route(match):
+    case = {**CASE, "route": next_step.complaint_route(match, 3)}
+    lines = evidence.complaint_draft(case, evidence.rule_counts(case["events"]))
+    assert lines[0] == ADDRESSEE[match]
+
+
+def test_regulated_route_after_day_30_still_goes_to_the_grievance_officer():
+    route = next_step.complaint_route("FOUND", 31)            # "...go to the RBI Ombudsman now"
+    assert evidence.letter_addressee(route, "QuickCash") == ADDRESSEE["FOUND"]
+
+
+def test_no_route_yet_is_the_unsure_letter():
+    assert evidence.letter_addressee(None, "QuickCash") == ADDRESSEE["SIMILAR"]
+
+
+def test_unknown_lender_name_never_leaves_a_blank():
+    assert evidence.letter_addressee(next_step.complaint_route("FOUND"), None) == \
+        "To: the Grievance Redressal Officer of the lender"
+    assert "of the lender, or the Sachet" in evidence.letter_addressee(None, None)
+
+
+def test_sachet_letter_is_in_the_pdf_for_an_unlisted_lender():
+    text = pdf_text({**CASE, "route": next_step.complaint_route("NOT_FOUND")})
+    assert "To: Sachet portal (RBI) / National Cyber Crime Reporting Portal" in text
+    assert "To: the Grievance Redressal Officer" not in text

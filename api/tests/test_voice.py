@@ -95,7 +95,7 @@ def fake_listen_and_read(monkeypatch, transcript=SPOKEN, digits=DIGITS, reply=RE
     by their prompt. Returns the list of text-model prompts, to see what was read."""
     prompts = []
 
-    def transcribe(audio_bytes):
+    def transcribe(audio_bytes, lang="hi"):
         if listen_error:
             raise listen_error
         return transcript, "whisper", 0.9
@@ -233,9 +233,9 @@ def test_api_voice_note_is_never_cached(client, env, monkeypatch):
     fake_listen_and_read(monkeypatch)
     real = fallback.transcribe
 
-    def counting(audio_bytes):
+    def counting(audio_bytes, lang="hi"):
         calls.append(1)
-        return real(audio_bytes)
+        return real(audio_bytes, lang)
 
     monkeypatch.setattr(fallback, "transcribe", counting)
     assert post_voice(client).status_code == 200

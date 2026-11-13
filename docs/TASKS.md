@@ -347,7 +347,7 @@ All changes go through a pull request that Gurpreet merges (D27).
 ## F. Evidence and harassment
 
 ### F1 · `harass.py`: rules H1–H6, text labelling with keyword backup
-- Status: todo (Siddeshwar)
+- Status: review (Siddeshwar): H1-H6, AI + keyword safety net, 10/10 real samples
 - Type: Must
 - Depends on: A4
 - Files: api/core/harass.py, api/tests/test_harass.py

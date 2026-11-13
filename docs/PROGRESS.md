@@ -21,6 +21,14 @@ Every agent session and every person adds an entry here at the end of each task,
 
 ## Log
 
+### 13 Nov 2026, 11:46 PM · F1 harassment rules · agent for Siddeshwar
+- Did: harass.label(event, calls_that_day) -> sorted rule ids. H1 (before 08:00 / after 19:00 IST, hours from config), H6 (calls_that_day >= h6_calls_per_day, "our threshold") and H3 when contacted is family/employer/contacts are plain code. H2-H5: gpt-oss-20b JSON (check= parser) plus a Hinglish/English/Devanagari keyword list, used alone when the model is down and added as a safety net when it answers. RULES (English meanings) and RULES_BASIS for the PDF.
+- Files: api/core/harass.py, api/tests/test_harass.py (new, 45 tests), docs/PROGRESS.md, docs/TASKS.md
+- Proof: `pytest -q` 311 passed. Real gpt-oss on 10 hand-written samples: 10/10 match (first try without the safety net: 7/10; it missed "family ko sab bata diya" H3 and "warna police" H2). Polite 11 AM reminder -> []. ~2 s per event.
+- Status in docs/TASKS.md: F1 = review
+- Next: C4 lender sentence, then F3 PDF, then D5 bot.
+- Broken / risks: the old skeleton name label_event is replaced by label (docs/PLAN.md signature). No G2 samples in api/data/harassment yet, so the samples are in the test file.
+
 ### 13 Nov 2026, 9:15 PM · WhatsApp skipped · agent for Gurpreet
 - Did: the lead skipped WhatsApp: D41 reverses D39, D12 dropped, CLAUDE.md and AGENTS.md list WhatsApp as plain out of scope again; removed from Siddeshwar's prompt.
 - Files: CLAUDE.md, AGENTS.md, docs/PLAN.md, TASKS.md, DECISIONS.md (D41), PROGRESS.md

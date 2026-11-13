@@ -26,7 +26,7 @@ Every agent session and every person adds an entry here at the end of each task,
 - Files: CLAUDE.md, AGENTS.md, docs/PLAN.md, TASKS.md, DECISIONS.md, PROGRESS.md, ARCHITECTURE.md, TESTING.md, START_HERE.md, DEMO.md
 - Proof: docs only; `pytest -q` 266 passed on main (611cb0a).
 - Status in docs/TASKS.md: owners on every open task
-- Next: Gurpreet B9b then A3; Siddeshwar F1; Anam G4 (RBI CSV) first; Tejaswini E2/E3/E9.
+- Next (D40 wave 1): Gurpreet B9b, A3, F2, C1, A5, B11; Siddeshwar F1, C4, F3, D5 then D9, D10, D8, D11; Anam G4, G2, G8, G3; Tejaswini E2/E3/E9, E6, E4/E5, E8, E7.
 - Broken / risks: no web PR yet; the RBI CSV blocks C1, C2, F5; A3 blocks F2 and the rest of feature 4.
 
 ### 13 Nov 2026, 7:50 PM · B9 warning in Bengali and Marathi · agent for Gurpreet

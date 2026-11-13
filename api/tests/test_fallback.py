@@ -81,6 +81,13 @@ GOOD = '{"is_loan_ad": true, "principal": 5000}'
 PNG = b"\x89PNG\r\n\x1a\n" + b"0" * 20
 
 
+@pytest.fixture(autouse=True)
+def fake_keys(monkeypatch):
+    """CI has no .env, so give every test fake keys (the fakes never send them anywhere)."""
+    monkeypatch.setattr(fallback, "settings", dataclasses.replace(
+        fallback.settings, groq_api_key="fake-groq", gemini_api_key="fake-gemini"))
+
+
 def rate_limited():
     resp = httpx.Response(429, request=httpx.Request("POST", "https://api.groq.com/x"))
     return RateLimitError("rate limit", response=resp, body=None)

@@ -18,7 +18,7 @@
 ## Handover (tick as each phase is committed and pushed; to take over: git pull on data/demo-pack, read this file, start at the first unticked phase)
 - [x] P0 sync and start: branch data/demo-pack from main 05c9b21, pytest 600 passed, D52 added, this file, PR opened
 - [x] P1 names + expected answers first: demo_pack.json (10), sms_demo.json (5), harassment/samples.json (5), name checks shown (below); hand arithmetic re-checked with the CLAUDE.md formulas: 0 errors
-- [ ] P2 draw the 10 images: scripts/make_demo_pack.py -> api/data/offers/demo/01.png..10.png, checked by eye
+- [x] P2 draw the 10 images: scripts/make_demo_pack.py -> api/data/offers/demo/01.png..10.png (1080 px wide, 760 KB in all), checked by eye; a second run gives byte-identical files
 - [ ] P3 remove the old data, update references (README, DEMO, TASKS, test comment), pytest passes
 - [ ] P4 run everything through the real API: scripts/run_demo_pack.py, results table + K below
 - [ ] P5 finish: PR description, G1/G2/G8 = review, tell Gurpreet "demo pack ready"
@@ -53,3 +53,11 @@ WARNING   score=72.7  nbfc=no  warning=yes  Alok Auto Credit Pvt. Ltd.  [10, sms
 - Item 01 prints the GST total ("total Rs 590") like a real KFS; the correct in-hand is 9410. If the reader uses Rs 500, in-hand 9500 is a wrong verified number: that would be a K finding, not a reason to change the answer.
 - lender "WARNING" is not a lender.match value: the API returns match NOT_FOUND + lender.warning, so each item stores lender_flag (the brief's label) and lender_match / lender_warning (the API values).
 - Not reachable in this pack: next steps FIND_CHEAPER, ASK_BANK_MITRA and SEND_CLEARER need a lender that is FOUND or not checked with a costly / unclear verdict; every costly item must carry an invented name (NOT_FOUND wins), and real names may only carry ordinary terms. Covered: all 4 verdicts, all 4 lender flags, next steps DO_NOT_PAY_FIRST, ON_WARNING_LIST, NOT_IN_RBI_LIST, CHECK_APP_NAME, KEEP_PAPERS.
+
+## P2: how the images are drawn
+- `python scripts/make_demo_pack.py` reads demo_pack.json and draws demo/01.png..10.png (1080 px wide, portrait, height fits the content).
+- Only the strings in text_on_image are drawn, and the script stops if a line is missing (long lines wrap; words unchanged).
+- This Pillow has no libraqm, so Hindi / Bengali would be mis-shaped (vowel signs and joined letters in the wrong place). Text is shaped with HarfBuzz (uharfbuzz 0.57) and drawn glyph by glyph with FreeType (freetype-py 2.5); the script stops if any character has no glyph (an empty box). Installed in the local .venv only, NOT in api/requirements.txt.
+- Fonts: Segoe UI (+ Bold) for English and ₹; Nirmala UI (+ Bold, from Nirmala.ttc) for Devanagari and Bengali.
+- The ✅ in item 03 has no glyph in these fonts: it is drawn as a green rounded square with a white tick (how phones show it).
+- Checked by eye: digits exact on all 10; सिर्फ़ / शुल्क / गल्ला (04) and টুকরি / প্রসেসিং / মঞ্জুর (05) shaped correctly; Bengali digits ৫০০০ ৩০০ ৩০ ৫৬০০ exact; "Synthetic sample" on every image; real names (08, 10) on neutral grey layouts, no logo.

@@ -142,7 +142,7 @@ async def run_check(image: bytes | None = None, text: str | None = None,
         if image is not None:
             read = await run_in_threadpool(extract.extract_from_image, image)
         elif audio is not None:
-            read = await run_in_threadpool(extract.extract_from_voice, audio)
+            read = await run_in_threadpool(extract.extract_from_voice, audio, lang)   # D8
         else:
             read = await run_in_threadpool(extract.extract_from_text, text)
     except extract.NotALoan as exc:

@@ -22,7 +22,7 @@ Helper's browser (PWA)  ──► web/ (Vite)  ─┼──► FastAPI api/main.
 | Money asked before the loan (advance-fee fraud) | yes: `pay_first` from the reader + a code rule (English, Hinglish, Devanagari Hindi, Bengali, Marathi words; B9b) for SMS and voice notes -> warning first in the voice, next step DO_NOT_PAY_FIRST (D36) | extract.py, main.py |
 | "5 lakh", "2 crore", "50 hazaar" | yes, converted by code (D36) | extract.py |
 | Telegram card + MP3, pasted SMS, seconds stamp | yes | bot/main.py |
-| Voice notes (Hindi speech) | yes: Whisper -> number words to digits (gpt-oss) -> read like an SMS (D6) | fallback.transcribe, extract.extract_from_voice |
+| Voice notes (Hindi, Bengali, Marathi speech) | yes: Whisper (language = the request's lang, D8; Gemini backup is told the language too) -> number words to digits (gpt-oss, hi/bn/mr examples; code expands হাজার / লাখ / শো / शे and Bengali digits) -> read like an SMS (D6) | fallback.transcribe, extract.extract_from_voice |
 | Bengali + Marathi voice, /bhasha | yes: bn-IN-TanishaaNeural, mr-IN-AarohiNeural; card stays Hinglish; sentences await the native-speaker OK (D7, D32) | speak.py, bot/main.py |
 | Results stored | yes: SQLite file (DB_PATH, default ./karzsamjho.db); survives a restart; main.py keeps a fast in-memory copy (A3) | db.py, main.py |
 | Cache by SHA-256 (photos) | yes: one JSON per photo in CACHE_DIR, survives a restart; a repeat makes no AI call; a missing MP3 is made again with edge-tts only | cache.py, main.py |

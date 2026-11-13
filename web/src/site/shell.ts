@@ -7,4 +7,8 @@ export const SHELL = 'mx-auto w-full max-w-6xl px-5 sm:px-8'
 export const NAV: { to: string; label: string }[] = [
   { to: '/how', label: 'How it works' },
   { to: '/partners', label: 'For partners' },
+  { to: '/join', label: 'Back this' },
 ]
+
+/** Pages whose first screen is a dark block, so the nav starts with light text. */
+export const DARK_TOP = ['/join']

@@ -6,6 +6,8 @@
 @custom-variant dark (&:is(.dark *));
 
 @theme inline {
+    --color-ink: var(--ink);
+    --color-paper: var(--paper);
     --font-heading: var(--font-sans);
     --font-sans: 'Geist Variable', sans-serif;
     --color-sidebar-ring: var(--sidebar-ring);
@@ -51,6 +53,9 @@
 :root {
     /* KarzSamjho palette (D47): cream + near-black + burnt orange. One accent, one radius.
        Website and PWA both read these tokens; never hard-code a colour. */
+    /* Fixed in both themes: an always-dark block (ink) and the cream text on it (paper). */
+    --ink: oklch(0.165 0.008 60);
+    --paper: oklch(0.95 0.015 85);
     --background: oklch(0.975 0.012 85);
     --foreground: oklch(0.18 0.01 60);
     --card: oklch(0.99 0.008 85);

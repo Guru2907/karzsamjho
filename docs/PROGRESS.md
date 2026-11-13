@@ -21,7 +21,7 @@ Every agent session and every person adds an entry here at the end of each task,
 
 ## Log
 
-### 13 Nov 2026, 5:40 PM · B5 (T2) · agent for Siddeshwar
+### 13 Nov 2026, 5:12 PM · B5 (T2) · agent for Siddeshwar
 - Did: verdict.py decide(numbers, fees) per docs/PLAN.md: CANNOT_SAY if in_hand, repay_total, tenure_days or apr_simple is unverified; VERY_COSTLY if apr > 100 or a fee on a loan of 30 days or less; COSTLY if apr >= 36; else USUAL. Thresholds are read from config.settings on every call.
 - Files: api/core/verdict.py, api/tests/test_verdict.py, docs/TASKS.md, docs/PROGRESS.md
 - Proof: `pytest -q` 23 passed (17 verdict: PLAN.md rows 1-10, edges 35/36/100/101, fee rule at 30 vs 31 days, band_costly_apr 20 turns row 2 COSTLY; 6 smoke).

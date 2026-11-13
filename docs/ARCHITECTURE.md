@@ -26,7 +26,7 @@ Helper's browser (PWA)  ──► web/ (Vite)  ─┼──► FastAPI api/main.
 | Bengali + Marathi voice, /bhasha | yes: bn-IN-TanishaaNeural, mr-IN-AarohiNeural; card stays Hinglish; sentences await the native-speaker OK (D7, D32) | speak.py, bot/main.py |
 | Results stored | in memory only (lost on restart) | main.py `CHECKS`; db.py is task A3 |
 | Cache by SHA-256 (photos) | yes: one JSON per photo in CACHE_DIR, survives a restart; a repeat makes no AI call; a missing MP3 is made again with edge-tts only | cache.py, main.py |
-| Lender match | not yet: `lender.match` is null and the card hides the line (D26) | lender.py, task C1 |
+| Lender match | yes: app/lender name (RapidFuzz, generic words stripped) + any website or Play Store link in the SMS, against the local copy of RBI's directory api/data/rbi_dla.csv; a listed name with a different link = SIMILAR (possible clone); empty directory = null (not checked); spoken via C4 when present (C1, D37) | lender.py, main.py |
 | Next step | one fixed line: "Loan lene se pehle bank mitra se poochho." (D26) | main.py; next_step.py is task C2 |
 | Harassment log, PDF, verify | sample data | tasks F1 to F5 |
 

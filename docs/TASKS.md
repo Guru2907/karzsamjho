@@ -163,7 +163,7 @@ All changes go through a pull request that Gurpreet merges (D27).
 ## C. Lender check and next step
 
 ### C1 · Load `rbi_dla.csv`; `lender.py` with RapidFuzz
-- Status: todo (Gurpreet; name + website domain, D37)
+- Status: review (Gurpreet): name + website match, clone check, list date; proven with a made-up directory + real AI (12:20 AM); real RBI CSV (G4) still missing
 - Type: Must
 - Depends on: A1, G4
 - Files: api/core/lender.py, api/data/rbi_dla.csv, api/tests/test_lender.py

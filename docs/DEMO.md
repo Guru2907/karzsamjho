@@ -41,7 +41,7 @@ Stage roles (to be assigned): presenter · phone · laptop · technical answers.
 - [ ] Optional LIVE moment (B9): paste "Your loan is approved. Pay ₹1,499 processing fee to release funds." -> the voice starts "Savdhaan! ... Paise mat bhejo"
 - [ ] LIVE 2 lender line: built (C1 + C4); needs Anam's real RBI CSV (G4), otherwise it says nothing ("not checked")
 - [x] Verify (F4): /api/cases/<id>/verify recomputes the chain; a hand-edited entry makes it ok:false (proven 1:01 AM). Optional live moment: show ok:true, edit one entry, show ok:false
-- [ ] LIVE 2 needs the lender check (C1) and next step (C2); tonight the card has no RBI line and one fixed next step (D26)
+- [ ] LIVE 2 needs the lender check (C1) and next step (C2); C2 is built (1:31 AM): the card's 👉 line now follows the verdict, e.g. the Raju ad (VERY_COSTLY) says "Yeh loan bahut mehenga hai. Bank, SHG ya cooperative se sasta loan poochho." The RBI line still needs Anam's CSV (G4)
 
 ## Never say
 "100%", "illegal", "guaranteed", "the Ombudsman accepts this", "real users tested it" (unless they did), anything we did not build.

@@ -124,7 +124,7 @@ def test_api_normal_offer_has_no_warning(client, monkeypatch, tmp_path):
     monkeypatch.setattr(main, "CHECKS", {})
     model_down(monkeypatch)
     body = client.post("/api/checks", json={"text": "Loan Rs 5000. Fee Rs 500. Repay Rs 5600 in 7 days."}).json()
-    assert body["next_step"]["code"] == "ASK_BANK_MITRA"
+    assert body["next_step"]["code"] == "FIND_CHEAPER"        # VERY_COSTLY: fee on a 7-day loan (C2)
     assert not body["speech_text_hi"].startswith("Savdhaan")
 
 

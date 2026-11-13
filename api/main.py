@@ -101,11 +101,8 @@ async def _from_cache(key: str, start: float, lang: str = "hi") -> dict | None:
     log.info("check %s: cache hit, no AI call, seconds=%s", result["id"], result["seconds"])
     return result
 
-NEXT_STEP = {"code": "ASK_BANK_MITRA", "text_hi": "Loan lene se pehle bank mitra se poochho."}  # D26
+# The card's ONE next step comes from next_step.next_step (C2); its "do not pay first" text is there.
 # B9: the offer asks for money BEFORE the loan (advance-fee fraud). Fixed text, filled by code.
-PAY_FIRST_STEP = {"code": "DO_NOT_PAY_FIRST",
-                  "text_hi": "Paise mat bhejo. Loan se pehle paise maangna dhokha ho sakta hai. "
-                             "Shikayat: 1930 ya cybercrime.gov.in"}
 PAY_FIRST_WARNING = ("Savdhaan! Yeh offer loan dene se pehle aapse {amount} rupaye maang raha hai. "
                      "Loan se pehle paise maangna dhokha ho sakta hai. Paise mat bhejo.")
 # The same warning in the voice's own language and script (bn / mr voices cannot read Hinglish).
@@ -198,7 +195,7 @@ async def run_check(image: bytes | None = None, text: str | None = None,
         "numbers": numbers,
         "unverified": unverified,
         "lender": lender_result,
-        "next_step": dict(PAY_FIRST_STEP if pay_first else NEXT_STEP),
+        "next_step": next_step.next_step(result_verdict, lender_result.get("match"), pay_first),  # C2
         "speech_text_hi": sentence,
         "audio_url": audio_url,
         "engines": {"read": engines["read"], "second_read": engines["second_read"],

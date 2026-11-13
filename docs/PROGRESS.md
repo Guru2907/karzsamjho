@@ -21,6 +21,13 @@ Every agent session and every person adds an entry here at the end of each task,
 
 ## Log
 
+### 13 Nov 2026, 5:26 PM · D3 D4 (T4) · agent for Siddeshwar
+- Did: bot/main.py. Card now HTML (names escaped): verdict line, 4 symbols with bold rupees, RBI line (hidden when lender.match is null, never "illegal"), next step. After the card, the MP3 from audio_url goes by sendAudio; no audio_url or a failed download -> card alone. Pasted text -> POST /api/checks JSON {text, lang "hi", source "telegram"}. 422 -> detail.text_hi; server off / other errors -> Hindi messages.
+- Files: bot/main.py, docs/TASKS.md, docs/PROGRESS.md
+- Proof: `pytest -q` 6 passed (no bot test file in my list). Handler check script (not committed): 21/21, against the real API app (sample data) and a fake API: card then MP3, card alone, 422 text, server off, JSON body, escaping.
+- Status in docs/TASKS.md: D3, D4 = review
+- Next: live Telegram run with the test bot once the 6:30 PM merge gives real answers; then "Done when" with the 3 printed ads.
+- Broken / risks: not yet run against real Telegram. The Telegram card wording changed (verdict line, RBI line): docs/DEMO.md is the lead's file, please update it.
 ### 13 Nov 2026, 5:45 PM · L5 second reading (B6) · agent for Gurpreet
 - Did: `extract.second_reading`: when cross_check fails on a photo, the OTHER reader (Gemini after Qwen, Qwen after Gemini) reads it again; number fields differing by more than Rs 1, or seen by only one reader, are disputed and set aside before the maths. Other reader down -> the failed sum's fields become unverified. Text never gets a second reading. Only runs on a mismatch (not on every photo).
 - Files: api/core/extract.py, api/main.py, api/tests/test_extract.py, api/tests/test_pipeline.py

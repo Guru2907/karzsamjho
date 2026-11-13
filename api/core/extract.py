@@ -1,17 +1,277 @@
 """Photo or text -> fields (through fallback.py). The AI only copies written numbers; it never calculates. Strip ```json fences, validate with Pydantic. Ignore an AI in_hand the ad did not state.
 
-Filled by task(s): B1, B2, B6, B7 in docs/TASKS.md. This is a skeleton: the signatures are a
-starting point and may change inside the task, but the API contract may not.
+Filled by task(s): B1, B2, B7, B8 (B6 second reading comes in L5). Signatures in docs/PLAN.md.
+
+Every function returns  {"fields": {<the 10 keys>}, "engines": {"read": ..., "second_read": None}}
+or raises NotALoan / Unreadable, each carrying the Hindi message (text_hi) the user sees.
 """
+import json
+import re
+from typing import Any, Optional
+
+from pydantic import BaseModel, ConfigDict, field_validator, model_validator
+
+from api.core import fallback
+
+FIELD_KEYS = ("is_loan_ad", "principal", "in_hand", "fees", "repay_total", "emi_amount",
+              "emi_count", "tenure_days", "lender_name", "app_name")
+NUMBER_KEYS = ("principal", "in_hand", "fees", "repay_total", "emi_amount", "emi_count",
+               "tenure_days")
+AMOUNT_KEYS = ("principal", "in_hand", "repay_total", "emi_amount")   # at least one must be read
+
+MSG_NOT_A_LOAN = "Yeh loan ka offer nahi lagta. Loan ke offer ki photo ya message bhejo."
+MSG_BAD_PHOTO = "Photo saaf nahi hai, dobara bhejo."
+MSG_BAD_TEXT = "Message samajh nahi aaya. Poora loan wala message dobara bhejo."
+
+PROMPT = """You read Indian loan advertisements and loan SMS messages for a person who cannot read.
+Return ONLY one JSON object, no other text, with exactly these keys:
+{"is_loan_ad": true or false,
+ "principal": loan amount offered,
+ "in_hand": amount the borrower receives, ONLY if the ad states it in words like "you get", "in hand", "disbursed", "credited",
+ "fees": processing fee or other charges taken from the loan (a rupee amount, or a percentage like "10%"),
+ "repay_total": total amount to repay,
+ "emi_amount": one EMI / instalment amount,
+ "emi_count": number of EMIs / instalments,
+ "tenure_days": loan length exactly as written, with its unit, e.g. "7 days", "2 weeks", "3 months",
+ "lender_name": the bank or NBFC named as lender (not the app name),
+ "app_name": the app or brand name}
+Rules: copy numbers exactly as written; never calculate, add, subtract or guess a number;
+use null for anything not clearly written; is_loan_ad is false for anything that is not a loan offer."""
+
+DEVANAGARI_DIGITS = str.maketrans("०१२३४५६७८९", "0123456789")
+_NUMBER = re.compile(r"\d[\d,]*(?:\.\d+)?")
+_UNIT_DAYS = (("week", 7), ("hafte", 7), ("hafta", 7), ("saptah", 7), ("month", 30),
+              ("mahin", 30), ("year", 365), ("saal", 365), ("varsh", 365))
 
 
+class NotALoan(Exception):
+    """The reader says this is not a loan offer."""
+    def __init__(self, text_hi: str = MSG_NOT_A_LOAN):
+        super().__init__("not a loan offer")
+        self.text_hi = text_hi
+
+
+class Unreadable(Exception):
+    """No reader gave valid fields."""
+    def __init__(self, text_hi: str = MSG_BAD_PHOTO):
+        super().__init__("unreadable")
+        self.text_hi = text_hi
+
+
+# ---------------------------------------------------------------- clean-up
+def strip_fences(raw: str) -> str:
+    """Drop <think> blocks and ```json fences; keep the text from the first { to the last }."""
+    text = re.sub(r"<think>.*?</think>", "", raw or "", flags=re.DOTALL)
+    text = re.sub(r"```(?:json|JSON)?", "", text).strip()
+    start, end = text.find("{"), text.rfind("}")
+    return text[start:end + 1] if start != -1 and end > start else text
+
+
+def to_number(value: Any) -> Optional[float]:
+    """'Rs 5,000' -> 5000.0, '₹1200/-' -> 1200.0, 7 -> 7.0, 'null' / '' / 0 / -5 -> None."""
+    if value is None or isinstance(value, bool):
+        return None
+    if isinstance(value, (int, float)):
+        return float(value) if value > 0 else None
+    match = _NUMBER.search(str(value).translate(DEVANAGARI_DIGITS))
+    if not match:
+        return None
+    number = float(match.group().replace(",", ""))
+    return number if number > 0 else None
+
+
+def to_days(value: Any) -> Optional[float]:
+    """'7 days' -> 7, '2 weeks' -> 14, '3 months' -> 90, '1 saal' -> 365. Plain numbers are days."""
+    number = to_number(value)
+    if number is None or isinstance(value, (int, float)):
+        return number
+    text = str(value).lower()
+    for unit, days in _UNIT_DAYS:
+        if unit in text:
+            return number * days
+    return number
+
+
+class Fields(BaseModel):
+    """What a reader must return. Text numbers are cleaned before validation."""
+    model_config = ConfigDict(extra="ignore")
+    is_loan_ad: Optional[bool] = None
+    principal: Optional[float] = None
+    in_hand: Optional[float] = None
+    fees: Optional[float] = None
+    repay_total: Optional[float] = None
+    emi_amount: Optional[float] = None
+    emi_count: Optional[float] = None
+    tenure_days: Optional[float] = None
+    lender_name: Optional[str] = None
+    app_name: Optional[str] = None
+
+    @model_validator(mode="before")
+    @classmethod
+    def clean(cls, data: Any) -> Any:
+        if not isinstance(data, dict):
+            raise ValueError("reader did not return a JSON object")
+        data = dict(data)
+        fee = data.get("fees")
+        principal = to_number(data.get("principal"))
+        if isinstance(fee, str) and "%" in fee:          # "10%" of the loan, worked out in code
+            pct = to_number(fee)
+            data["fees"] = round(principal * pct / 100, 2) if pct and principal else None
+        else:
+            data["fees"] = to_number(fee)
+        data["tenure_days"] = to_days(data.get("tenure_days"))
+        for key in ("principal", "in_hand", "repay_total", "emi_amount", "emi_count"):
+            data[key] = to_number(data.get(key))
+        loan = data.get("is_loan_ad")
+        if isinstance(loan, str):
+            data["is_loan_ad"] = {"true": True, "yes": True, "false": False, "no": False}.get(loan.strip().lower())
+        return data
+
+    @field_validator("lender_name", "app_name", mode="before")
+    @classmethod
+    def clean_name(cls, value: Any) -> Optional[str]:
+        if value is None:
+            return None
+        text = str(value).strip()
+        return None if text.lower() in ("", "null", "none", "n/a", "na") else text
+
+
+def parse(raw: str) -> dict:
+    """Reader reply -> the 10 fields. Raises on invalid JSON (that engine then counts as failed)."""
+    data = json.loads(strip_fences(raw))
+    return Fields.model_validate(data).model_dump()
+
+
+def _check_loan(fields: dict, unreadable_msg: str) -> None:
+    if fields["is_loan_ad"] is False:
+        raise NotALoan()
+    if all(fields[k] is None for k in AMOUNT_KEYS):
+        raise Unreadable(unreadable_msg)
+
+
+# ---------------------------------------------------------------- photo
 def extract_from_image(image_bytes: bytes) -> dict:
-    raise NotImplementedError("extract_from_image: see docs/TASKS.md B1, B2, B6, B7")
+    """Photo -> fields. Qwen first, Gemini if Qwen fails or returns invalid JSON."""
+    try:
+        raw, engine, _ = fallback.read_image(image_bytes, PROMPT, check=parse)
+    except fallback.EngineError:
+        raise Unreadable(MSG_BAD_PHOTO)
+    fields = parse(raw)
+    _check_loan(fields, MSG_BAD_PHOTO)
+    return {"fields": fields, "engines": {"read": engine, "second_read": None}}
+
+
+OTHER_READER = {"qwen": "gemini", "gemini": "qwen"}
+
+
+def disputed_fields(first: dict, second: dict, tolerance: float = 1.0) -> list[str]:
+    """Number fields the two readings disagree on: values more than Rs 1 apart,
+    or one reader saw a number and the other saw none."""
+    out = []
+    for key in NUMBER_KEYS:
+        a, b = first.get(key), second.get(key)
+        if (a is None) != (b is None) or (a is not None and abs(a - b) > tolerance):
+            out.append(key)
+    return out
+
+
+def second_reading(image_bytes: bytes, first: dict, problems: list[str]) -> tuple[dict, list[str]]:
+    """The numbers do not add up, so the OTHER reader reads the photo again (task B6).
+
+    -> (first with engines.second_read filled, names of disputed fields).
+    If the other reader fails: second_read stays None and disputed = problems,
+    so the fields in the failed sum become "couldn't verify".
+    """
+    other = OTHER_READER.get(first["engines"]["read"])
+    if other is None:
+        return first, list(problems)
+    try:
+        raw, engine, _ = fallback.read_image(image_bytes, PROMPT, engines=(other,), check=parse)
+        second = parse(raw)
+    except Exception:   # EngineError, or a reply that will not parse: no second opinion
+        return first, list(problems)
+    result = {"fields": dict(first["fields"]),
+              "engines": {**first["engines"], "second_read": engine}}
+    return result, disputed_fields(first["fields"], second)
+
+
+# ---------------------------------------------------------------- text
+def _numbers_in(text: str) -> set[float]:
+    return {float(n.replace(",", "")) for n in _NUMBER.findall(text.translate(DEVANAGARI_DIGITS))}
+
+
+def _drop_unwritten(fields: dict, text: str) -> dict:
+    """For text we can check: a number the AI gives that is not in the message was invented.
+
+    fees from a percentage and tenure from weeks/months are worked out in code, so for
+    them we check the number as written (the percentage, the 2 in "2 weeks") instead.
+    """
+    written = _numbers_in(text)
+    for key in ("principal", "in_hand", "repay_total", "emi_amount", "emi_count"):
+        if fields[key] is not None and fields[key] not in written:
+            fields[key] = None
+    if fields["fees"] is not None and fields["fees"] not in written and "%" not in text:
+        fields["fees"] = None
+    if fields["tenure_days"] is not None and not written:
+        fields["tenure_days"] = None
+    return fields
+
+
+_RS = r"(?:rs\.?|inr|₹|rupees?|rupaye)?\s*"
+_AMT = r"(\d[\d,]*(?:\.\d+)?)"
+_GAP = r"[^\d.!?\n]{0,25}?"          # a label and its number must be in the same sentence
+_REGEX = {
+    "principal": [rf"(?:loan(?: amount)?|amount|approved|udhaar|karz){_GAP}{_RS}{_AMT}",
+                  rf"{_RS}{_AMT}\s*(?:ka\s+)?(?:loan|udhaar|karz)"],
+    "in_hand": [rf"(?:in hand|you get|you will get|disbursed|credited|haath mein|milenge){_GAP}{_RS}{_AMT}",
+                rf"{_RS}{_AMT}\s*(?:haath mein|in hand|milenge)"],
+    "fees": [rf"(?:processing fee|fees?|charges?|kharcha){_GAP}{_RS}{_AMT}\s*(%)?"],
+    "repay_total": [rf"(?:repay|return|pay back|payback|total|lautana|lautane|chukana|wapas){_GAP}{_RS}{_AMT}",
+                    rf"{_RS}{_AMT}\s*(?:lautana|lautane|chukana|wapas|repay)"],
+    "emi": [rf"emi{_GAP}{_RS}{_AMT}\s*(?:x|\*|×)\s*(\d+)"],
+    "tenure": [r"(\d+)\s*(days?|din|weeks?|hafte?|months?|mahine?|years?|saal)"],
+}
+
+
+def regex_fields(text: str) -> dict:
+    """Backup when the text model is down. Only picks up numbers written next to their label."""
+    t = text.lower().translate(DEVANAGARI_DIGITS)
+    out = {k: None for k in FIELD_KEYS}
+
+    def first(key):
+        """The match that starts earliest in the message, across this key's patterns."""
+        found = [m for m in (re.search(p, t) for p in _REGEX[key]) if m]
+        return min(found, key=lambda m: m.start()) if found else None
+
+    for key in ("principal", "in_hand", "repay_total"):
+        m = first(key)
+        out[key] = to_number(m.group(1)) if m else None
+    m = first("fees")
+    if m:
+        value = to_number(m.group(1))
+        out["fees"] = (round(out["principal"] * value / 100, 2)
+                       if m.group(2) and out["principal"] and value else (None if m.group(2) else value))
+    m = first("emi")
+    if m:
+        out["emi_amount"], out["emi_count"] = to_number(m.group(1)), to_number(m.group(2))
+    m = first("tenure")
+    if m:
+        out["tenure_days"] = to_days(f"{m.group(1)} {m.group(2)}")
+    found = any(out[k] is not None for k in AMOUNT_KEYS)
+    out["is_loan_ad"] = True if found else None
+    return out
 
 
 def extract_from_text(text: str) -> dict:
-    raise NotImplementedError("extract_from_text: see docs/TASKS.md B1, B2, B6, B7")
-
-
-def strip_fences(raw: str) -> str:
-    raise NotImplementedError("strip_fences: see docs/TASKS.md B1, B2, B6, B7")
+    """Pasted SMS -> fields. gpt-oss-20b first; regex if the model is down or answers badly."""
+    if not text or not text.strip():
+        raise Unreadable(MSG_BAD_TEXT)
+    try:
+        raw, engine, _ = fallback.read_text(f"{PROMPT}\n\nMESSAGE:\n{text}", check=parse)
+        fields = _drop_unwritten(parse(raw), text)
+    except fallback.EngineError:
+        fields, engine = regex_fields(text), "regex"
+    if engine == "regex" and fields["is_loan_ad"] is None:
+        raise NotALoan()
+    _check_loan(fields, MSG_BAD_TEXT)
+    return {"fields": fields, "engines": {"read": engine, "second_read": None}}

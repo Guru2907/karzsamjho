@@ -18,7 +18,7 @@ class NumberField(BaseModel):
 
 class Lender(BaseModel):
     name_read: Optional[str] = None
-    match: LenderMatch
+    match: Optional[LenderMatch] = None   # null = not checked yet (D26); the card hides the line
     score: Optional[float] = None
     closest: Optional[str] = None
     list_date: Optional[str] = None

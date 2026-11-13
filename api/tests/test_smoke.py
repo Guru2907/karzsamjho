@@ -1,5 +1,5 @@
-"""Smoke tests: the API starts and the contract shapes hold."""
-from api.core.schemas import Case, CheckResult
+"""Smoke tests: the API starts and the contract shapes hold (cases are still sample data)."""
+from api.core.schemas import Case
 
 
 def test_health(client):
@@ -11,23 +11,7 @@ def test_health(client):
     assert all(isinstance(body[k], bool) for k in ("groq_key", "gemini_key", "telegram_key"))
 
 
-def test_post_check_with_image(client):
-    r = client.post("/api/checks", files={"image": ("ad.jpg", b"\xff\xd8\xff\xd9", "image/jpeg")},
-                    data={"lang": "hi", "source": "test"})
-    assert r.status_code == 200
-    CheckResult.model_validate(r.json())
-
-
-def test_post_check_with_text(client):
-    r = client.post("/api/checks", json={"text": "5000 ka loan, 7 din, 1200 fees"})
-    assert r.status_code == 200
-    CheckResult.model_validate(r.json())
-
-
-def test_get_check_and_list(client):
-    assert client.get("/api/checks/chk_0042").status_code == 200
-    assert client.get("/api/checks/nope").status_code == 404
-    assert len(client.get("/api/checks?limit=20").json()) >= 1
+# Check tests (photo, text, get, list, audio) live in test_pipeline.py: checks are real now.
 
 
 def test_cases(client):

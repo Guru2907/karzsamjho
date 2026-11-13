@@ -3,10 +3,10 @@
 Every agent session and every person adds an entry here at the end of each task, before committing. Never delete or edit someone else's entry. Keep each entry under 12 lines.
 
 ## Current status (update this block when a gate passes or the plan changes)
-- Now: re-planned at 4:50 PM (D25); no product code yet. Everyone follows docs/PLAN.md: photo or text -> card + Hindi voice, with second reading, merged and tested by 7:00 PM, rehearsal 7:00 to 7:30 PM. Harassment, lender, database and cache wait until after the review.
+- Now (5:45 PM): the whole backend pipeline incl. second reading works on Gurpreet's laptop (PRs #2 #5 #8 #9 #10 + Siddeshwar's #3 #4 #6, bot #7); nothing merged to main yet. Everyone follows docs/PLAN.md: photo or text -> card + Hindi voice, with second reading, merged and tested by 7:00 PM, rehearsal 7:00 to 7:30 PM. Harassment, lender, database and cache wait until after the review.
 - Gates: 2:00 PM [x] · 7:30 PM [ ] · 12:30 AM [ ] · 3:30 AM freeze [ ]
 - Known broken: (none yet)
-- Groq photo reads used today on the server account: 0 of about 80
+- Groq photo reads used today on the server account: 0 of about 80 (Gurpreet's own account: 4)
 
 ## Entry template (copy, fill, paste at the top of the log below)
 ```
@@ -28,6 +28,66 @@ Every agent session and every person adds an entry here at the end of each task,
 - Status in docs/TASKS.md: D3, D4 = review
 - Next: live Telegram run with the test bot once the 6:30 PM merge gives real answers; then "Done when" with the 3 printed ads.
 - Broken / risks: not yet run against real Telegram. The Telegram card wording changed (verdict line, RBI line): docs/DEMO.md is the lead's file, please update it.
+### 13 Nov 2026, 5:45 PM · L5 second reading (B6) · agent for Gurpreet
+- Did: `extract.second_reading`: when cross_check fails on a photo, the OTHER reader (Gemini after Qwen, Qwen after Gemini) reads it again; number fields differing by more than Rs 1, or seen by only one reader, are disputed and set aside before the maths. Other reader down -> the failed sum's fields become unverified. Text never gets a second reading. Only runs on a mismatch (not on every photo).
+- Files: api/core/extract.py, api/main.py, api/tests/test_extract.py, api/tests/test_pipeline.py
+- Proof: `pytest -q` 131 passed (12 new: invented in_hand caught, agreed within Rs 1, Gemini-first asks Qwen, disagreeing repay, reader down, self-contradicting ad, text). Real run: synthetic ad "loan 5000, fee 1200, you get 4000" -> Qwen 2.08 s, mismatch, Gemini 3.51 s agrees -> CANNOT_SAY, in-hand unverified, "saaf nahi padhe gaye" voice, 7.5 s total.
+- Status in docs/TASKS.md: B6 = review
+- Next: rehearsal prep: server laptop, demo bot, printed ads (data teammate), bot PR #7 against the real API.
+- Broken / risks: none new. Merge order for Gurpreet: #2, #5, #8, #3, #4, #6, #9, #10, then #7.
+
+### 13 Nov 2026, 5:55 PM · L4 join the parts in POST /api/checks (A7) · agent for Gurpreet
+- Did: POST /api/checks is real: photo or text -> extract -> cross_check -> fill_gaps -> compute -> decide -> speech_text -> make_audio; results kept in memory; GET /api/checks, /api/checks/{id}, /api/audio/{id}.mp3 and /api/stats read them. No card -> 422 {code, text_hi} (D26). lender.match is null. Form text (urlencoded) accepted too. Merged Siddeshwar's maths, verdict and speak branches into this branch to wire against them.
+- Files: api/main.py, api/core/schemas.py (lender.match nullable), api/tests/test_pipeline.py (new), api/tests/test_smoke.py
+- Proof: `pytest -q` 119 passed (14 new pipeline tests). Real server: ad photo -> 3800/5000/7/1200, VERY_COSTLY, MP3, 3.9 s; Hinglish SMS -> 9000/11500/14/2500, VERY_COSTLY, MP3, 4.7 s (checked by hand); non-loan -> 422 Hindi.
+- Status in docs/TASKS.md: A7 = review
+- Next: L5 second reading; then Siddeshwar's bot (#7) against the real API.
+- Broken / risks: results vanish on restart (no database until A3). Cases, PDF, verify are still sample data.
+
+### 13 Nov 2026, 5:45 PM · L3 extract.py (B1, B2, B7, B8) · agent for Gurpreet
+- Did: reading prompt; strip fences; Pydantic `Fields` that turns "Rs 5,000" -> 5000, "2 weeks" -> 14 days, "10%" fee -> rupees (in code); not-a-loan and nothing-readable raise NotALoan / Unreadable with the Hindi text; SMS numbers not written in the message are dropped (stops invented in_hand, D18); regex backup when gpt-oss is down or answers badly.
+- Files: api/core/extract.py, api/tests/test_extract.py (new)
+- Proof: `pytest -q` 59 passed (40 new; uses the real Qwen/Gemini replies). Real run: ad photo via Qwen 2.18 s -> 5000/1200/5000/7; English and Hinglish SMS via gpt-oss ~1 s, both correct; a non-loan message -> polite Hindi refusal.
+- Status in docs/TASKS.md: B2, B7, B8 = review; B1 = review on the synthetic ad, the 3 printed ads still to test
+- Next: L4 join everything in POST /api/checks (needs Siddeshwar's PRs #3, #4 and speak.py).
+- Broken / risks: B1 "done when" needs the printed ads (data teammate, 6:00 PM). Second reading (L5) not in yet.
+
+### 13 Nov 2026, 5:40 PM · L2 read_image(), read_text() (A4, A6) · agent for Gurpreet
+- Did: Qwen -> Gemini photo reading, gpt-oss-20b text reading. Each engine once, temperature 0, timeout from config, Groq max_retries=0, Gemini 1 attempt; a 429, error or a reply that `check` rejects moves on at once; EngineError when all fail. Logs engine, seconds, tokens, Groq tokens/requests left; errors logged by type + status only.
+- Files: api/core/fallback.py, api/tests/test_fallback.py, docs/PLAN.md (read_image now takes `prompt` and `check`)
+- Proof: `pytest -q` 19 passed (8 new). Real run on a synthetic ad: Qwen 1.17 s (1,866 prompt tokens), Gemini 4.54 s, gpt-oss-20b 0.80 s; all three read 5000 / 1200 / 5000 / 7 correctly.
+- Status in docs/TASKS.md: A4 = doing (cache after the review); A6 = review (engine + seconds returned by every read)
+- Next: L3 extract.py (prompt, number clean-up, Pydantic, not-a-loan, regex backup).
+- Broken / risks: readers return numbers as text ("Rs 5000", "7 days"); extract.py must convert them. Qwen put the app name in lender_name too.
+
+### 13 Nov 2026, 5:20 PM · L1 speak() (part of A4) · agent for Gurpreet
+- Did: `fallback.speak(text, out_path) -> bool`: edge-tts hi-IN-SwaraNeural, timeout from config, writes a .part file then renames, never raises (False = send the card alone). Added `EngineError` and the agreed `read_image` / `read_text` signatures (still stubs).
+- Files: api/core/fallback.py, api/tests/test_fallback.py (new)
+- Proof: `pytest -q` 11 passed (5 new: ok, no internet, timeout, empty audio, empty text). Real run: sample sentence -> 72 KB MP3 in 3.05 s and 1.51 s.
+- Status in docs/TASKS.md: A4 = doing (Gurpreet); speak part ready for Siddeshwar's make_audio (T3)
+- Next: L2 `read_image()` (Qwen -> Gemini) and `read_text()` (gpt-oss-20b).
+- Broken / risks: speak needs internet; the venue network is untested.
+### 13 Nov 2026, 5:08 PM · B3 B4 (T1) · agent for Siddeshwar
+- Did: maths.py to docs/PLAN.md "Rules inside the maths": cross_check, fill_gaps(fields, disputed), compute. Whole numbers round half up. A sum cross_check still finds broken is treated as disputed (safety net). A fee that was printed but disputed is not treated as "no fee": in_hand stays unverified.
+- Files: api/core/maths.py, api/tests/test_maths.py, docs/TASKS.md, docs/PROGRESS.md
+- Proof: `pytest -q` 25 passed (19 maths: PLAN.md rows 1-10 + cross-check + safety cases; 6 smoke).
+- Status in docs/TASKS.md: B3, B4 = review
+- Next: T2 verdict.py (B5), then T3 speak.py (D2), T4 bot (D3, D4).
+- Broken / risks: none known. maths.py is not called by api/main.py until the lead's 6:30 PM merge.
+### 13 Nov 2026, 5:12 PM · B5 (T2) · agent for Siddeshwar
+- Did: verdict.py decide(numbers, fees) per docs/PLAN.md: CANNOT_SAY if in_hand, repay_total, tenure_days or apr_simple is unverified; VERY_COSTLY if apr > 100 or a fee on a loan of 30 days or less; COSTLY if apr >= 36; else USUAL. Thresholds are read from config.settings on every call.
+- Files: api/core/verdict.py, api/tests/test_verdict.py, docs/TASKS.md, docs/PROGRESS.md
+- Proof: `pytest -q` 23 passed (17 verdict: PLAN.md rows 1-10, edges 35/36/100/101, fee rule at 30 vs 31 days, band_costly_apr 20 turns row 2 COSTLY; 6 smoke).
+- Status in docs/TASKS.md: B5 = review
+- Next: T3 speak.py (D2).
+- Broken / risks: none known. The skeleton's decide(numbers) gained the fees argument, as agreed in docs/PLAN.md.
+### 13 Nov 2026, 5:23 PM · D2 (T3) · agent for Siddeshwar
+- Did: speak.py. speech_text fills the fixed Hindi sentence from CLAUDE.md (whole numbers, no commas), or says "Is offer ke saare number saaf nahi padhe gaye..." when in_hand, repay_total, tenure_days or extra is unverified. make_audio writes <AUDIO_DIR>/<id>.mp3 through fallback.speak and returns /api/audio/<id>.mp3, or None when voice is off, fails or raises.
+- Files: api/core/speak.py, api/tests/test_speak.py, docs/TASKS.md, docs/PROGRESS.md
+- Proof: `pytest -q` 19 passed (13 speak with a fake fallback.speak: PLAN.md row 1 sentence exact, row 8 "not clear", audio ok / failed / error / voice off; 6 smoke).
+- Status in docs/TASKS.md: D2 = review
+- Next: T4 bot (D3, D4).
+- Broken / risks: a real edge-tts run from this laptop's Claude session timed out at 6 s (connection never opened; probably the session sandbox, not yet re-tried outside it). "MP3 in under 5 s" is not proven yet: check it once fallback/speak is merged.
 
 ### 13 Nov 2026, 5:15 PM · teammate prompts + PR workflow · agent for Gurpreet
 - Did: full paste-ready prompts in docs/PLAN.md for Siddeshwar (Claude Code), the PWA teammate (RajuCard, /check, errors, Raju mode, home-screen app) and the data teammate (demo ads, SMS offers, 30 offers, harassment samples, RBI list, vendor notes). Every change now goes through a PR; Gurpreet merges (D27).

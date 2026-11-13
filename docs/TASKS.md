@@ -39,7 +39,7 @@ All changes go through a pull request that Gurpreet merges (D27).
 - Done when: A check and a case survive a server restart
 
 ### A4 · `fallback.py` + `cache.py`
-- Status: todo
+- Status: doing (Gurpreet): speak(), read_image(), read_text() done 5:40 PM; cache after the review
 - Type: Must
 - Depends on: A2
 - Files: api/core/fallback.py, api/core/cache.py
@@ -53,14 +53,14 @@ All changes go through a pull request that Gurpreet merges (D27).
 - Done when: Health lists each engine as up or down; stats numbers match the database
 
 ### A6 · Seconds stamp and engine names on every result
-- Status: todo
+- Status: review (fallback side: every read returns engine + seconds; A7 puts them on the CheckResult)
 - Type: Must
 - Depends on: A4
 - Files: api/main.py, api/core/fallback.py
 - Done when: Each `CheckResult` has `seconds` and `engines` filled
 
 ### A7 · Join the parts in `POST /api/checks`; results kept in memory
-- Status: todo
+- Status: review (Gurpreet)
 - Type: Must
 - Depends on: A4, B1, B3, B5, D2
 - Files: api/main.py, api/core/schemas.py, api/tests/test_pipeline.py, api/tests/test_smoke.py
@@ -70,56 +70,56 @@ All changes go through a pull request that Gurpreet merges (D27).
 ## B. Reading and maths
 
 ### B1 · `extract.py`: photo → fields with Qwen (temperature 0, fences stripped, fields validated)
-- Status: todo
+- Status: review (Gurpreet): synthetic ad read correctly; printed ads still to test
 - Type: Must
 - Depends on: A4
 - Files: api/core/extract.py
 - Done when: The 3 printed ads, photographed by phone, return correct fields
 
 ### B2 · Text input → fields with gpt-oss-20b
-- Status: todo
+- Status: review (Gurpreet)
 - Type: Must
 - Depends on: A4
 - Files: api/core/extract.py
 - Done when: A pasted SMS offer returns fields
 
 ### B3 · `maths.py` + unit tests
-- Status: todo
+- Status: review
 - Type: Must
 - Depends on: A1
 - Files: api/core/maths.py, api/tests/test_maths.py
 - Done when: 12 tests pass: normal, fee upfront, EMI, missing field, mismatch, zero days
 
 ### B4 · Cross-check and fill gaps
-- Status: todo
+- Status: review
 - Type: Must
 - Depends on: B3
 - Files: api/core/maths.py, api/tests/test_maths.py
 - Done when: A contradictory ad is flagged; a missing in-hand amount is derived and marked "derived"
 
 ### B5 · `verdict.py` with thresholds in a config file
-- Status: todo
+- Status: review
 - Type: Must
 - Depends on: B3
 - Files: api/core/verdict.py, api/core/config.py
 - Done when: Changing a threshold changes the verdict without touching code
 
 ### B6 · Second reading by the other reader on mismatch
-- Status: todo
+- Status: review (Gurpreet)
 - Type: Must
 - Depends on: B1, B4
 - Files: api/core/extract.py
 - Done when: A disputed field becomes "couldn't verify"; an agreed field is kept
 
 ### B7 · Not-a-loan detection
-- Status: todo
+- Status: review (Gurpreet)
 - Type: Must
 - Depends on: B1
 - Files: api/core/extract.py
 - Done when: A photo of a menu gets a polite refusal, not a card
 
 ### B8 · Regex backup for text offers
-- Status: todo
+- Status: review (Gurpreet)
 - Type: Must
 - Depends on: B2
 - Files: api/core/extract.py, api/tests/test_extract.py
@@ -160,7 +160,7 @@ All changes go through a pull request that Gurpreet merges (D27).
 - Note: bot/main.py skeleton exists (photo → API → text card); D1 = make it robust + wire audio after D2.
 
 ### D2 · `speak.py`: template sentence + edge-tts audio
-- Status: todo
+- Status: review
 - Type: Must
 - Depends on: B3
 - Files: api/core/speak.py

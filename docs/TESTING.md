@@ -58,6 +58,7 @@ Pace: one offer every 25 s (Groq ~3 photos/min). Never during a mentor round or 
 | 14 Nov 12:05 AM | B9b: hi / bn / mr scams through the real AI | 1500 / 1200 / 1500 caught by both the AI and the code rule; normal Marathi offer no warning |
 | 14 Nov 12:20 AM | C1 + C4: made-up directory + real AI | FOUND (+ spoken), clone link SIMILAR, near name SIMILAR, unlisted NOT_FOUND |
 | 14 Nov 12:25 AM | B9c: "Loan 5000 approved. Fee 500" x3 | in-hand 4500 every time, no false warning (was 5000) |
+| 14 Nov 2:14 AM | B13: AI keys made invalid (gpt-oss 401, Gemini 400); regex backup on bn / mr / Devanagari Hindi SMS: "অভিনন্দন! আপনার ৫০০০ টাকার লোন মঞ্জুর। প্রসেসিং ফি ৫০০ টাকা। ৭ দিনে ৫৬০০ টাকা ফেরত দিতে হবে।", "अभिनंदन! तुमचे 10000 रुपयांचे कर्ज मंजूर. प्रोसेसिंग फी 1000 रुपये. 30 दिवसांत 11500 रुपये परत करा.", "आपका 5000 रुपये का लोन मंजूर। प्रोसेसिंग फीस 500 रुपये। 7 दिन में 5600 रुपये लौटाने होंगे।" | read=regex: 4500 / 5600 / 7 / 1100; 9000 / 11500 / 30 / 2500; 4500 / 5600 / 7 / 1100: same as the real AI; before B13 the backup read nothing |
 | 14 Nov 12:35 AM | A5 with a wrong Groq key | groq DOWN 401, gemini UP, can_read_photos true |
 | 14 Nov 12:35 AM | Evidence PDF | H1 H2 H3, Aadhaar shown as XXXX XXXX 9012, hash chain, routes, complaint draft |
 | 14 Nov 12:45 AM | B11 drill, wrong Groq key | SMS read by Gemini 4.1 s; Hindi voice note heard + read by Gemini 8.1 s; numbers right |

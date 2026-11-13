@@ -44,6 +44,7 @@ never calculate, add, subtract or guess a number;
 use null for anything not clearly written; is_loan_ad is false for anything that is not a loan offer."""
 
 DEVANAGARI_DIGITS = str.maketrans("०१२३४५६७८९", "0123456789")
+BENGALI_DIGITS = str.maketrans("০১২৩৪৫৬৭৮৯", "0123456789")
 _NUMBER = re.compile(r"\d[\d,]*(?:\.\d+)?")
 # A number with an optional Indian unit after it: "5 lakh", "1.5 lac", "2 crore", "50 hazaar", "5k" (B10).
 _UNITS = (("crore", 1e7), ("cr", 1e7), ("करोड़", 1e7), ("करोड", 1e7),
@@ -63,7 +64,10 @@ def _amount(match: re.Match) -> float:
             return number * factor
     return number
 _UNIT_DAYS = (("week", 7), ("hafte", 7), ("hafta", 7), ("saptah", 7), ("month", 30),
-              ("mahin", 30), ("year", 365), ("saal", 365), ("varsh", 365))
+              ("mahin", 30), ("year", 365), ("saal", 365), ("varsh", 365),
+              # B13: Bengali, Marathi and Devanagari Hindi units (days need no entry)
+              ("সপ্তাহ", 7), ("सप्ताह", 7), ("आठवड", 7), ("हफ्त", 7), ("মাস", 30), ("महिन", 30), ("महीन", 30),
+              ("বছর", 365), ("वर्ष", 365), ("साल", 365))
 
 
 class NotALoan(Exception):
@@ -317,23 +321,38 @@ def _drop_unwritten(fields: dict, text: str) -> dict:
 
 _RS = r"(?:rs\.?|inr|₹|rupees?|rupaye)?\s*"
 _AMT = r"(\d[\d,]*(?:\.\d+)?(?:\s*(?:crores?|cr\b|lakhs?|lacs?|hazaar|hazar|thousand|k\b))?)"
-_GAP = r"[^\d.!?\n]{0,25}?"          # a label and its number must be in the same sentence
+_GAP = r"[^\d.!?\n।॥]{0,25}?"       # a label and its number must be in the same sentence (। = danda)
+# B13: Bengali, Marathi and Devanagari Hindi labels. In those scripts the currency word comes AFTER
+# the number ("5000 টাকার লোন", "10000 रुपयांचे कर्ज", "5000 रुपये का लोन").
+_CUR = r"\s*(?:টাকার|টাকা|रुपयांचे|रुपयांचा|रुपयांची|रुपये|रुपए|रुपयों)?\s*(?:का|की|के)?\s*"
+_LOAN_NATIVE = r"লোন|ঋণ|कर्ज|लोन|ऋण"
+_HAND_NATIVE = r"হাতে|हातात|हाथ में"
+_FEE_NATIVE = r"প্রসেসিং ফি|ফি|ফী|শুল্ক|চার্জ|फीस|फी|शुल्क|चार्ज"
+_REPAY_NATIVE = r"ফেরত|परत|लौटाने|लौटाना|वापस"
 _REGEX = {
     "principal": [rf"(?:loan(?: amount)?|amount|approved|udhaar|karz){_GAP}{_RS}{_AMT}",
-                  rf"{_RS}{_AMT}\s*(?:ka\s+)?(?:loan|udhaar|karz)"],
+                  rf"{_RS}{_AMT}\s*(?:ka\s+)?(?:loan|udhaar|karz)",
+                  rf"(?:{_LOAN_NATIVE}){_GAP}{_AMT}",
+                  rf"{_AMT}{_CUR}(?:{_LOAN_NATIVE})"],
     "in_hand": [rf"(?:in hand|you get|you will get|disbursed|credited|haath mein|milenge){_GAP}{_RS}{_AMT}",
-                rf"{_RS}{_AMT}\s*(?:haath mein|in hand|milenge)"],
-    "fees": [rf"(?:processing fee|fees?|charges?|kharcha){_GAP}{_RS}{_AMT}\s*(%)?"],
+                rf"{_RS}{_AMT}\s*(?:haath mein|in hand|milenge)",
+                rf"(?:{_HAND_NATIVE}){_GAP}{_AMT}",
+                rf"{_AMT}{_CUR}(?:{_HAND_NATIVE})"],
+    "fees": [rf"(?:processing fee|fees?|charges?|kharcha){_GAP}{_RS}{_AMT}\s*(%)?",
+             rf"(?:{_FEE_NATIVE}){_GAP}{_AMT}\s*(%)?"],
     "repay_total": [rf"(?:repay|return|pay back|payback|total|lautana|lautane|chukana|wapas){_GAP}{_RS}{_AMT}",
-                    rf"{_RS}{_AMT}\s*(?:lautana|lautane|chukana|wapas|repay)"],
+                    rf"{_RS}{_AMT}\s*(?:lautana|lautane|chukana|wapas|repay)",
+                    rf"(?:{_REPAY_NATIVE}){_GAP}{_AMT}",
+                    rf"{_AMT}{_CUR}(?:{_REPAY_NATIVE})"],
     "emi": [rf"emi{_GAP}{_RS}{_AMT}\s*(?:x|\*|×)\s*(\d+)"],
-    "tenure": [r"(\d+)\s*(days?|din|weeks?|hafte?|months?|mahine?|years?|saal)"],
+    "tenure": [r"(\d+)\s*(days?|din|weeks?|hafte?|months?|mahine?|years?|saal"
+               r"|দিন|দিবস|সপ্তাহ|মাস|বছর|दिवस|दिन|सप्ताह|आठवड|हफ्त|महिन|महीन|वर्ष|साल)"],
 }
 
 
 def regex_fields(text: str) -> dict:
     """Backup when the text model is down. Only picks up numbers written next to their label."""
-    t = text.lower().translate(DEVANAGARI_DIGITS)
+    t = text.lower().translate(DEVANAGARI_DIGITS).translate(BENGALI_DIGITS)
     out = {k: None for k in FIELD_KEYS}
 
     def first(key):

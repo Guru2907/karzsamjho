@@ -249,3 +249,80 @@ def test_voice_note_without_mime_type_is_sent_as_ogg(monkeypatch):
     posts = fake_check_api(monkeypatch, httpx.Response(200, json=RESULT))
     asyncio.run(bot.on_voice(voice_update(mime_type=None), None))
     assert posts[0][1]["files"]["audio"][2] == "audio/ogg"
+
+
+# ---------------------------------------------------------------- /bhasha (D7)
+from types import SimpleNamespace  # noqa: E402
+
+
+class MarkupMessage(FakeMessage):
+    async def reply_text(self, text, parse_mode=None, reply_markup=None):
+        self.sent.append(("text", text, reply_markup))
+
+
+class FakeQuery:
+    def __init__(self, data):
+        self.data, self.answered, self.edited = data, False, None
+
+    async def answer(self):
+        self.answered = True
+
+    async def edit_message_text(self, text):
+        self.edited = text
+
+
+def test_bhasha_shows_three_language_buttons():
+    update = FakeUpdate()
+    update.message = MarkupMessage()
+    asyncio.run(bot.bhasha(update, SimpleNamespace(chat_data={})))
+    _, text, markup = update.message.sent[0]
+    assert text == bot.MSG_PICK_LANG
+    buttons = markup.inline_keyboard[0]
+    assert [(b.text, b.callback_data) for b in buttons] == [
+        ("Hindi", "lang:hi"), ("বাংলা", "lang:bn"), ("मराठी", "lang:mr")]
+
+
+@pytest.mark.parametrize("lang", ["hi", "bn", "mr"])
+def test_pressing_a_button_remembers_the_language(lang):
+    context = SimpleNamespace(chat_data={})
+    query = FakeQuery(f"lang:{lang}")
+    asyncio.run(bot.on_lang_choice(SimpleNamespace(callback_query=query), context))
+    assert context.chat_data == {"lang": lang}
+    assert query.answered and query.edited == bot.MSG_LANG_SET[lang]
+
+
+def test_unknown_button_data_changes_nothing():
+    context = SimpleNamespace(chat_data={"lang": "bn"})
+    query = FakeQuery("lang:kn")
+    asyncio.run(bot.on_lang_choice(SimpleNamespace(callback_query=query), context))
+    assert context.chat_data == {"lang": "bn"} and query.answered and query.edited is None
+
+
+@pytest.mark.parametrize("context, expected", [
+    (None, "hi"), (SimpleNamespace(chat_data={}), "hi"), (SimpleNamespace(chat_data={"lang": "mr"}), "mr"),
+    (SimpleNamespace(chat_data={"lang": "xx"}), "hi")])
+def test_chat_lang(context, expected):
+    assert bot.chat_lang(context) == expected
+
+
+def test_chosen_language_is_sent_with_photo_text_and_voice(monkeypatch):
+    posts = fake_check_api(monkeypatch, httpx.Response(200, json=RESULT))
+    context = SimpleNamespace(chat_data={"lang": "bn"})
+
+    photo_update = FakeUpdate()
+    photo_update.message.photo = [FakeVoice(data=b"\xff\xd8 jpeg")]      # same get_file shape
+    asyncio.run(bot.on_photo(photo_update, context))
+
+    text_update = FakeUpdate()
+    text_update.message.text = "Loan Rs 5000. Repay Rs 5600 in 7 days."
+    asyncio.run(bot.on_text(text_update, context))
+
+    asyncio.run(bot.on_voice(voice_update(), context))
+
+    assert posts[0][1]["data"]["lang"] == "bn"                 # photo
+    assert posts[1][1]["json"]["lang"] == "bn"                 # pasted SMS
+    assert posts[2][1]["data"]["lang"] == "bn"                 # voice note
+
+
+def test_card_text_stays_hinglish_whatever_the_language():
+    assert "haath mein" in bot.card_text(RESULT) and "lautana hai" in bot.card_text(RESULT)

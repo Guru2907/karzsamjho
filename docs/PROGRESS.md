@@ -21,6 +21,14 @@ Every agent session and every person adds an entry here at the end of each task,
 
 ## Log
 
+### 13 Nov 2026, 7:24 PM · D7 bot side (PR 4 of 4 for D6 + D7) · agent for Siddeshwar
+- Did: bot/main.py /bhasha: three inline buttons (Hindi, বাংলা, मराठी), the choice kept in context.chat_data["lang"] and sent as `lang` with every photo, pasted SMS and voice note; default Hindi. Card text stays Hinglish. /start mentions /bhasha.
+- Files: bot/main.py, api/tests/test_bot.py (11 new tests), docs/PROGRESS.md, docs/TASKS.md
+- Proof: `pytest -q` 231 passed. Real run (bot handlers + real API, Telegram faked): press বাংলা -> "Theek hai: ab awaaz Bangla (বাংলা) mein aayegi."; ad photo -> Hinglish card ₹3,800 / ₹5,000 / 7 din / ₹1,200 + Bengali MP3 (from the bn cache, 0.0 s).
+- Status in docs/TASKS.md: D7 = review (merge only after native-speaker approval)
+- Next: native speakers approve; real Telegram run with the test bot (voice note + /bhasha); then F1, F3, D5.
+- Broken / risks: the language choice lives in the bot's memory, so it resets to Hindi when the bot restarts. Stacked on #20 (merge #17, #18, #20 first).
+
 ### 13 Nov 2026, 7:22 PM · D7 server side (PR 3 of 4 for D6 + D7) · agent for Siddeshwar
 - Did: Bengali + Marathi voice. config: tts_voice_bn / tts_voice_mr + tts_voice(lang) and LANGS; .env.example TTS_VOICE_BN / TTS_VOICE_MR. fallback.speak(voice=None). speak.speech_text(numbers, lang) with the bn / mr sentences copied from docs/PLAN.md; make_audio(check_id, text, lang). cache.image_key(image, lang): Hindi key unchanged, bn / mr differ. main: lang read from form or JSON (hi / bn / mr, else hi) and passed to the cache key, speech_text, make_audio and _from_cache (one extra argument there, so a cached bn photo is never re-voiced in Hindi).
 - Files: api/core/config.py, .env.example, api/core/fallback.py (speak), api/core/speak.py, api/core/cache.py (image_key), api/main.py (_lang, _from_cache lang, run_check lang, create_check), api/tests/test_lang.py (new, 22 tests)

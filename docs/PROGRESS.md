@@ -28,6 +28,14 @@ Every agent session and every person adds an entry here at the end of each task,
 - Status in docs/TASKS.md: C1 = review
 - Next: fix the advance-fee false positive found in this run (see risks); then A5, B11.
 - Broken / risks: api/data/rbi_dla.csv is still only the header (Anam's G4), so on main every check stays "not checked". FOUND in this run's first SMS also showed a B9 bug: the AI marked "Loan Rs 5000 approved. Fee Rs 500" as pay-first, the fee was dropped and in-hand showed 5000 instead of 4500 (K risk). Fix proposed as the next task.
+### 14 Nov 2026, 12:35 AM · evidence PDF route connected (F3 wiring) · agent for Gurpreet
+- Did: found in the 11-PR merge check: Siddeshwar's build_pdf (F3) and his bot's PDF download (D5) were done, but /api/cases/{id}/evidence.pdf in main.py still answered 404. It now builds the PDF fresh from the database (with the day counter) and returns application/pdf. The fingerprint formula in evidence.py and main.py was checked to be identical.
+- Files: api/main.py, api/tests/test_cases.py
+- Proof: `pytest -q` 377 passed (2 new: real %PDF, every event, 12-digit number masked). Real: case with a 9:40 PM threat + Aadhaar 1234 5678 9012 and a message to the son -> PDF with H1, H2, H3, the timeline, "XXXX XXXX 9012", the hash chain, where to complain and a complaint draft.
+- Status in docs/TASKS.md: no own task ID (connects F3 to the API)
+- Next: F4 verify (the PDF says /verify checks the chain, but it still always answers ok).
+- Broken / risks: built on #35 (+ #26, #29) with #30 merged in: merge after #30 and #35.
+
 ### 14 Nov 2026, 12:35 AM · A5 health: engines up or down · agent for Gurpreet
 - Did: fallback.ping() checks Groq (model list), Gemini (model lookup) and edge-tts (voice list) in parallel: free calls, no loan reads, 4 s timeout, cached 60 s (`?fresh=true` re-checks). /api/health adds engines up/down with the reason, can_read_photos, can_speak and the database state; it still answers if the database is broken; keys only as set / not set. Stats come from the database (A3); a test checks they match. Tests never ping the internet (conftest.py).
 - Files: api/core/fallback.py, api/main.py, api/tests/test_health.py (new), api/tests/conftest.py, docs/RUNBOOK.md, TASKS.md
@@ -35,6 +43,29 @@ Every agent session and every person adds an entry here at the end of each task,
 - Status in docs/TASKS.md: A5 = review
 - Next: B11 (Gemini backup for SMS and voice).
 - Broken / risks: built on #26 (A3): merge after it.
+### 13 Nov 2026, 11:57 PM · D5 bot harassment log · agent for Siddeshwar
+- Did: bot/main.py: a forwarded text message, or a message after /log (or /log <words>), becomes an event: POST /api/cases once per chat (id kept in chat_data; the case names the lender of his last check), POST /api/cases/{id}/events with at = the ORIGINAL message time in IST, channel telegram, contacted borrower; then a Hindi line with the rules broken, then GET evidence.pdf sent with reply_document. /pdf sends it again. A case lost on a server restart is made again once. Hindi messages only.
+- Files: bot/main.py, api/tests/test_bot.py (12 new tests), docs/PROGRESS.md, docs/TASKS.md
+- Proof: `pytest -q` 360 passed (the fake API serves the real F3 PDF). Real run against the API on main (sample cases): case_0007 remembered, "Darj ho gaya ... H1 raat ya subah jaldi sampark", then the Hindi "PDF abhi nahi ban paya, /pdf bhejo" because the PDF endpoint is not real yet.
+- Status in docs/TASKS.md: D5 = review
+- Next: once F2 + the evidence.pdf endpoint land, a real Telegram run (forward a threat, get the PDF). Then stretch D9, D10, D8.
+- Broken / risks: a forwarded TEXT is always treated as harassment (a forwarded loan SMS too); paste a loan SMS instead of forwarding it. docs/DEMO.md (Gurpreet) may need the new /log, /pdf flow.
+
+### 13 Nov 2026, 11:53 PM · F3 evidence PDF · agent for Siddeshwar
+- Did: evidence.build_pdf(case) -> English PDF: case details + "Day N of 30", rules-broken table with the RBI basis (H6 marked as our threshold), timeline (masked words), every hash and prev_hash, where to complain (case route, or all routes + police when H2/H5), complaint draft on one page. mask(): any 12-digit number -> "XXXX XXXX 1234". Text in Devanagari/Bengali script gets a note instead of broken letters (D20). Also event_hash / verify_chain = SHA-256(prev_hash + event fields) for F2 / F4 if Gurpreet wants one shared definition.
+- Files: api/core/evidence.py, api/tests/test_evidence.py (new, 23 tests), docs/PROGRESS.md, docs/TASKS.md
+- Proof: `pytest -q` 348 passed. Sample PDF checked by eye: 2 pages, every section present, Aadhaar masked.
+- Status in docs/TASKS.md: F3 = review
+- Next: D5 bot (forward -> case event -> PDF).
+- Broken / risks: GET /api/cases/{id}/evidence.pdf is Gurpreet's main.py: it should return build_pdf(case) with media_type application/pdf. Needs F2 for real cases.
+
+### 13 Nov 2026, 11:48 PM · C4 spoken lender result · agent for Siddeshwar
+- Did: speak.lender_sentence(lender, lang) -> fixed sentence for FOUND / SIMILAR / NOT_FOUND, None when match is null (D37, mentor feedback: Raju cannot read the card). Hindi exactly as docs/PLAN.md "Night plan"; bn / mr are drafts waiting for the native-speaker OK. Never "safe", "illegal" or "fake" (tested in all three languages).
+- Files: api/core/speak.py, api/tests/test_speak.py (14 new tests), docs/PROGRESS.md, docs/TASKS.md
+- Proof: `pytest -q` 325 passed.
+- Status in docs/TASKS.md: C4 = review (wiring into the voice is Gurpreet's main.py, after C1)
+- Next: F3 evidence PDF, then D5.
+- Broken / risks: not spoken yet: main.py must append lender_sentence(...) after speech_text(...) once C1 fills lender.match. bn / mr wording needs a native speaker.
 ### 13 Nov 2026, 11:55 PM · F2 cases, events, hash chain · agent for Gurpreet
 - Did: /api/cases, /api/cases/{id} and POST /api/cases/{id}/events are real (A3 database, sample data removed). Each event: time normalised to IST, rules from Siddeshwar's harass.label (calls that day INCLUDING this one, for H6), hash = SHA-256(prev_hash + compact sorted JSON of at/channel/contacted/text/rules), first prev_hash = 64 zeros; one lock so the chain never forks. If harass.label is missing or fails, the event is still stored with no rules. Day counter (day 1 = opening day, IST). `event_hash` is shared with F4.
 - Files: api/main.py, api/tests/test_cases.py (new), api/tests/test_smoke.py, docs/ARCHITECTURE.md, TASKS.md
@@ -43,6 +74,13 @@ Every agent session and every person adds an entry here at the end of each task,
 - Next: B9b, then C1. Siddeshwar's F3 (PDF) and D5 (bot) can now build on these routes.
 - Broken / risks: verify (F4) still answers ok=true for everything until F4. Merge order: #26 (A3) -> #27 (F1) -> this.
 
+### 13 Nov 2026, 11:46 PM · F1 harassment rules · agent for Siddeshwar
+- Did: harass.label(event, calls_that_day) -> sorted rule ids. H1 (before 08:00 / after 19:00 IST, hours from config), H6 (calls_that_day >= h6_calls_per_day, "our threshold") and H3 when contacted is family/employer/contacts are plain code. H2-H5: gpt-oss-20b JSON (check= parser) plus a Hinglish/English/Devanagari keyword list, used alone when the model is down and added as a safety net when it answers. RULES (English meanings) and RULES_BASIS for the PDF.
+- Files: api/core/harass.py, api/tests/test_harass.py (new, 45 tests), docs/PROGRESS.md, docs/TASKS.md
+- Proof: `pytest -q` 311 passed. Real gpt-oss on 10 hand-written samples: 10/10 match (first try without the safety net: 7/10; it missed "family ko sab bata diya" H3 and "warna police" H2). Polite 11 AM reminder -> []. ~2 s per event.
+- Status in docs/TASKS.md: F1 = review
+- Next: C4 lender sentence, then F3 PDF, then D5 bot.
+- Broken / risks: the old skeleton name label_event is replaced by label (docs/PLAN.md signature). No G2 samples in api/data/harassment yet, so the samples are in the test file.
 ### 13 Nov 2026, 11:45 PM · A3 SQLite database · agent for Gurpreet
 - Did: db.py stores checks, cases and events in SQLite (DB_PATH, *.db not committed); one short connection per call; helpers for F2: last_event_hash (chain start = 64 zeros) and calls_on (H6). main.py writes every check to the database (cache hits never overwrite the first answer), reads /api/checks, /api/checks/{id} and /api/stats from it, keeps CHECKS only as a fast in-memory copy, and never reuses a check id after a restart. Every test now gets its own temp database (conftest.py). /api/cases is still sample data until F2.
 - Files: api/core/db.py, api/main.py, api/tests/test_db.py (new), api/tests/conftest.py, docs/ARCHITECTURE.md, START_HERE.md, RUNBOOK.md, TASKS.md
@@ -50,6 +88,29 @@ Every agent session and every person adds an entry here at the end of each task,
 - Status in docs/TASKS.md: A3 = review
 - Next: F2 events + hash chain (unblocks Siddeshwar's F3 and D5).
 - Broken / risks: none. Before the demo, copy karzsamjho.db with cache/ and audio/ to the backup laptop (RUNBOOK).
+### 13 Nov 2026, 11:53 PM · F3 evidence PDF · agent for Siddeshwar
+- Did: evidence.build_pdf(case) -> English PDF: case details + "Day N of 30", rules-broken table with the RBI basis (H6 marked as our threshold), timeline (masked words), every hash and prev_hash, where to complain (case route, or all routes + police when H2/H5), complaint draft on one page. mask(): any 12-digit number -> "XXXX XXXX 1234". Text in Devanagari/Bengali script gets a note instead of broken letters (D20). Also event_hash / verify_chain = SHA-256(prev_hash + event fields) for F2 / F4 if Gurpreet wants one shared definition.
+- Files: api/core/evidence.py, api/tests/test_evidence.py (new, 23 tests), docs/PROGRESS.md, docs/TASKS.md
+- Proof: `pytest -q` 348 passed. Sample PDF checked by eye: 2 pages, every section present, Aadhaar masked.
+- Status in docs/TASKS.md: F3 = review
+- Next: D5 bot (forward -> case event -> PDF).
+- Broken / risks: GET /api/cases/{id}/evidence.pdf is Gurpreet's main.py: it should return build_pdf(case) with media_type application/pdf. Needs F2 for real cases.
+
+### 13 Nov 2026, 11:48 PM · C4 spoken lender result · agent for Siddeshwar
+- Did: speak.lender_sentence(lender, lang) -> fixed sentence for FOUND / SIMILAR / NOT_FOUND, None when match is null (D37, mentor feedback: Raju cannot read the card). Hindi exactly as docs/PLAN.md "Night plan"; bn / mr are drafts waiting for the native-speaker OK. Never "safe", "illegal" or "fake" (tested in all three languages).
+- Files: api/core/speak.py, api/tests/test_speak.py (14 new tests), docs/PROGRESS.md, docs/TASKS.md
+- Proof: `pytest -q` 325 passed.
+- Status in docs/TASKS.md: C4 = review (wiring into the voice is Gurpreet's main.py, after C1)
+- Next: F3 evidence PDF, then D5.
+- Broken / risks: not spoken yet: main.py must append lender_sentence(...) after speech_text(...) once C1 fills lender.match. bn / mr wording needs a native speaker.
+
+### 13 Nov 2026, 11:46 PM · F1 harassment rules · agent for Siddeshwar
+- Did: harass.label(event, calls_that_day) -> sorted rule ids. H1 (before 08:00 / after 19:00 IST, hours from config), H6 (calls_that_day >= h6_calls_per_day, "our threshold") and H3 when contacted is family/employer/contacts are plain code. H2-H5: gpt-oss-20b JSON (check= parser) plus a Hinglish/English/Devanagari keyword list, used alone when the model is down and added as a safety net when it answers. RULES (English meanings) and RULES_BASIS for the PDF.
+- Files: api/core/harass.py, api/tests/test_harass.py (new, 45 tests), docs/PROGRESS.md, docs/TASKS.md
+- Proof: `pytest -q` 311 passed. Real gpt-oss on 10 hand-written samples: 10/10 match (first try without the safety net: 7/10; it missed "family ko sab bata diya" H3 and "warna police" H2). Polite 11 AM reminder -> []. ~2 s per event.
+- Status in docs/TASKS.md: F1 = review
+- Next: C4 lender sentence, then F3 PDF, then D5 bot.
+- Broken / risks: the old skeleton name label_event is replaced by label (docs/PLAN.md signature). No G2 samples in api/data/harassment yet, so the samples are in the test file.
 
 ### 13 Nov 2026, 9:15 PM · WhatsApp skipped · agent for Gurpreet
 - Did: the lead skipped WhatsApp: D41 reverses D39, D12 dropped, CLAUDE.md and AGENTS.md list WhatsApp as plain out of scope again; removed from Siddeshwar's prompt.

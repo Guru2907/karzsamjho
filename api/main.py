@@ -21,9 +21,9 @@ from pathlib import Path
 from fastapi import FastAPI, HTTPException, Request
 from fastapi.concurrency import run_in_threadpool
 from fastapi.middleware.cors import CORSMiddleware
-from fastapi.responses import FileResponse
+from fastapi.responses import FileResponse, Response
 
-from api.core import cache, config, db, extract, fallback, harass, lender, maths, speak, verdict
+from api.core import cache, config, db, evidence, extract, fallback, harass, lender, maths, speak, verdict
 from api.core.config import ensure_dirs
 from api.core.schemas import (Case, CaseIn, CheckResult, Event, EventIn, Stats,
                               VerifyResult)
@@ -356,7 +356,14 @@ def add_event(case_id: str, body: EventIn):
 
 @app.get("/api/cases/{case_id}/evidence.pdf")
 def evidence_pdf(case_id: str):
-    raise HTTPException(404, "No PDF yet (task F3).")
+    """The case as Siddeshwar's English evidence PDF (F3): timeline, rules, hashes, masked numbers,
+    complaint draft. Built fresh from the database on every request, so it always has every event."""
+    case = db.get_case(case_id)
+    if case is None:
+        raise HTTPException(404, "Case not found.")
+    pdf = evidence.build_pdf(_with_day(case))
+    return Response(content=pdf, media_type="application/pdf",
+                    headers={"Content-Disposition": f'inline; filename="{case_id}_evidence.pdf"'})
 
 
 @app.get("/api/cases/{case_id}/verify", response_model=VerifyResult)

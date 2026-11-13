@@ -17,7 +17,7 @@ Builders use their own Gemini and Groq keys and the TEST bot token. Only the ser
 | API | `uvicorn api.main:app --host 0.0.0.0 --port 8000 --reload` | drop --reload on the demo laptop |
 | Bot | `python -m bot.main` | long polling; one program per bot token |
 | Web | `cd web && npm run dev -- --host` | Vite proxies /api to localhost:8000 |
-Health check: open http://localhost:8000/api/health
+Health check: open http://localhost:8000/api/health (add `?fresh=true` to re-check now). It shows each engine (Groq, Gemini, edge-tts) up or down with the reason, `can_read_photos`, `can_speak` and the database. Check it before going on stage
 
 ## Phones on the same network
 - Laptop address: `ipconfig` -> IPv4 Address. Phone opens `http://<address>:5173`.

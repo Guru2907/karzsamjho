@@ -21,6 +21,14 @@ Every agent session and every person adds an entry here at the end of each task,
 
 ## Log
 
+### 14 Nov 2026, 12:35 AM · A5 health: engines up or down · agent for Gurpreet
+- Did: fallback.ping() checks Groq (model list), Gemini (model lookup) and edge-tts (voice list) in parallel: free calls, no loan reads, 4 s timeout, cached 60 s (`?fresh=true` re-checks). /api/health adds engines up/down with the reason, can_read_photos, can_speak and the database state; it still answers if the database is broken; keys only as set / not set. Stats come from the database (A3); a test checks they match. Tests never ping the internet (conftest.py).
+- Files: api/core/fallback.py, api/main.py, api/tests/test_health.py (new), api/tests/conftest.py, docs/RUNBOOK.md, TASKS.md
+- Proof: `pytest -q` 283 passed (9 new). Real: all three engines UP (0.6 to 1.0 s); with a deliberately wrong Groq key -> groq DOWN (AuthenticationError 401), gemini UP, can_read_photos true.
+- Status in docs/TASKS.md: A5 = review
+- Next: B11 (Gemini backup for SMS and voice).
+- Broken / risks: built on #26 (A3): merge after it.
+
 ### 13 Nov 2026, 11:45 PM · A3 SQLite database · agent for Gurpreet
 - Did: db.py stores checks, cases and events in SQLite (DB_PATH, *.db not committed); one short connection per call; helpers for F2: last_event_hash (chain start = 64 zeros) and calls_on (H6). main.py writes every check to the database (cache hits never overwrite the first answer), reads /api/checks, /api/checks/{id} and /api/stats from it, keeps CHECKS only as a fast in-memory copy, and never reuses a check id after a restart. Every test now gets its own temp database (conftest.py). /api/cases is still sample data until F2.
 - Files: api/core/db.py, api/main.py, api/tests/test_db.py (new), api/tests/conftest.py, docs/ARCHITECTURE.md, START_HERE.md, RUNBOOK.md, TASKS.md

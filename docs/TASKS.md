@@ -52,7 +52,7 @@ All changes go through a pull request that Gurpreet merges (D27).
 - Done when: With the Groq key removed, a check still answers through Gemini Flash-Lite; a repeated photo answers instantly
 
 ### A5 · `/api/health`, `/api/stats`
-- Status: todo (Gurpreet; partly: stats from memory, health shows keys only)
+- Status: review (Gurpreet): live engine pings (free calls, cached 60 s), database state, stats from the database; proven with a wrong Groq key (12:35 AM)
 - Type: Must
 - Depends on: A3
 - Files: api/main.py

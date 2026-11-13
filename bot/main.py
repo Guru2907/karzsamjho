@@ -26,7 +26,11 @@ logging.basicConfig(level=logging.INFO, format="%(asctime)s %(levelname)s %(mess
 logging.getLogger("httpx").setLevel(logging.WARNING)  # httpx logs URLs, which contain the token
 log = logging.getLogger("bot")
 
-API_TIMEOUT_S = 30     # a photo check can take ~12 s when Gemini answers
+# How long to wait for the API, from the engine timeouts in config.py (never hard-coded).
+# Worst photo check: Qwen times out, Gemini reads it, the sums fail so the other reader
+# reads it again, then the voice: 6 + 12 + 12 + 6 = 36 s. Plus a margin for the network.
+API_TIMEOUT_S = (settings.vision_timeout_s + 2 * settings.read_timeout_s
+                 + settings.tts_timeout_s + 9)          # 45 s with the default timeouts
 AUDIO_TIMEOUT_S = 10
 MAX_TEXT_CHARS = 2000  # an SMS offer is short; ignore pasted essays
 
@@ -52,11 +56,24 @@ def _http(timeout: float) -> httpx.AsyncClient:
     return httpx.AsyncClient(timeout=timeout)
 
 
+def indian_digits(value: float) -> str:
+    """Whole rupees with Indian grouping: 3800 -> "3,800", 100000 -> "1,00,000"."""
+    digits = str(int(round(value)))
+    if len(digits) <= 3:
+        return digits
+    head, tail = digits[:-3], digits[-3:]
+    groups = []
+    while len(head) > 2:
+        groups.insert(0, head[-2:])
+        head = head[:-2]
+    return ",".join([head, *groups, tail])
+
+
 def rupees(field: dict | None) -> str:
-    """A number field as rupees ("₹3,800"), or "pata nahi chala" when it could not be verified."""
+    """A number field as rupees ("₹3,800", "₹1,00,000"), or "pata nahi chala" when it could not be verified."""
     if not field or field.get("value") is None or field.get("status") == "unverified":
         return "pata nahi chala"
-    return f"₹{field['value']:,.0f}"
+    return f"₹{indian_digits(field['value'])}"
 
 
 def lender_line(lender: dict | None) -> str | None:

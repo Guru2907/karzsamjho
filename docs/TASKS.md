@@ -4,7 +4,9 @@ How to use: pick one task by ID ("Do task B3"). Status is one of: todo, doing (n
 
 Type: M = must build. S = stretch, only after the 7:30 PM gate on 13 Nov has passed. Nothing new after the 3:30 AM freeze on 14 Nov.
 
-## Right now: the 7:30 PM review (re-plan at 4:50 PM, D25)
+## Right now: the night plan (from 9:00 PM, D38). Owners, order and prompts: docs/PLAN.md "Night plan"
+
+## Earlier: the 7:30 PM review (re-plan at 4:50 PM, D25)
 
 Owners, order, target times and signatures are in docs/PLAN.md. In scope tonight:
 - Lead: A4 (without the cache), A6, A7, B1, B2, B6, B7, B8
@@ -34,7 +36,7 @@ All changes go through a pull request that Gurpreet merges (D27).
 - Done when: Every route in section 5 returns sample data by 12:30 PM
 
 ### A3 · `db.py`: tables for checks, cases, events
-- Status: todo
+- Status: todo (Gurpreet)
 - Type: Must
 - Depends on: A1
 - Files: api/core/db.py
@@ -48,7 +50,7 @@ All changes go through a pull request that Gurpreet merges (D27).
 - Done when: With the Groq key removed, a check still answers through Gemini Flash-Lite; a repeated photo answers instantly
 
 ### A5 · `/api/health`, `/api/stats`
-- Status: todo (partly: /api/stats counts the in-memory checks; /api/health shows keys set, not engines reachable)
+- Status: todo (Gurpreet; partly: stats from memory, health shows keys only)
 - Type: Must
 - Depends on: A3
 - Files: api/main.py
@@ -142,24 +144,45 @@ All changes go through a pull request that Gurpreet merges (D27).
 - Files: api/core/extract.py, api/tests/test_advance_fee.py
 - Done when: "₹5 lakh" -> 500000 from the AI path and the regex path, and is not dropped as an invented number
 
+### B9b · Scam code rule in Devanagari Hindi, Bengali and Marathi words
+- Status: todo (Gurpreet)
+- Type: Must
+- Depends on: B9
+- Files: api/core/extract.py, api/tests/test_advance_fee.py
+- Done when: "पहले 1500 रुपये प्रोसेसिंग शुल्क भेजो", "আগে 1499 টাকা প্রসেসিং ফি পাঠান" and "आधी 999 रुपये नोंदणी शुल्क पाठवा" each trigger the warning even when the AI misses it; normal offers in those scripts do not
+
+### B11 · Gemini as backup for SMS and voice when Groq is down
+- Status: todo (Gurpreet)
+- Type: Must
+- Depends on: B2, D6
+- Files: api/core/fallback.py, api/tests/test_fallback.py
+- Done when: with Groq failing (429 or no key), a pasted SMS is read by Gemini Flash-Lite (regex only as the last resort) and a Hindi voice note is transcribed by Gemini; engines show "gemini" (Hindi audio test passed at 8:00 PM: 2.4 to 3.1 s, digits right)
+
 ## C. Lender check and next step
 
 ### C1 · Load `rbi_dla.csv`; `lender.py` with RapidFuzz
-- Status: todo
+- Status: todo (Gurpreet; name + website domain, D37)
 - Type: Must
 - Depends on: A1, G4
 - Files: api/core/lender.py, api/data/rbi_dla.csv, api/tests/test_lender.py
-- Done when: A listed app returns FOUND with its lender; a made-up app returns NOT_FOUND; a near-miss spelling returns SIMILAR
+- Done when: A listed app returns FOUND with its lender; a made-up app returns NOT_FOUND; a near-miss spelling returns SIMILAR; a link or website in the SMS/ad is matched against the directory's website column too (D37); wording never says safe, illegal or fake
 
 ### C2 · `next_step.py`
-- Status: todo (tonight a fixed next step in main.py, D26)
+- Status: todo (Gurpreet; fixed line for now, D26)
 - Type: Must
 - Depends on: B5, C1
 - Files: api/core/next_step.py
 - Done when: Every verdict maps to exactly one next step
 
+### C4 · Speak the lender result (mentor feedback, D37)
+- Status: todo (Siddeshwar)
+- Type: Must
+- Depends on: C1 (shape only)
+- Files: api/core/speak.py, api/tests/test_speak.py (Siddeshwar); api/main.py adds the sentence after the numbers (Gurpreet)
+- Done when: FOUND / SIMILAR / NOT_FOUND each add one fixed sentence to the voice (Hindi; bn/mr after the native-speaker OK); nothing is added when lender.match is null; never "safe", "illegal" or "fake"
+
 ### C3 · NBFC list as a second source
-- Status: todo
+- Status: todo (Gurpreet, stretch)
 - Type: Stretch
 - Depends on: C1
 - Files: api/core/lender.py
@@ -197,7 +220,7 @@ All changes go through a pull request that Gurpreet merges (D27).
 - Done when: A pasted SMS returns a reply
 
 ### D5 · Bot: forward a message → harassment event; send the PDF back
-- Status: todo
+- Status: todo (Siddeshwar)
 - Type: Must
 - Depends on: F2, F3
 - Files: bot/main.py
@@ -217,6 +240,41 @@ All changes go through a pull request that Gurpreet merges (D27).
 - Files: api/core/speak.py, bot/main.py (Siddeshwar); api/main.py, api/core/config.py, api/core/fallback.py (Gurpreet)
 - Done when: With lang bn or mr, the same check returns the MP3 in that language (bn-IN-TanishaaNeural, mr-IN-AarohiNeural), numbers match the card; a native speaker approved each sentence. Templates in docs/PLAN.md. Last; only after the 7:30 gate
 
+### D8 · Bengali/Marathi listening (voice notes in those languages)
+- Status: todo (Siddeshwar)
+- Type: Stretch
+- Depends on: D6, D7
+- Files: bot/main.py, api/core/speak.py (Siddeshwar); a small change in fallback.py / extract.py only with Gurpreet's OK
+- Done when: a Bengali and a Marathi voice note with /bhasha set give the right numbers on the card
+
+### D9 · Bot tidy: one short line on a network blip
+- Status: todo (Siddeshwar)
+- Type: Stretch
+- Depends on: D1
+- Files: bot/main.py
+- Done when: a dropped Telegram connection logs one line ("network blip, retrying"), not a traceback, and the bot keeps working
+
+### D10 · Cached answers say "pehle se jaancha hua" instead of "0.0 sec"
+- Status: todo (Siddeshwar)
+- Type: Stretch
+- Depends on: A4
+- Files: bot/main.py
+- Done when: a result with cached: true shows "⏱ pehle se jaancha hua" on the card
+
+### D11 · Card text in Bengali/Marathi too
+- Status: todo (Siddeshwar)
+- Type: Stretch of stretch
+- Depends on: D7
+- Files: bot/main.py
+- Done when: with /bhasha bn or mr the card labels are in that language (native-speaker OK first)
+
+### D12 · WhatsApp via Twilio sandbox (D39)
+- Status: todo (Siddeshwar)
+- Type: Stretch of stretch
+- Depends on: every Must and Stretch task passed
+- Files: a new bot/whatsapp.py (Siddeshwar); reuses POST /api/checks
+- Done when: a photo sent to the Twilio sandbox number gets the card text and the MP3; Telegram stays the main demo; stop at 3:30 AM even if unfinished
+
 ## E. Helper web app
 
 ### E1 · Vite + Tailwind + shadcn setup, colour tokens for light and dark, 4 empty routes
@@ -227,35 +285,35 @@ All changes go through a pull request that Gurpreet merges (D27).
 - Done when: All routes open; tokens exist for both themes
 
 ### E2 · The Raju card component
-- Status: todo
+- Status: todo (Tejaswini)
 - Type: Must
 - Depends on: E1
 - Files: web/src/components/RajuCard.tsx
 - Done when: Renders the sample `CheckResult` correctly on a phone-width screen, including grey "couldn't verify" state
 
 ### E3 · `/check` with helper details and manual entry
-- Status: todo
+- Status: todo (Tejaswini)
 - Type: Must
 - Depends on: E2, A2
 - Files: web/src/pages/Check.tsx
 - Done when: A photo uploaded from a phone returns the card; details table matches the API
 
 ### E4 · `/cases` list
-- Status: todo
+- Status: todo (Tejaswini)
 - Type: Must
 - Depends on: E1, F2
 - Files: web/src/pages/Cases.tsx
 - Done when: Shows cases with route badge and day counter
 
 ### E5 · `/cases/:id` detail: timeline, rule badges, log dialog, PDF button, complaint draft, verify line
-- Status: todo
+- Status: todo (Tejaswini)
 - Type: Must
 - Depends on: E4, F3
 - Files: web/src/pages/CaseDetail.tsx
 - Done when: A new event appears without a page reload; PDF downloads; verify shows ✓
 
 ### E6 · Manifest so the app can be added to a home screen
-- Status: todo
+- Status: todo (Tejaswini)
 - Type: Must
 - Depends on: E1
 - Files: web/public/manifest.json, icons
@@ -263,21 +321,21 @@ All changes go through a pull request that Gurpreet merges (D27).
 - Note: moved into tonight's PWA work (D27). Also allowed: web/index.html (manifest link, theme-color, apple-touch-icon, viewport-fit). Added done when: "Add to home screen" in Chrome on a phone opens /check without the browser bar.
 
 ### E7 · Raju mode (details hidden, big camera and play buttons)
-- Status: todo
+- Status: todo (Tejaswini, stretch)
 - Type: Stretch (first stretch)
 - Depends on: E3
 - Files: web/src/pages/Check.tsx
 - Done when: A person can complete a check without reading a word
 
 ### E8 · Phone-width, empty-state and error-state pass
-- Status: todo
+- Status: todo (Tejaswini)
 - Type: Must
 - Depends on: E3, E4, E5
 - Files: web/src/
 - Done when: Every page looks right at 400 px wide, with no data and with the server off
 
 ### E9 · `/check`: text box, audio player, loading / error / not-a-loan states
-- Status: todo
+- Status: todo (Tejaswini)
 - Type: Must
 - Depends on: E2
 - Files: web/src/pages/Check.tsx, web/src/lib/api.ts
@@ -287,35 +345,35 @@ All changes go through a pull request that Gurpreet merges (D27).
 ## F. Evidence and harassment
 
 ### F1 · `harass.py`: rules H1–H6, text labelling with keyword backup
-- Status: todo
+- Status: todo (Siddeshwar)
 - Type: Must
 - Depends on: A4
 - Files: api/core/harass.py, api/tests/test_harass.py
 - Done when: The 10 samples get exactly the expected rules; the polite 11 AM reminder matches none
 
 ### F2 · Events endpoint with hash chain
-- Status: todo
+- Status: todo (Gurpreet)
 - Type: Must
 - Depends on: A3, F1
 - Files: api/main.py, api/core/db.py
 - Done when: Each event stores its hash and the previous hash
 
 ### F3 · `evidence.py`: PDF with timeline, rules, hashes, masking, complaint draft
-- Status: todo
+- Status: todo (Siddeshwar)
 - Type: Must
 - Depends on: F2
 - Files: api/core/evidence.py
 - Done when: A forwarded message becomes a PDF in under 60 seconds; a 12-digit number is masked
 
 ### F4 · Verify endpoint
-- Status: todo
+- Status: todo (Gurpreet)
 - Type: Must
 - Depends on: F2
 - Files: api/main.py
 - Done when: Editing one stored entry by hand makes verify fail
 
 ### F5 · Route chooser and day counter
-- Status: todo
+- Status: todo (Gurpreet)
 - Type: Must
 - Depends on: C1, F2
 - Files: api/core/next_step.py
@@ -324,28 +382,28 @@ All changes go through a pull request that Gurpreet merges (D27).
 ## G. Testing and data
 
 ### G1 · 30 synthetic offers with expected answers (before the event)
-- Status: todo
+- Status: todo (Anam; 3 ads so far)
 - Type: Must
 - Depends on: -
 - Files: api/data/offers/
 - Done when: Images and an answers file exist; answers were written before any run
 
 ### G2 · 10 harassment samples with expected rules (before the event)
-- Status: todo
+- Status: todo (Anam)
 - Type: Must
 - Depends on: -
 - Files: api/data/harassment/
 - Done when: File exists
 
 ### G3 · 3 demo ads printed in colour, two copies each (before the event)
-- Status: todo
+- Status: review (Anam): ai_ad1-3.png + demo_expected.json merged (#19); printing still to do
 - Type: Must
 - Depends on: G1
 - Files: (paper)
 - Done when: In the folder
 
 ### G4 · RBI directory saved as CSV with its date (before the event)
-- Status: todo
+- Status: todo (Anam; with a website column, D37)
 - Type: Must
 - Depends on: -
 - Files: api/data/rbi_dla.csv
@@ -359,21 +417,21 @@ All changes go through a pull request that Gurpreet merges (D27).
 - Done when: Every must-task above is checked by someone who did not build it
 
 ### G6 · Full 30-offer run, paced
-- Status: todo
+- Status: todo (Gurpreet)
 - Type: Must
 - Depends on: B1–B7, C1, G1
 - Files: api/tests/run_offers.py, results file
 - Done when: Results table filled; K (wrong numbers shown as verified) is known
 
 ### G7 · Kill-switch drill at 1:00 AM
-- Status: todo
+- Status: todo (Gurpreet)
 - Type: Must
 - Depends on: A4, D3
 - Files: (no code)
 - Done when: All four drills in section 13 pass
 
 ### G8 · 5 SMS-style text offers with expected numbers
-- Status: todo
+- Status: doing (Anam): 3 SMS merged (#19, scam2/scam3 fixed to D36); 2 more to add
 - Type: Must
 - Depends on: -
 - Files: api/data/offers/sms_offers.json
@@ -383,21 +441,21 @@ All changes go through a pull request that Gurpreet merges (D27).
 ## H. Landing page
 
 ### H1 · Split hero with the real card in a phone frame; top bar with theme toggle
-- Status: todo
+- Status: todo (Tejaswini, stretch)
 - Type: Stretch
 - Depends on: E2
 - Files: web/src/pages/Landing.tsx
 - Done when: Looks right in light and dark, on phone and laptop
 
 ### H2 · Live numbers from `/api/stats`
-- Status: todo
+- Status: todo (Tejaswini, stretch)
 - Type: Stretch
 - Depends on: A5, H1
 - Files: web/src/pages/Landing.tsx
 - Done when: Numbers change after a new check
 
 ### H3 · Story, how it works, who it helps, limits, footer
-- Status: todo
+- Status: todo (Tejaswini, stretch)
 - Type: Stretch
 - Depends on: H1
 - Files: web/src/pages/Landing.tsx
@@ -406,42 +464,42 @@ All changes go through a pull request that Gurpreet merges (D27).
 ## I. Pitch and demo
 
 ### I1 · Mentor questions for both rounds
-- Status: todo
+- Status: doing (Anam): round 1 done at the 7:30 PM review
 - Type: Must
 - Depends on: -
 - Files: (notes)
 - Done when: 3 risky questions written before each round
 
 ### I2 · Deck in the framework order (section 14)
-- Status: todo
+- Status: todo (Anam + Gurpreet)
 - Type: Must
 - Depends on: G6 for the numbers
 - Files: (deck)
 - Done when: 8–9 slides, real numbers filled in after the test run
 
 ### I3 · Backup video
-- Status: todo
+- Status: todo (Anam; full video by 3:00 AM)
 - Type: Must
 - Depends on: D3
 - Files: (video)
 - Done when: A 60-second clip at 7:30 PM; a full run at 3:00 AM
 
 ### I4 · Roadmap-vs-actual slide
-- Status: todo
+- Status: todo (Anam + Gurpreet)
 - Type: Must
 - Depends on: -
 - Files: (deck)
 - Done when: Deck's 5 blocks beside real commit times
 
 ### I5 · README
-- Status: todo
+- Status: todo (Gurpreet)
 - Type: Must
 - Depends on: -
 - Files: README.md
 - Done when: What it is, how to run it, test results, limits, credits for libraries and APIs
 
 ### I6 · Three timed rehearsals
-- Status: todo
+- Status: todo (everyone)
 - Type: Must
 - Depends on: I2
 - Files: (no code)

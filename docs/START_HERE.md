@@ -81,7 +81,7 @@ Start the API first. You only need the parts your task touches (web-only work = 
 - http://localhost:8000/api/health shows `"api":"up"` and your keys as `true`
 - Send a loan ad photo or paste a loan SMS to your bot in Telegram: the ₹ card comes back, then a Hindi MP3
 - Send something that is not a loan: a polite Hindi "Yeh loan ka offer nahi lagta" and no card
-- Tests: `.venv\Scripts\python -m pytest -q` (152 passed on main at 6:30 PM, 13 Nov)
+- Tests: `.venv\Scripts\python -m pytest -q` (266 passed on main at 9:00 PM, 13 Nov)
 
 Checks are **real** since 6:00 PM, 13 Nov (photo/text -> AI reads -> Python maths -> verdict -> Hindi voice). Still sample data: cases, events, evidence PDF, verify. The `/check` page still shows the old placeholder until the PWA work (E2, E3, E9) is merged. Results are kept in memory, so they disappear when the API restarts (database: task A3).
 

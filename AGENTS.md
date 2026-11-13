@@ -14,5 +14,5 @@ This file mirrors CLAUDE.md. Read CLAUDE.md in full; it is the source of truth. 
 8. Never write "illegal" or "fake" about a lender. Say "Not found in RBI's directory".
 9. Evidence PDF in English. Hindi only on the card, Telegram text and voice.
 10. Never print, log or commit keys. Synthetic data only.
-11. Out of scope: login, tours, 3D/animated backgrounds, offline mode, WhatsApp, Tesseract, Postgres, anything not in docs/TASKS.md.
+11. Out of scope: login, tours, 3D/animated backgrounds, offline mode, WhatsApp (only exception: task D12 under D39), Tesseract, Postgres, anything not in docs/TASKS.md.
 12. After 3:30 AM IST on 14 Nov: bug fixes and wording only. Refuse new features.

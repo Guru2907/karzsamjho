@@ -173,7 +173,7 @@ Do NOT use gemini-3.8-flash or Gemma (503 errors and 20 requests/day on the free
 - UI: shadcn/ui + lucide-react only. Raju mode: buttons >= 56 px, numbers 36-48 px, colour + icon together, no animation libraries. The Raju card is ONE component reused everywhere.
 
 ## Out of scope (do not build, do not suggest)
-Login/accounts, guided tours, Bhashini, 3D or animated backgrounds, scroll libraries, offline mode/service worker, WhatsApp, Tesseract, local Whisper, a second AI reading on every photo, Postgres/Supabase, any feature not in docs/TASKS.md.
+Login/accounts, guided tours, Bhashini, 3D or animated backgrounds, scroll libraries, offline mode/service worker, WhatsApp (only exception: task D12 under D39, stretch of stretch), Tesseract, local Whisper, a second AI reading on every photo, Postgres/Supabase, any feature not in docs/TASKS.md.
 
 ## Gates and freeze (IST)
 - 13 Nov 2:00 PM: photo in Telegram gets a reply; card page shows sample data.

@@ -28,6 +28,13 @@ Every agent session and every person adds an entry here at the end of each task,
 - Status in docs/TASKS.md: A5 = review
 - Next: B11 (Gemini backup for SMS and voice).
 - Broken / risks: built on #26 (A3): merge after it.
+### 13 Nov 2026, 11:55 PM · F2 cases, events, hash chain · agent for Gurpreet
+- Did: /api/cases, /api/cases/{id} and POST /api/cases/{id}/events are real (A3 database, sample data removed). Each event: time normalised to IST, rules from Siddeshwar's harass.label (calls that day INCLUDING this one, for H6), hash = SHA-256(prev_hash + compact sorted JSON of at/channel/contacted/text/rules), first prev_hash = 64 zeros; one lock so the chain never forks. If harass.label is missing or fails, the event is still stored with no rules. Day counter (day 1 = opening day, IST). `event_hash` is shared with F4.
+- Files: api/main.py, api/tests/test_cases.py (new), api/tests/test_smoke.py, docs/ARCHITECTURE.md, TASKS.md
+- Proof: `pytest -q` 283 passed (9 new); with Siddeshwar's F1 (#27) merged in a throwaway copy: 328 passed. Real run with F1 + real AI: night threat -> H1 H2; message to the son -> H3; polite 11:30 AM reminder -> none; 5th call in a day -> H6; API restarted -> 8 events, every link and every hash recomputes.
+- Status in docs/TASKS.md: F2 = review
+- Next: B9b, then C1. Siddeshwar's F3 (PDF) and D5 (bot) can now build on these routes.
+- Broken / risks: verify (F4) still answers ok=true for everything until F4. Merge order: #26 (A3) -> #27 (F1) -> this.
 
 ### 13 Nov 2026, 11:45 PM · A3 SQLite database · agent for Gurpreet
 - Did: db.py stores checks, cases and events in SQLite (DB_PATH, *.db not committed); one short connection per call; helpers for F2: last_event_hash (chain start = 64 zeros) and calls_on (H6). main.py writes every check to the database (cache hits never overwrite the first answer), reads /api/checks, /api/checks/{id} and /api/stats from it, keeps CHECKS only as a fast in-memory copy, and never reuses a check id after a restart. Every test now gets its own temp database (conftest.py). /api/cases is still sample data until F2.

@@ -354,7 +354,7 @@ All changes go through a pull request that Gurpreet merges (D27).
 - Done when: The 10 samples get exactly the expected rules; the polite 11 AM reminder matches none
 
 ### F2 · Events endpoint with hash chain
-- Status: todo (Gurpreet)
+- Status: review (Gurpreet): real cases/events, hash chain, rules from F1, day counter; chain proven across a restart (11:52 PM)
 - Type: Must
 - Depends on: A3, F1
 - Files: api/main.py, api/core/db.py

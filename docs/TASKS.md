@@ -303,14 +303,14 @@ All changes go through a pull request that Gurpreet merges (D27).
 - Done when: All routes open; tokens exist for both themes
 
 ### E2 · The Raju card component
-- Status: todo (Tejaswini)
+- Status: review (Tejaswini)
 - Type: Must
 - Depends on: E1
 - Files: web/src/components/RajuCard.tsx
 - Done when: Renders the sample `CheckResult` correctly on a phone-width screen, including grey "couldn't verify" state
 
 ### E3 · `/check` with helper details and manual entry
-- Status: todo (Tejaswini)
+- Status: review (Tejaswini)
 - Type: Must
 - Depends on: E2, A2
 - Files: web/src/pages/Check.tsx
@@ -339,7 +339,7 @@ All changes go through a pull request that Gurpreet merges (D27).
 - Note: moved into tonight's PWA work (D27). Also allowed: web/index.html (manifest link, theme-color, apple-touch-icon, viewport-fit). Added done when: "Add to home screen" in Chrome on a phone opens /check without the browser bar.
 
 ### E7 · Raju mode (details hidden, big camera and play buttons)
-- Status: todo (Tejaswini, stretch)
+- Status: review (Tejaswini)
 - Type: Stretch (first stretch)
 - Depends on: E3
 - Files: web/src/pages/Check.tsx
@@ -353,7 +353,7 @@ All changes go through a pull request that Gurpreet merges (D27).
 - Done when: Every page looks right at 400 px wide, with no data and with the server off
 
 ### E9 · `/check`: text box, audio player, loading / error / not-a-loan states
-- Status: todo (Tejaswini)
+- Status: review (Tejaswini)
 - Type: Must
 - Depends on: E2
 - Files: web/src/pages/Check.tsx, web/src/lib/api.ts

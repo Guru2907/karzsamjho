@@ -32,7 +32,8 @@ Stage roles (to be assigned): presenter · phone · laptop · technical answers.
 ## Demo assets checklist
 - [ ] 3 printed ads (2 copies each), pre-run and cached on the server
 - [ ] Threat message ready to forward on the phone
-- [ ] Browser tabs open in order: /check (helper view), /cases/:id
+- [x] Browser tabs open in order: /check (helper view, photo/SMS -> card + voice; Easy mode ?mode=raju), /cases/:id
+- [x] /check step: photo or SMS -> Raju card + voice player; Easy mode (?mode=raju) gives Raju the single giant camera button, colour + icons and auto-playing voice; "Share with helper" sends receipt
 - [ ] Backup video: 60 s clip (7:30 PM) and full run (3:00 AM)
 - [ ] Final numbers filled from docs/TESTING.md
 - [ ] Speaker paired, phone at 100%, hotspot ready

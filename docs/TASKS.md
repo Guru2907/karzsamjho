@@ -65,14 +65,14 @@ Type: M = must build. S = stretch, only after the 7:30 PM gate on 13 Nov has pas
 - Done when: A pasted SMS offer returns fields
 
 ### B3 · `maths.py` + unit tests
-- Status: todo
+- Status: review
 - Type: Must
 - Depends on: A1
 - Files: api/core/maths.py, api/tests/test_maths.py
 - Done when: 12 tests pass: normal, fee upfront, EMI, missing field, mismatch, zero days
 
 ### B4 · Cross-check and fill gaps
-- Status: todo
+- Status: review
 - Type: Must
 - Depends on: B3
 - Files: api/core/maths.py, api/tests/test_maths.py

@@ -21,6 +21,14 @@ Every agent session and every person adds an entry here at the end of each task,
 
 ## Log
 
+### 13 Nov 2026, 5:00 PM · B3 B4 · agent for Siddeshwar
+- Did: rupee maths in plain Python. cross_check flags contradictions (within Rs 1), fill_gaps builds in_hand / repay_total / tenure_days with a status each, compute adds extra, per_day and apr_simple (a percentage).
+- Files: api/core/maths.py, api/tests/test_maths.py, docs/TASKS.md, docs/DECISIONS.md
+- Proof: `pytest -q` 20 passed (14 new maths tests + 6 smoke). 5000 - 1200 fee -> in_hand 3800 derived; 7 days -> extra 1200, per_day 171, apr_simple 1647.
+- Status in docs/TASKS.md: B3, B4 = review
+- Next: B5 verdict.py, then D2 speak.py. Lead: call cross_check(fields) in extract.py to trigger the second reading, then compute(fill_gaps(fields)) for CheckResult["numbers"].
+- Broken / risks: see D25. An ad with no fee and no in-hand amount gives in_hand "unverified" (so CANNOT_SAY); lead, please confirm. maths.py is not called by api/main.py yet, so replies are still sample data.
+
 ### 13 Nov 2026, 3:10 PM · 2:00 PM gate · agent for lead
 - Did: logged the lead's gate test and the work split (D24). Docs only, no product code.
 - Files: docs/PROGRESS.md, docs/DECISIONS.md

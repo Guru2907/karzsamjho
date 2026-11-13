@@ -2,6 +2,163 @@
 
 This replaces the earlier split. Decision D25 in docs/DECISIONS.md. If this file and the code disagree, trust the code and fix this file.
 
+
+## Night plan: from 9:00 PM, 13 Nov (D37, D38, D39)
+
+The 7:30 PM review passed. This section replaces the earlier splits for everything still open. **Nobody edits a file outside their own list.** Hard limits: **12:30 AM** all 4 core features pass · **1:00 AM** kill-switch drill · **3:30 AM** feature freeze · **9:00 AM** submission.
+
+### Mentor feedback (7:30 PM review, D37)
+1. Cross-check the lender: is the app/bank in **RBI's directory**? Use the name **and** the website/link in the message or ad.
+2. Raju cannot read, so the lender result must be **spoken**, not only shown on the card.
+3. Wording: "found in RBI's list, linked to <bank>" / "not found in RBI's list" + the list date. **Never "safe", "unsafe", "illegal" or "fake".**
+
+### Who owns which files
+| Person | Only these files |
+|---|---|
+| **Gurpreet** (Claude Code) | `api/main.py`, `api/core/schemas.py`, `config.py`, `fallback.py`, `cache.py`, `db.py`, `lender.py`, `next_step.py`, `extract.py`, their tests, `docs/`, `README.md` |
+| **Siddeshwar** (Claude Code) | `bot/main.py`, `api/core/speak.py`, `harass.py`, `evidence.py`, `maths.py`, `verdict.py`, their tests |
+| **Tejaswini** (Antigravity, web) | `web/src/`, `web/public/`, `web/index.html` |
+| **Anam** (Antigravity, data) | `api/data/` |
+
+Everyone may add their own entry to `docs/PROGRESS.md` and set their own task status in `docs/TASKS.md`.
+
+### Tasks by group (M = must, S = stretch, SS = stretch of stretch)
+| Group | Task | Type | Owner | Needs | Target |
+|---|---|---|---|---|---|
+| A | A3 database (checks, cases, events survive a restart) | M | Gurpreet | none | 10:00 PM |
+| A | A5 health: engines up/down; stats from the database | M | Gurpreet | A3 | 11:45 PM |
+| A | Cache repeated SMS text | SS | Gurpreet | none | after freeze-safe |
+| B | B9b scam code rule in Devanagari Hindi / Bengali / Marathi words | M | Gurpreet | none | 9:20 PM |
+| B | B11 Gemini backup for SMS + voice when Groq is down | M | Gurpreet | none | before 1:00 AM |
+| B | Regex backup that knows Bengali/Marathi words | SS | Gurpreet | none | if time |
+| C | C1 lender match: name + website domain -> FOUND / SIMILAR / NOT_FOUND + list date 🎓 | M | Gurpreet | G4 | 10:30 PM |
+| C | C2 one next step per verdict + lender match (advance-fee warning still wins) | M | Gurpreet | C1 | 11:00 PM |
+| C | **C4 speak the lender result** (fixed sentence, hi/bn/mr) 🎓 | M | Siddeshwar | C1 shape | 11:00 PM |
+| C | C3 NBFC list as a second source | S | Gurpreet | C1 | if time |
+| D | D5 bot: forwarded message -> case event -> PDF back | M | Siddeshwar | F2, F3 | 12:15 AM |
+| D | D8 Bengali/Marathi listening (voice notes in those languages) | S | Siddeshwar | none | after 12:30 |
+| D | D9 bot tidy: one short line instead of a traceback on a network blip | S | Siddeshwar | none | after 12:30 |
+| D | D10 cached ads show "⏱ 0.0 sec": wording ("pehle se jaancha hua") | S | Siddeshwar | none | after 12:30 |
+| D | D11 card text in Bengali/Marathi too | SS | Siddeshwar | D7 | if time |
+| D | D12 WhatsApp via Twilio (D39 conditions) | SS | Siddeshwar | everything else | if time, before 3:30 |
+| E | E2 Raju card · E3 + E9 /check (photo, SMS, audio, states) | M | Tejaswini | none | 10:00 PM |
+| E | E6 home-screen app (manifest, icons) | M | Tejaswini | E3 | 10:30 PM |
+| E | E4 /cases · E5 /cases/:id (timeline, rules, PDF, verify) | M | Tejaswini | F2 shape | 12:00 AM |
+| E | E8 phone-width, empty and error states everywhere | M | Tejaswini | E2-E5 | 12:15 AM |
+| E | E7 Raju mode | S | Tejaswini | E3 | after 12:30 |
+| F | F1 harassment rules H1-H6 | M | Siddeshwar | none | 10:00 PM |
+| F | F2 events + hash chain (real /api/cases) | M | Gurpreet | A3, F1 | 11:00 PM |
+| F | F3 evidence PDF (English, masking, complaint draft) | M | Siddeshwar | F2 | 11:45 PM |
+| F | F4 verify endpoint | M | Gurpreet | F2 | 11:30 PM |
+| F | F5 complaint route + "Day N of 30" | M | Gurpreet | C1, F2 | 12:00 AM |
+| G | G4 RBI directory CSV **with a website column** 🎓 | M | Anam | none | **9:30 PM** |
+| G | G2 10 harassment samples | M | Anam | none | 10:30 PM |
+| G | G8 two more SMS offers (5 in total) | M | Anam | none | 10:45 PM |
+| G | G3 print the 3 demo ads, 2 copies each | M | Anam | none | 11:00 PM |
+| G | G1 30 test offers | M | Anam | none | 11:30 PM |
+| G | G5 independent checks | M | everyone | each task | ongoing |
+| G | G6 30-offer run, find K | M | Gurpreet | G1 | 12:30 AM |
+| G | G7 kill-switch drill | M | Gurpreet | B11, E3 | 1:00 AM |
+| H | H1-H3 landing page | S | Tejaswini | E2 | after 12:30 |
+| I | I1 mentor questions (round 2) · I3 backup video (3:00 AM) | M | Anam | - | 3:00 AM |
+| I | I2 deck · I4 roadmap slide | M | Anam + Gurpreet | G6 | 4:00 AM |
+| I | I5 README | M | Gurpreet | G6 | 5:00 AM |
+| I | I6 three timed rehearsals | M | everyone | I2 | 6-8 AM |
+
+Critical path: **A3 -> F2 -> F3 + F4 -> D5** (feature 4) and **G4 -> C1 -> C2 + C4 + F5** (feature 3).
+
+### New agreed signatures (night)
+```python
+# api/core/lender.py (Gurpreet), C1
+def match_lender(name: str | None, text: str | None = None) -> dict
+    # name = app_name or lender_name read from the ad; text = the SMS / ad text (for links)
+    # -> {"name_read", "match": "FOUND"|"SIMILAR"|"NOT_FOUND", "score", "closest", "list_date"}
+    #    closest = "<app> (<regulated entity>)" for FOUND/SIMILAR; this fills CheckResult.lender
+
+# api/core/speak.py (Siddeshwar), C4
+def lender_sentence(lender: dict, lang: str = "hi") -> str | None
+    # fixed sentence from lender["match"], lender["closest"], lender["list_date"]; None when match is null
+    # hi FOUND:     "Yeh app RBI ki list mein hai, {closest} se juda hai."
+    # hi SIMILAR:   "RBI ki list mein milta-julta naam hai: {closest}. Sahi naam check karo."
+    # hi NOT_FOUND: "Yeh app RBI ki list mein nahi mila."
+    # bn / mr versions need the native-speaker OK (D32). Never "safe", "illegal" or "fake".
+    # main.py (Gurpreet) adds it after the numbers sentence.
+
+# api/core/db.py (Gurpreet), A3 + F2: used only by main.py
+# api/core/harass.py label(event, calls_that_day) and evidence.py build_pdf(case): unchanged from "After the review"
+```
+
+### Prompt for Gurpreet (Claude Code)
+```
+I am Gurpreet, the lead. Read CLAUDE.md, docs/PLAN.md section "Night plan", docs/PROGRESS.md (top) and docs/DECISIONS.md D36 to D39. Follow "How to report while working" and my workflow: before each task say "We are doing <task>", one branch + one PR per task, I merge; no Claude co-author line. The API runs from this folder with --reload, so build in a separate git worktree and never restart my running servers.
+My tasks, in order: B9b, A3, C1 (name + website domain, D37 wording), C2, F2, F4, F5, A5, B11, then G6, G7, G5 checks, I5.
+Only my files (Night plan table). Tests for everything; a real run for each feature; update TASKS, PROGRESS, DECISIONS, DEMO in the same PR.
+```
+
+### Prompt for Siddeshwar (Claude Code)
+```
+I am Siddeshwar. Read AGENTS.md, CLAUDE.md, docs/PLAN.md sections "After the review" and "Night plan", docs/PROGRESS.md (top) and docs/DECISIONS.md D32 to D39. Follow "How to report while working" in CLAUDE.md.
+
+FILES I MAY EDIT: bot/main.py, api/core/speak.py, api/core/harass.py, api/core/evidence.py, api/core/maths.py, api/core/verdict.py, their tests in api/tests/, my PROGRESS entry and my task statuses. Nothing else; Gurpreet owns main.py, db.py, lender.py, next_step.py, extract.py, fallback.py, config.py, schemas.py.
+
+WORKFLOW: one task at a time; say "We are doing <task>"; pytest -q (show output); pull main; branch; commit "<area>: <what changed>"; push; gh pr create; gh pr checks. Never push to main, never merge. No Claude co-author line. Tell Gurpreet when a PR is ready.
+
+MUST (by 12:30 AM), in this order:
+1. F1 harass.py: label(event, calls_that_day) as in docs/PLAN.md "After the review". H1 before 08:00 or after 19:00 (hours from config); H6 calls_that_day >= config h6_calls_per_day ("our threshold"); H2-H5 with fallback.read_text (temperature 0 JSON, check= a parser) and a Hinglish + English keyword backup. Tests with hand-written samples; the polite 11 AM reminder gets [].
+2. C4 speak.py: lender_sentence(lender, lang) exactly as in "Night plan > New agreed signatures". Fixed sentences only; never "safe", "illegal" or "fake". Hindi now; bn/mr drafts marked for the native-speaker OK. Tests for FOUND / SIMILAR / NOT_FOUND / null.
+3. F3 evidence.py: mask() and build_pdf(case), ENGLISH only. Timeline, rules with their basis (RBI circular on recovery agents, 12 Aug 2022), hashes, masked 12-digit numbers ("XXXX XXXX 1234"), complaint draft, route, "Day N of 30". Tests: masked; PDF starts with %PDF.
+4. D5 bot: a forwarded message (or a message after /log) -> POST /api/cases once per chat (remember the id) -> POST /api/cases/{id}/events (at = original message time, channel "telegram", contacted "borrower", text) -> GET /api/cases/{id}/evidence.pdf -> reply_document. Hindi messages only.
+
+STRETCH (only after the 12:30 AM gate passes):
+5. D9 bot tidy: register an error handler; a network blip logs one line ("network blip, retrying"), not a traceback.
+6. D10 cached results (cached: true) show "⏱ pehle se jaancha hua" instead of "0.0 sec".
+7. D8 Bengali/Marathi listening: Whisper language from the chat's /bhasha choice (needs a tiny fallback.py/extract.py change: ask Gurpreet first), plus bn/mr number words in the digits step.
+
+STRETCH OF STRETCH (only if everything above is done, and before 3:30 AM):
+8. D11 card text in Bengali/Marathi (native-speaker OK first).
+9. D12 WhatsApp via Twilio sandbox, under D39: a separate entry point that reuses POST /api/checks; needs a public tunnel; never replaces Telegram; stop at 3:30 AM even if unfinished.
+```
+
+### Prompt for Tejaswini (Antigravity, web)
+```
+I am Tejaswini, building the KarzSamjho web app. Read AGENTS.md, CLAUDE.md and docs/PLAN.md section "Night plan" first; read the old "For the PWA teammate" prompt in docs/PLAN.md for the details of the Raju card and /check.
+
+FILES I MAY EDIT: only web/src/, web/public/, web/index.html. No new npm packages, no animation libraries, no service worker, no login.
+
+RUN: in web/: npm ci, npm run dev; open http://localhost:5173/check. The API must run on port 8000 (Gurpreet runs it, or .\scripts\run_api.bat). The API is REAL now: a photo or SMS returns a real CheckResult (shape in CLAUDE.md).
+
+WHAT THE API RETURNS NOW (build for these):
+- lender.match is null until the lender check lands (~10:30 PM), then "FOUND" | "SIMILAR" | "NOT_FOUND" with closest and list_date. Show: "RBI ki list mein mila: <closest> (list: <date>)" / "milta-julta naam: <closest>, sahi naam check karo" / "RBI ki list mein nahi mila (list: <date>)". Hide the line when null. Never write "safe", "illegal" or "fake".
+- next_step.code "DO_NOT_PAY_FIRST" = an advance-fee scam: show next_step.text_hi in a big red warning box with an alert icon at the TOP of the card.
+- engines.listen may be "whisper" (voice note). lang may be sent as "hi" | "bn" | "mr" (a small language picker: Hindi / বাংলা / मराठी; the card stays Hinglish, only the voice changes).
+- No card -> status 422 {"detail": {"code": "NOT_A_LOAN" | "UNREADABLE", "text_hi": "..."}}: show text_hi as it is. Never show a code.
+- cached: true -> "pehle se jaancha hua" instead of the seconds.
+- /api/cases and /api/cases/{id} are sample data until ~11 PM, then real with the SAME shape; the PDF is /api/cases/{id}/evidence.pdf; verify is /api/cases/{id}/verify -> {"ok": true|false}.
+
+ORDER (one pull request each; tell Gurpreet):
+1. by 10:00 PM: E2 RajuCard.tsx + E3/E9 /check (photo upload with camera, SMS box, audio player, loading "Padh rahe hain...", errors in Hindi, the red scam box, lender line).
+2. by 10:30 PM: E6 manifest.json + 192/512 icons + apple-touch-icon; index.html manifest link, theme-color, viewport-fit=cover.
+3. by 12:00 AM: E4 /cases (list, route badge, "Day N of 30") and E5 /cases/:id (timeline, rule badges H1-H6, add-event dialog, PDF button, verify line ✓/✗). Build on the sample data now; it turns real without code changes.
+4. by 12:15 AM: E8 every page right at 400 px, with no data, and with the server off.
+STRETCH after 12:30 AM: E7 Raju mode; then H1-H3 landing page.
+
+BEFORE EACH PR: in web/ run npm run build (no errors); look at 400 px and laptop width, light and dark. Commit with MY git email (the one on my GitHub account) so I show as a contributor. Push a branch, open a pull request, never merge.
+```
+
+### Prompt for Anam (Antigravity, data)
+```
+I am Anam, doing the KarzSamjho test data. Read only AGENTS.md, api/data/README.md and docs/PLAN.md section "Night plan". Do not read other files. You may create or edit ONLY files inside api/data/. Never calculate an expected number yourself: I confirm the numbers; a small Python script does in_hand / extra. Synthetic data only; no real people, phone numbers, links, UPI ids or account numbers. Do not run git push without showing me the files first.
+
+1. G4 FIRST (needed by 9:30 PM for the lender check): RBI's public directory of digital lending apps (search rbi.org.in for "digital lending apps"). Save api/data/rbi_dla.csv with the header dla_name,regulated_entity,website,list_date (website = the app's website or Play Store link if the list has it, else empty; list_date = the list's date as YYYY-MM-DD in every row). Write the source URL and download date in api/data/README.md. If the full list cannot be fetched, copy at least 30 real rows and say it is partial. PR: "data: RBI digital lending apps directory".
+2. G2 by 10:30 PM: api/data/harassment/samples.json, 10 items {"id", "at" (ISO time +05:30), "channel" (call|sms|whatsapp|telegram|visit), "contacted" (borrower|family|employer|contacts), "text", "expected_rules"}. Cover H1 to H6 at least once (H6 = 5 calls on one date); one polite 11 AM reminder with no rule; one with a made-up 12-digit number. Show me each sample and its rules before writing; I confirm.
+3. G8 by 10:45 PM: add 2 more SMS offers to api/data/offers/sms_offers.json (one Hinglish EMI offer, one with "5 lakh" written in words), same shape incl. "pay_first". I confirm the numbers.
+4. G3 by 11:00 PM: print ai_ad1/2/3.png in colour, 2 copies each, and hand them to Gurpreet (no code).
+5. G1 by 11:30 PM: more test offers (aim 30 in total) in api/data/offers/ with answers.json, covering: fee upfront, plain, EMI with/without total, in-hand printed, days missing, contradicting, blurry photo, not a loan, weekly wording, "lakh", advance-fee scam. Expected numbers confirmed by me.
+6. I1 / I3: 3 mentor questions for round 2; screen-record the full demo as the backup video by 3:00 AM (keep it on your laptop, do not commit it).
+
+For each step: git checkout main; git pull; git checkout -b data/<short-name>; make the files; show me; I say ok; git add api/data/; git commit (with my GitHub email so I am a contributor); git push -u origin data/<short-name>; gh pr create (or give me the link). Never merge.
+```
+
 ## Status at 6:30 PM
 
 - **Backend + bot: done and merged** (PRs #1 to #11). Photo or SMS in Telegram -> card + Hindi MP3, with the second reading. 152 tests pass on main.

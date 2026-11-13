@@ -3,9 +3,9 @@
 Every agent session and every person adds an entry here at the end of each task, before committing. Never delete or edit someone else's entry. Keep each entry under 12 lines.
 
 ## Current status (update this block when a gate passes or the plan changes)
-- Now (6:30 PM): backend + bot for the review are merged on main (PRs #1 to #11; 152 tests pass): photo or pasted SMS in Telegram -> card + Hindi MP3, second reading on a mismatch. Waiting for: the web /check page (PWA teammate, no PR yet) and the printed ads + SMS offers (data teammate, nothing in api/data yet). Next: real Telegram test on the server laptop, then the 7:00 PM rehearsal. Harassment, lender, database and cache come after the review.
-- Gates: 2:00 PM [x] · 7:30 PM [ ] · 12:30 AM [ ] · 3:30 AM freeze [ ]
-- Known broken: none in code. Missing for 7:30: printed ads, web /check page, a real Telegram run. Results vanish on API restart (no database yet).
+- Now (9:00 PM): the 7:30 PM review passed. On main (23 PRs, 266 tests): photo / SMS / Hindi voice note -> card + voice in hi / bn / mr, second reading, cache, advance-fee warning, lakh/crore. Night plan with owners and prompts: docs/PLAN.md "Night plan" (D37 mentor feedback, D38 owners, D39 WhatsApp). Critical path: A3 -> F2 -> F3/F4 -> D5 and G4 -> C1 -> C2/C4/F5.
+- Gates: 2:00 PM [x] · 7:30 PM [x] (review passed) · 12:30 AM [ ] · 3:30 AM freeze [ ]
+- Known broken: none in code. Missing: web pages (Tejaswini, no PR yet), RBI CSV (Anam), database, lender check, harassment log. bn/mr sentences await the native-speaker OK.
 - Groq photo reads used today on the server account: 0 of about 80 (Gurpreet's own account: 6)
 
 ## Entry template (copy, fill, paste at the top of the log below)
@@ -20,6 +20,14 @@ Every agent session and every person adds an entry here at the end of each task,
 ```
 
 ## Log
+
+### 13 Nov 2026, 9:00 PM · 7:30 PM gate passed + night plan · agent for Gurpreet
+- Did: ticked the 7:30 PM gate (the review passed); recorded the mentor's feedback (D37: lender check by name + website, spoken, never "safe"); night owners by group exactly as the lead assigned (D38); WhatsApp only as stretch-of-stretch D12 (D39); new tasks C4, D8 to D12; owners on every open task; prompts for Gurpreet, Siddeshwar, Tejaswini and Anam in docs/PLAN.md "Night plan"; stale lines fixed (test counts, ARCHITECTURE, DEMO LIVE 2, CLAUDE.md/AGENTS.md WhatsApp note).
+- Files: CLAUDE.md, AGENTS.md, docs/PLAN.md, TASKS.md, DECISIONS.md, PROGRESS.md, ARCHITECTURE.md, TESTING.md, START_HERE.md, DEMO.md
+- Proof: docs only; `pytest -q` 266 passed on main (611cb0a).
+- Status in docs/TASKS.md: owners on every open task
+- Next: Gurpreet B9b then A3; Siddeshwar F1; Anam G4 (RBI CSV) first; Tejaswini E2/E3/E9.
+- Broken / risks: no web PR yet; the RBI CSV blocks C1, C2, F5; A3 blocks F2 and the rest of feature 4.
 
 ### 13 Nov 2026, 7:50 PM · B9 warning in Bengali and Marathi · agent for Gurpreet
 - Did: the "Savdhaan!" advance-fee warning was Hinglish only, so with /bhasha set to Bengali or Marathi that voice read Hindi words with a Bengali/Marathi accent (found in Gurpreet's live test). Now the warning is in the voice's own language and script (drafts, need the native-speaker OK like D32).

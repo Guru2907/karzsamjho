@@ -12,7 +12,7 @@ Stage roles (to be assigned): presenter · phone · laptop · technical answers.
 | 0:45-1:00 | Cost | "Rs 3,800 in hand, Rs 5,000 back in a week. Rs 1,200 extra. He finds out after he signs." |
 | 1:00-1:10 | Solution | "Send a photo. Hear the cost in rupees, in your language." |
 | 1:10-2:00 | LIVE 1: Snap & hear | Phone photographs printed ad 1 in Telegram; speaker plays the Hindi; hold up the card and the seconds stamp |
-| 2:00-2:20 | LIVE 2: Next step | "Not found in RBI's directory" + one next step; laptop shows helper view with the maths |
+| 2:00-2:20 | LIVE 2: Next step | The card AND the voice say "found / not found in RBI's list" (+ the bank behind it and the list date, D37) + one next step; laptop shows helper view with the maths. Never "safe" or "illegal" |
 | 2:20-3:05 | LIVE 3: Harassment log | Forward a threat timed 9:40 PM; case page shows H1 + H2; PDF opens; draft letter; "Day 1 of 30" |
 | 3:05-3:30 | Before / after | Before: learns the cost after a week, screenshots scattered. After: hears it in T s; evidence in under a minute |
 | 3:30-4:05 | Proof and limits | Measured 30-offer result incl. misses. "Synthetic ads. We can't stop someone borrowing. We tell him the cost first." |

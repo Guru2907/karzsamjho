@@ -163,14 +163,14 @@ All changes go through a pull request that Gurpreet merges (D27).
 - Done when: with Groq failing (429 or no key), a pasted SMS is read by Gemini Flash-Lite (regex only as the last resort) and a Hindi voice note is transcribed by Gemini; engines show "gemini" (Hindi audio test passed at 8:00 PM: 2.4 to 3.1 s, digits right)
 
 ### B12 · Photo pay-first must be confirmed by the second reader
-- Status: todo (Siddeshwar, D45)
+- Status: review (Siddeshwar, D45, D48): confirm_pay_first asks the other reader; agree within Rs 1 -> warning, else no warning and the fee stays; real run 2:05 AM (Gemini confirmed a synthetic scam ad)
 - Type: Stretch
 - Depends on: B9, B9c, B6
 - Files: api/core/extract.py, api/tests/test_advance_fee.py
 - Done when: a photo whose first reader claims "pay first" warns (and drops the fee) only if the other reader also reports it within Rs 1; otherwise no warning and the fee is kept; other reader down = no warning (D42 follow-up)
 
 ### B13 · Regex backup that knows Bengali / Marathi words
-- Status: todo (Siddeshwar, D45)
+- Status: review (Siddeshwar, D45): bn / mr / Devanagari Hindi labels + Bengali digits + bn/mr/hi time units; real run 2:14 AM with the AI keys invalid (SMS now in docs/TESTING.md results)
 - Type: Stretch of stretch
 - Depends on: B8
 - Files: api/core/extract.py, api/tests/test_extract.py
@@ -186,7 +186,7 @@ All changes go through a pull request that Gurpreet merges (D27).
 - Done when: A listed app returns FOUND with its lender; a made-up app returns NOT_FOUND; a near-miss spelling returns SIMILAR; a link or website in the SMS/ad is matched against the directory's website column too (D37); wording never says safe, illegal or fake
 
 ### C2 · `next_step.py`
-- Status: todo (Siddeshwar, D45) - Must: one next step per verdict x lender match x pay_first
+- Status: review (Siddeshwar, D45): one next step per verdict x lender match x pay_first; all 48 combinations tested; real run 1:31 AM, one SMS per verdict
 - Type: Must
 - Depends on: B5, C1
 - Files: api/core/next_step.py
@@ -259,21 +259,21 @@ All changes go through a pull request that Gurpreet merges (D27).
 - Done when: With lang bn or mr, the same check returns the MP3 in that language (bn-IN-TanishaaNeural, mr-IN-AarohiNeural), numbers match the card; a native speaker approved each sentence. Templates in docs/PLAN.md. Last; only after the 7:30 gate
 
 ### D8 · Bengali/Marathi listening (voice notes in those languages)
-- Status: todo (Siddeshwar) - stretch, D45 order 6
+- Status: review (Siddeshwar, D45): lang reaches Whisper + the Gemini backup; bn/mr digit examples; real run 2:09 AM with edge-tts bn/mr speech (correct numbers); a real native speaker's recording still to do
 - Type: Stretch
 - Depends on: D6, D7
-- Files: bot/main.py, api/core/speak.py (Siddeshwar); a small change in fallback.py / extract.py only with Gurpreet's OK
+- Files: api/core/fallback.py, api/core/extract.py, api/main.py (one argument), tests (the bot already sends lang; no bot change needed)
 - Done when: a Bengali and a Marathi voice note with /bhasha set give the right numbers on the card
 
 ### D9 · Bot tidy: one short line on a network blip
-- Status: todo (Siddeshwar) - stretch, D45 order 3
+- Status: review (Siddeshwar, D45): error handler registered; network blip / timeout -> one line, other errors -> one line with the type, token never logged; proven through the real telegram error dispatch 1:37 AM
 - Type: Stretch
 - Depends on: D1
 - Files: bot/main.py
 - Done when: a dropped Telegram connection logs one line ("network blip, retrying"), not a traceback, and the bot keeps working
 
 ### D10 · Cached answers say "pehle se jaancha hua" instead of "0.0 sec"
-- Status: todo (Siddeshwar) - stretch, D45 order 4
+- Status: review (Siddeshwar, D45): cached: true -> "⏱ pehle se jaancha hua"; real run 1:59 AM, ai_ad3 sent twice: 3.2 sec, then "pehle se jaancha hua"
 - Type: Stretch
 - Depends on: A4
 - Files: bot/main.py
@@ -398,7 +398,7 @@ All changes go through a pull request that Gurpreet merges (D27).
 - Done when: Regulated lender → grievance officer route with "Day N of 30"; unlisted app → Sachet + cybercrime route
 
 ### F6 · Complaint letter addressee follows the route
-- Status: todo (Siddeshwar, D45)
+- Status: review (Siddeshwar, D45): addressee from the F5 route; tests per route; real PDFs 1:34 AM (ZapCash -> Sachet, PaisaTurant -> grievance officer)
 - Type: Must (small)
 - Depends on: F3, F5
 - Files: api/core/evidence.py, api/tests/test_evidence.py

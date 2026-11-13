@@ -220,7 +220,7 @@ def test_cached_bengali_mp3_is_remade_in_bengali(client, env):
 
 def test_voice_note_with_lang_bn(client, env, monkeypatch):
     spoken, _ = env
-    monkeypatch.setattr(fallback, "transcribe", lambda audio: ("5000 ka loan, 7 din mein 6000 lautana",
+    monkeypatch.setattr(fallback, "transcribe", lambda audio, lang="hi": ("5000 ka loan, 7 din mein 6000 lautana",
                                                                "whisper", 0.9))
 
     def read_text(prompt, check=None):

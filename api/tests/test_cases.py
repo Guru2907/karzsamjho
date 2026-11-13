@@ -150,6 +150,50 @@ def test_evidence_pdf_masks_and_has_every_event(client, fake_label, monkeypatch)
     assert b"1234 5678 9012" not in body                              # the 12-digit number is masked
 
 
+# ---------------------------------------------------------------- F4 verify
+def _three_events(client):
+    case = new_case(client)
+    for at, text in (("2026-11-13T21:40:00+05:30", "Paisa do warna"), ("2026-11-14T10:00:00+05:30", "Kal tak"),
+                     ("2026-11-14T22:30:00+05:30", "Ghar aa jayenge")):
+        log_event(client, case["id"], at, text)
+    return case["id"]
+
+
+def _sql(query, *args):
+    with sqlite3.connect(config.settings.db_path) as conn:
+        conn.execute(query, args)
+
+
+def test_verify_untouched_chain_is_ok(client, fake_label):
+    cid = _three_events(client)
+    assert client.get(f"/api/cases/{cid}/verify").json() == {"ok": True}
+
+
+def test_verify_empty_case_is_ok_and_missing_case_is_404(client):
+    assert client.get(f"/api/cases/{new_case(client)['id']}/verify").json() == {"ok": True}
+    assert client.get("/api/cases/case_9999/verify").status_code == 404
+
+
+@pytest.mark.parametrize("tamper", [
+    ("UPDATE events SET text = 'Sorry for the trouble' WHERE id = 'evt_0001'",),        # words changed
+    ("UPDATE events SET at = '2026-11-13T11:40:00+05:30' WHERE id = 'evt_0001'",),      # 9:40 PM -> 11:40 AM
+    ("UPDATE events SET rules = '[]' WHERE id = 'evt_0001'",),                          # rules removed
+    ("DELETE FROM events WHERE id = 'evt_0002'",),                                      # an entry deleted
+    ("UPDATE events SET seq = 99 WHERE id = 'evt_0001'",),                              # order changed
+])
+def test_verify_catches_any_hand_edit(client, fake_label, tamper):
+    cid = _three_events(client)
+    _sql(tamper[0])
+    assert client.get(f"/api/cases/{cid}/verify").json() == {"ok": False}
+
+
+def test_verify_agrees_with_the_pdf_helper(client, fake_label):
+    from api.core import evidence
+    cid = _three_events(client)
+    events = client.get(f"/api/cases/{cid}").json()["events"]
+    assert main.chain_ok(events) is evidence.verify_chain(events) is True
+
+
 # ---------------------------------------------------------------- F5 complaint route + day counter
 from api.core import next_step as next_step_mod  # noqa: E402
 

@@ -368,7 +368,7 @@ All changes go through a pull request that Gurpreet merges (D27).
 - Done when: A forwarded message becomes a PDF in under 60 seconds; a 12-digit number is masked
 
 ### F4 · Verify endpoint
-- Status: todo (Gurpreet) - urgent: the evidence PDF tells readers /verify checks the chain, but it still always answers ok
+- Status: review (Gurpreet): real chain check; a hand-edited threat makes verify false (proven 1:01 AM)
 - Type: Must
 - Depends on: F2
 - Files: api/main.py

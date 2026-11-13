@@ -160,7 +160,7 @@ All changes go through a pull request that Gurpreet merges (D27).
 - Note: bot/main.py skeleton exists (photo → API → text card); D1 = make it robust + wire audio after D2.
 
 ### D2 · `speak.py`: template sentence + edge-tts audio
-- Status: todo
+- Status: review
 - Type: Must
 - Depends on: B3
 - Files: api/core/speak.py

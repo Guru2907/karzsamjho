@@ -9,7 +9,8 @@
       "in_hand": 500000,
       "repay_total": null,
       "tenure_days": null,
-      "extra": null
+      "extra": null,
+      "pay_first": null
     }
   },
   {
@@ -18,11 +19,12 @@
     "expected": {
       "is_loan_ad": true,
       "principal": null,
-      "fees": 1499,
+      "fees": null,
       "in_hand": null,
       "repay_total": null,
       "tenure_days": null,
-      "extra": null
+      "extra": null,
+      "pay_first": 1499
     }
   },
   {
@@ -31,11 +33,12 @@
     "expected": {
       "is_loan_ad": true,
       "principal": 500000,
-      "fees": 1200,
-      "in_hand": 498800,
+      "fees": null,
+      "in_hand": 500000,
       "repay_total": null,
       "tenure_days": null,
-      "extra": null
+      "extra": null,
+      "pay_first": 1200
     }
   }
 ]

@@ -3,7 +3,7 @@
 Every agent session and every person adds an entry here at the end of each task, before committing. Never delete or edit someone else's entry. Keep each entry under 12 lines.
 
 ## Current status (update this block when a gate passes or the plan changes)
-- Now: 2:00 PM gate passed on sample data. Next: real photo reading, maths and voice for the 7:30 PM gate (A4, B1, B3, B4, B5, D2, D3). UI is built after 7:30 PM (D24).
+- Now: re-planned at 4:50 PM (D25); no product code yet. Everyone follows docs/PLAN.md: photo or text -> card + Hindi voice, with second reading, merged and tested by 7:00 PM, rehearsal 7:00 to 7:30 PM. Harassment, lender, database and cache wait until after the review.
 - Gates: 2:00 PM [x] · 7:30 PM [ ] · 12:30 AM [ ] · 3:30 AM freeze [ ]
 - Known broken: (none yet)
 - Groq photo reads used today on the server account: 0 of about 80
@@ -20,6 +20,14 @@ Every agent session and every person adds an entry here at the end of each task,
 ```
 
 ## Log
+
+### 13 Nov 2026, 5:05 PM · re-plan for the 7:30 PM review · agent for lead
+- Did: wrote docs/PLAN.md: goal, who owns which files, order with target times, agreed signatures, 6:30 PM merge point, hand-worked test values, rehearsal checklist, and a paste-ready prompt for each teammate. Docs only.
+- Files: docs/PLAN.md (new), docs/TASKS.md (new tasks A7, B8, E9, G8; D1 = review), docs/DECISIONS.md (D25, D26), docs/PROGRESS.md
+- Proof: `pytest -q` 6 passed (still the sample-data smoke tests; nothing real is built).
+- Status in docs/TASKS.md: D1 = review (the lead's 2:00 PM gate test); everything else in scope is todo
+- Next: lead starts L1 (`speak()` in fallback.py); teammate starts T1 (maths.py). Merge point 6:30 PM, hard stop 7:00 PM.
+- Broken / risks: 2 hours for the whole pipeline; second reading is last in the lead's order so it is the first thing to slip. `lender.match` becomes nullable (D26), a small contract change. Printed ads are needed by 6:00 PM to test real phone photos.
 
 ### 13 Nov 2026, 3:10 PM · 2:00 PM gate · agent for lead
 - Did: logged the lead's gate test and the work split (D24). Docs only, no product code.

@@ -4,6 +4,16 @@ How to use: pick one task by ID ("Do task B3"). Status is one of: todo, doing (n
 
 Type: M = must build. S = stretch, only after the 7:30 PM gate on 13 Nov has passed. Nothing new after the 3:30 AM freeze on 14 Nov.
 
+## Right now: the 7:30 PM review (re-plan at 4:50 PM, D25)
+
+Owners, order, target times and signatures are in docs/PLAN.md. In scope tonight:
+- Lead: A4 (without the cache), A6, A7, B1, B2, B6, B7, B8
+- Claude Code teammate: B3, B4, B5, D2, D3, D4
+- PWA teammate: E2, E3, E7, E9
+- Data teammate: G3, G8, then G4
+
+Waiting until after the review: A3 (database), the cache half of A4, A5, C1 to C3, D5, E4 to E6, E8, all of F, G1, G2.
+
 ## A. Server and setup
 
 ### A1 · Create repo, `docs/PREP.md`, `.env.example`, `.gitignore`
@@ -47,6 +57,14 @@ Type: M = must build. S = stretch, only after the 7:30 PM gate on 13 Nov has pas
 - Depends on: A4
 - Files: api/main.py, api/core/fallback.py
 - Done when: Each `CheckResult` has `seconds` and `engines` filled
+
+### A7 · Join the parts in `POST /api/checks`; results kept in memory
+- Status: todo
+- Type: Must
+- Depends on: A4, B1, B3, B5, D2
+- Files: api/main.py, api/core/schemas.py, api/tests/test_pipeline.py, api/tests/test_smoke.py
+- Done when: A photo or a text offer returns a real `CheckResult` (not the sample); `GET /api/checks/{id}` and `/api/audio/{id}.mp3` work until the server restarts; not-a-loan and unreadable inputs return status 422 with a Hindi message; `lender.match` is null
+- Note: added in the 4:50 PM re-plan (D25, D26). The database (A3) replaces the in-memory store later.
 
 ## B. Reading and maths
 
@@ -99,6 +117,14 @@ Type: M = must build. S = stretch, only after the 7:30 PM gate on 13 Nov has pas
 - Files: api/core/extract.py
 - Done when: A photo of a menu gets a polite refusal, not a card
 
+### B8 · Regex backup for text offers
+- Status: todo
+- Type: Must
+- Depends on: B2
+- Files: api/core/extract.py, api/tests/test_extract.py
+- Done when: With the text model switched off, "Loan Rs 5000. Fee Rs 500. Repay Rs 5600 in 7 days." still returns principal 5000, fees 500, repay 5600, days 7, and `engines.read` is "regex"
+- Note: added in the 4:50 PM re-plan (D25).
+
 ## C. Lender check and next step
 
 ### C1 · Load `rbi_dla.csv`; `lender.py` with RapidFuzz
@@ -125,7 +151,7 @@ Type: M = must build. S = stretch, only after the 7:30 PM gate on 13 Nov has pas
 ## D. Bot and voice
 
 ### D1 · Bot receives a photo and calls the API
-- Status: todo
+- Status: review
 - Type: Must
 - Depends on: A2
 - Files: bot/main.py
@@ -232,6 +258,14 @@ Type: M = must build. S = stretch, only after the 7:30 PM gate on 13 Nov has pas
 - Files: web/src/
 - Done when: Every page looks right at 400 px wide, with no data and with the server off
 
+### E9 · `/check`: text box, audio player, loading / error / not-a-loan states
+- Status: todo
+- Type: Must
+- Depends on: E2
+- Files: web/src/pages/Check.tsx, web/src/lib/api.ts
+- Done when: A pasted SMS offer returns the card; the MP3 plays on a phone; a 422 answer shows its Hindi message; with the server off the page says so; the lender line is hidden when `lender.match` is null
+- Note: added in the 4:50 PM re-plan (D25). E7 (Raju mode) is also in scope for the review.
+
 ## F. Evidence and harassment
 
 ### F1 · `harass.py`: rules H1–H6, text labelling with keyword backup
@@ -319,6 +353,14 @@ Type: M = must build. S = stretch, only after the 7:30 PM gate on 13 Nov has pas
 - Depends on: A4, D3
 - Files: (no code)
 - Done when: All four drills in section 13 pass
+
+### G8 · 5 SMS-style text offers with expected numbers
+- Status: todo
+- Type: Must
+- Depends on: -
+- Files: api/data/offers/sms_offers.json
+- Done when: File exists with 5 offers; expected in_hand, repay_total, tenure_days and extra were worked out by hand before any run
+- Note: added in the 4:50 PM re-plan (D25). The 3 demo ads (G3) also get `api/data/offers/demo_expected.json`.
 
 ## H. Landing page
 

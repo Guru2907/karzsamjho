@@ -19,7 +19,7 @@ Helper's browser (PWA)  ──► web/ (Vite)  ─┼──► FastAPI api/main.
 | Cross-check, fill gaps, maths, verdict | yes | maths.py, verdict.py |
 | Second reading on a mismatch | yes | extract.second_reading, main.py |
 | Hindi sentence + MP3 | yes | speak.py, fallback.speak |
-| Money asked before the loan (advance-fee fraud) | yes: `pay_first` from the reader + a code rule for SMS -> warning first in the voice, next step DO_NOT_PAY_FIRST (D36) | extract.py, main.py |
+| Money asked before the loan (advance-fee fraud) | yes: `pay_first` from the reader + a code rule (English, Hinglish, Devanagari Hindi, Bengali, Marathi words; B9b) for SMS and voice notes -> warning first in the voice, next step DO_NOT_PAY_FIRST (D36) | extract.py, main.py |
 | "5 lakh", "2 crore", "50 hazaar" | yes, converted by code (D36) | extract.py |
 | Telegram card + MP3, pasted SMS, seconds stamp | yes | bot/main.py |
 | Voice notes (Hindi speech) | yes: Whisper -> number words to digits (gpt-oss) -> read like an SMS (D6) | fallback.transcribe, extract.extract_from_voice |

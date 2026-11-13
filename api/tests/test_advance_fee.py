@@ -143,3 +143,46 @@ def test_warning_is_in_the_voice_language(client, monkeypatch, tmp_path, lang, s
     assert body["speech_text_hi"].startswith(starts)
     if lang != "hi":
         assert "Savdhaan" not in body["speech_text_hi"]          # no Hinglish read by a bn/mr voice
+
+
+# ---------------------------------------------------------------- B9b: other scripts
+@pytest.mark.parametrize("text, amount", [
+    # Devanagari Hindi (how Whisper writes a Hindi voice note)
+    ("आपका लोन मंजूर हो गया है। पैसा पाने के लिए पहले 1500 रुपये प्रोसेसिंग शुल्क भेजो।", 1500),
+    ("लोन रिलीज करने के लिए अभी 999 रुपये रजिस्ट्रेशन फीस जमा करें।", 999),
+    # Bengali (Bengali digits too)
+    ("আপনার লোন অনুমোদিত। টাকা পেতে আগে 1499 টাকা প্রসেসিং ফি পাঠান।", 1499),
+    ("লোন পেতে এখনই ১২০০ টাকা বীমা চার্জ জমা দিন।", 1200),
+    # Marathi
+    ("तुमचे कर्ज मंजूर झाले आहे. पैसे मिळवण्यासाठी आधी 999 रुपये नोंदणी शुल्क पाठवा.", 999),
+    ("कर्ज मिळण्यासाठी आता 1500 रुपये प्रोसेसिंग फी भरा.", 1500),
+])
+def test_scam_rule_in_other_scripts(text, amount):
+    assert extract.pay_first_in_text(text) == amount
+
+
+@pytest.mark.parametrize("text", [
+    # normal offers and repayments in the same scripts: no warning
+    "आपका 5000 रुपये का लोन मंजूर। प्रोसेसिंग फीस 500 रुपये। 7 दिन में 5600 रुपये लौटाने होंगे।",
+    "अभी 5600 रुपये जमा करें, आपकी EMI बाकी है।",                                    # repaying, no charge word
+    "অভিনন্দন! আপনার 5000 টাকার লোন মঞ্জুর। প্রসেসিং ফি 500 টাকা। 7 দিনে 5600 টাকা ফেরত দিতে হবে।",
+    "অভিনন্দন! আপনার ৫০০০ টাকার লোন মঞ্জুর। প্রসেসিং ফি ৫০০ টাকা। ৭ দিনে ৫৬০০ টাকা ফেরত দিতে হবে।",
+    "अभिनंदन! तुमचे 10000 रुपयांचे कर्ज मंजूर. प्रोसेसिंग फी 1000 रुपये. 30 दिवसांत 11500 रुपये परत करा.",
+    "पहले 3 महीने कोई ब्याज नहीं। 10000 रुपये का लोन।",                               # "पहले" alone is not enough
+])
+def test_no_warning_for_normal_offers_in_other_scripts(text):
+    assert extract.pay_first_in_text(text) is None
+
+
+def test_danda_splits_sentences():
+    # the pay word and the fee are in different sentences: not a pay-first demand
+    text = "पहले 500 रुपये प्रोसेसिंग शुल्क कटेगा। फिर 7 दिन में 5600 रुपये भेजो।"
+    assert extract.pay_first_in_text(text) is None
+
+
+def test_voice_note_in_devanagari_warns_even_if_the_ai_misses_it(monkeypatch):
+    def read_text(prompt, check=None):          # the AI reads the numbers but misses pay_first
+        return json.dumps({"is_loan_ad": True, "pay_first": None}), "gpt-oss-20b", 0.5
+    monkeypatch.setattr(fallback, "read_text", read_text)
+    text = "आपका लोन अप्रूव हो गया है, पैसा रिलीज करने के लिए पहले पंद्रह सौ यानी 1500 रुपये प्रोसेसिंग फीस भेजो"
+    assert extract.extract_from_text(text)["fields"]["pay_first"] == 1500

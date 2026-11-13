@@ -21,6 +21,14 @@ Every agent session and every person adds an entry here at the end of each task,
 
 ## Log
 
+### 14 Nov 2026, 12:05 AM · B9b scam rule in more scripts · agent for Gurpreet
+- Did: the advance-fee code rule (backup for the AI) now knows Devanagari Hindi, Bengali and Marathi pay / charge / before words, matched as plain text because their vowel signs break ; sentences also split on । and ॥. Left out on purpose: Bengali দিন ("give" and "day") and कर ("tax", but inside कर्ज). English words keep matching with endings (released, disbursal).
+- Files: api/core/extract.py, api/tests/test_advance_fee.py, docs/ARCHITECTURE.md, TASKS.md
+- Proof: `pytest -q` 280 passed (14 new: 6 scams caught, 6 normal offers / repayments not, । split, Devanagari voice note caught when the AI misses it). Real AI: hi / bn / mr scams -> 1500 / 1200 / 1500 from both the AI and the code rule; normal Marathi offer -> no warning, numbers right.
+- Status in docs/TASKS.md: B9b = review
+- Next: C1 lender check (needs Anam's RBI CSV, G4).
+- Broken / risks: none.
+
 ### 13 Nov 2026, 9:15 PM · WhatsApp skipped · agent for Gurpreet
 - Did: the lead skipped WhatsApp: D41 reverses D39, D12 dropped, CLAUDE.md and AGENTS.md list WhatsApp as plain out of scope again; removed from Siddeshwar's prompt.
 - Files: CLAUDE.md, AGENTS.md, docs/PLAN.md, TASKS.md, DECISIONS.md (D41), PROGRESS.md

@@ -185,5 +185,30 @@ async def speak(text: str, out_path: str) -> bool:
     return True
 
 
-def transcribe(audio_bytes: bytes) -> str:
-    raise NotImplementedError("transcribe: stretch task D6")
+def transcribe(audio_bytes: bytes) -> tuple[str, str, float]:
+    """Voice note (Telegram OGG) -> (Hindi transcript, "whisper", seconds). Task D6.
+
+    One Groq Whisper call: language "hi", temperature 0, timeout from config, no retries.
+    Raises EngineError on any failure, a 429, or an empty transcript (there is no second
+    listener). Logs engine, seconds and the transcript LENGTH, never what was said.
+    """
+    if not settings.groq_api_key:
+        raise EngineError("no Groq key")
+    if not audio_bytes:
+        raise EngineError("empty audio")
+    start = time.perf_counter()
+    try:
+        client = Groq(api_key=settings.groq_api_key, timeout=settings.stt_timeout_s, max_retries=0)
+        resp = client.audio.transcriptions.create(
+            file=("voice.ogg", audio_bytes), model=settings.groq_stt_model,
+            language="hi", temperature=0, response_format="json")
+        text = (getattr(resp, "text", "") or "").strip()
+        if not text:
+            raise EngineError("whisper returned no text")
+    except Exception as exc:
+        log.warning("transcribe: engine=whisper failed (%s) seconds=%.2f",
+                    _why(exc), time.perf_counter() - start)
+        raise EngineError("listener failed") from exc
+    seconds = round(time.perf_counter() - start, 2)
+    log.info("transcribe: engine=whisper ok seconds=%.2f chars=%d", seconds, len(text))
+    return text, "whisper", seconds

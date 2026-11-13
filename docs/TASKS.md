@@ -571,3 +571,36 @@ All changes go through a pull request that Gurpreet merges (D27).
 - Rupee receipt: 12 maths tests pass. Across the 30 offers, no wrong number is ever shown as verified.
 - Official next step: listed app -> FOUND with lender; made-up app -> NOT_FOUND; near-miss -> SIMILAR. Each verdict gives exactly one next step.
 - Harassment log: 10 samples get the expected rules. A forwarded message becomes a PDF in under 60 seconds. Editing a stored entry makes verify fail. A 12-digit number is masked.
+
+## Left at 2:45 AM, 14 Nov, and how to merge everything (check by agent for Gurpreet)
+
+This section is at the END of the file on purpose: the open PRs change lines near the top, so adding here causes no merge clash.
+
+### What was checked
+- All 11 open PRs merged together in a throwaway copy of main: **571 backend tests pass**, the web app builds, lint is clean (two harmless "fast refresh" notes). CI is green on every PR.
+- Siddeshwar's list from D45 has 9 tasks. **7 are built**, each in its own PR with tests and a real run written in its progress file: C2 #42, F6 #43, D9 #44, D10 #47, B12 #48, D8 #50, B13 #51. The code of C2, B12 and F6 was read against the rules: sentences are fixed and written by code; no "safe", "illegal" or "fake"; a second reader that fails means no warning and the fee stays; with the RBI list empty, the cost verdict picks the next step.
+- **2 are not built, correctly:** C3 needs `api/data/rbi_nbfc.csv` from Anam (not there); D11 needs a native speaker's OK first.
+- After merging, someone other than Siddeshwar sets C2, F6, D9, D10, B12, D8, B13 to done (G5).
+
+### How to merge, in this order
+1. **Siddeshwar's backend, oldest first:** #42, #43, #44, #47, #48, #50, #51. Tested: all clean in this order.
+2. **Tell the agent "backend merged".** It merges main into the branch of #45 and fixes the one clash: `docs/DECISIONS.md`, where both sides added rows at the bottom (D46, D47 and Siddeshwar's D48). All three rows are kept, in number order. #46, #49 and #52 are built on #45, so they pick up the fix.
+3. **The website:** #45, then #46, then #49, then #52. Each one is built on the one before, so GitHub shrinks the next one as you go.
+4. **This task-list PR:** any time.
+
+Never "Accept both" on a code clash. The DECISIONS.md clash is two sets of new table rows, so keeping both is correct there.
+
+### What is left, biggest risk to the demo first
+| # | Task | Owner | Why it matters | Needed by |
+|---|---|---|---|---|
+| 1 | G4: RBI directory as CSV | Anam | `rbi_dla.csv` has only its header. Every check says "not checked", so core feature 3 (FOUND / SIMILAR / NOT_FOUND) cannot be shown and its acceptance test fails. Unblocks C3 too | 3:30 AM |
+| 2 | E2-E9: the web app | Tejaswini | Nothing pushed yet. `/check`, `/cases` and `/cases/:id` are still the setup placeholders, and the website's "Open the app" button and QR (`/check?mode=raju`) lead there. The Telegram bot (the main demo) works without them | Decide at 4:00 AM: if nothing is pushed, a minimal `/check` with the Raju card from the API before the 5:00 AM freeze |
+| 3 | G2: 10 harassment samples | Anam | `api/data/harassment/` is empty; core feature 4's acceptance test needs them | 3:30 AM |
+| 4 | G1: 30 offers (3 so far), G8: 5 SMS (3 so far) | Anam | G6 needs them | 3:30 AM |
+| 5 | G6: full 30-offer run; G7: kill-switch drill | Gurpreet | Proves K = 0 and the backups; G7 was due at 1:00 AM | 4:30 AM |
+| 6 | Native-speaker check of the Bengali and Marathi sentences | Siddeshwar finds one | Needed before "Bengali and Marathi" is said on stage; also unblocks D11 | before judging |
+| 7 | I2 deck, I3 backup video (due 3:00 AM), I4 roadmap slide, I5 README, I6 three rehearsals | Anam + Gurpreet, everyone for I6 | Judging starts around 9:00 AM | I3 now; rest after 5:00 AM |
+
+The website tasks H1-H8 are built and in review inside #45, #46, #49 and #52; they read "todo" on main only until those merge.
+
+After 5:00 AM (D46): bug fixes, wording and rehearsal only. No new features.

@@ -21,6 +21,13 @@ Every agent session and every person adds an entry here at the end of each task,
 
 ## Log
 
+### 14 Nov 2026, 12:35 AM · A5 health: engines up or down · agent for Gurpreet
+- Did: fallback.ping() checks Groq (model list), Gemini (model lookup) and edge-tts (voice list) in parallel: free calls, no loan reads, 4 s timeout, cached 60 s (`?fresh=true` re-checks). /api/health adds engines up/down with the reason, can_read_photos, can_speak and the database state; it still answers if the database is broken; keys only as set / not set. Stats come from the database (A3); a test checks they match. Tests never ping the internet (conftest.py).
+- Files: api/core/fallback.py, api/main.py, api/tests/test_health.py (new), api/tests/conftest.py, docs/RUNBOOK.md, TASKS.md
+- Proof: `pytest -q` 283 passed (9 new). Real: all three engines UP (0.6 to 1.0 s); with a deliberately wrong Groq key -> groq DOWN (AuthenticationError 401), gemini UP, can_read_photos true.
+- Status in docs/TASKS.md: A5 = review
+- Next: B11 (Gemini backup for SMS and voice).
+- Broken / risks: built on #26 (A3): merge after it.
 ### 13 Nov 2026, 11:57 PM · D5 bot harassment log · agent for Siddeshwar
 - Did: bot/main.py: a forwarded text message, or a message after /log (or /log <words>), becomes an event: POST /api/cases once per chat (id kept in chat_data; the case names the lender of his last check), POST /api/cases/{id}/events with at = the ORIGINAL message time in IST, channel telegram, contacted borrower; then a Hindi line with the rules broken, then GET evidence.pdf sent with reply_document. /pdf sends it again. A case lost on a server restart is made again once. Hindi messages only.
 - Files: bot/main.py, api/tests/test_bot.py (12 new tests), docs/PROGRESS.md, docs/TASKS.md

@@ -23,7 +23,7 @@ from fastapi.concurrency import run_in_threadpool
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import FileResponse
 
-from api.core import cache, config, db, extract, harass, maths, speak, verdict
+from api.core import cache, config, db, extract, fallback, harass, maths, speak, verdict
 from api.core.config import ensure_dirs
 from api.core.schemas import (Case, CaseIn, CheckResult, Event, EventIn, Stats,
                               VerifyResult)
@@ -372,9 +372,15 @@ def stats():
 
 
 @app.get("/api/health")
-def health():
-    """Says whether each key is set. Never returns the key values."""
+def health(fresh: bool = False):
+    """Is each part working right now (A5)? Keys are shown only as set / not set, never their values.
+    engines: a free live ping of Groq, Gemini and edge-tts (cached 60 s; ?fresh=true to re-check)."""
     s = config.settings
+    try:
+        stored, database = len(db.check_summaries()), "up"
+    except Exception as exc:                                  # the API still answers if the file is broken
+        stored, database = None, f"down ({type(exc).__name__})"
+    engines = fallback.ping(force=fresh)
     return {
         "api": "up",
         "groq_key": bool(s.groq_api_key),
@@ -382,5 +388,9 @@ def health():
         "telegram_key": bool(s.telegram_bot_token),
         "voice": s.voice_enabled,
         "sample_data": False,
-        "checks_stored": len(db.check_summaries()),
+        "database": database,
+        "checks_stored": stored,
+        "engines": engines,
+        "can_read_photos": engines["groq"]["up"] or engines["gemini"]["up"],
+        "can_speak": s.voice_enabled and engines["edge-tts"]["up"],
     }

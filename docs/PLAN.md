@@ -99,14 +99,14 @@ def lender_sentence(lender: dict, lang: str = "hi") -> str | None
 
 ### Prompt for Gurpreet (Claude Code)
 ```
-I am Gurpreet, the lead. Read CLAUDE.md, docs/PLAN.md section "Night plan", docs/PROGRESS.md (top) and docs/DECISIONS.md D36 to D39. Follow "How to report while working" and my workflow: before each task say "We are doing <task>", one branch + one PR per task, I merge; no Claude co-author line. The API runs from this folder with --reload, so build in a separate git worktree and never restart my running servers.
+I am Gurpreet, the lead. Read CLAUDE.md, docs/PLAN.md section "Night plan", docs/PROGRESS.md (top) and docs/DECISIONS.md D36 to D41. Follow "How to report while working" and my workflow: before each task say "We are doing <task>", one branch + one PR per task, I merge; no Claude co-author line. The API runs from this folder with --reload, so build in a separate git worktree and never restart my running servers.
 My tasks, in order (D40 wave 1): B9b, A3, F2, C1 (name + website domain, D37 wording), A5, B11. Later: C2, F4, F5, G6, G7, G5 checks, I5.
 Only my files (Night plan table). Tests for everything; a real run for each feature; update TASKS, PROGRESS, DECISIONS, DEMO in the same PR.
 ```
 
 ### Prompt for Siddeshwar (Claude Code)
 ```
-I am Siddeshwar. Read AGENTS.md, CLAUDE.md, docs/PLAN.md sections "After the review" and "Night plan", docs/PROGRESS.md (top) and docs/DECISIONS.md D32 to D39. Follow "How to report while working" in CLAUDE.md.
+I am Siddeshwar. Read AGENTS.md, CLAUDE.md, docs/PLAN.md sections "After the review" and "Night plan", docs/PROGRESS.md (top) and docs/DECISIONS.md D32 to D41. Follow "How to report while working" in CLAUDE.md.
 
 FILES I MAY EDIT: bot/main.py, api/core/speak.py, api/core/harass.py, api/core/evidence.py, api/core/maths.py, api/core/verdict.py, their tests in api/tests/, my PROGRESS entry and my task statuses. Nothing else; Gurpreet owns main.py, db.py, lender.py, next_step.py, extract.py, fallback.py, config.py, schemas.py.
 

@@ -29,6 +29,14 @@ Every agent session and every person adds an entry here at the end of each task,
 - Next: T3 speak.py (D2).
 - Broken / risks: none known. The skeleton's decide(numbers) gained the fees argument, as agreed in docs/PLAN.md.
 
+### 13 Nov 2026, 5:15 PM · teammate prompts + PR workflow · agent for Gurpreet
+- Did: full paste-ready prompts in docs/PLAN.md for Siddeshwar (Claude Code), the PWA teammate (RajuCard, /check, errors, Raju mode, home-screen app) and the data teammate (demo ads, SMS offers, 30 offers, harassment samples, RBI list, vendor notes). Every change now goes through a PR; Gurpreet merges (D27).
+- Files: docs/PLAN.md, docs/TASKS.md (E6 into tonight; G1, G2, I1, I3 to the data teammate), docs/DECISIONS.md (D27), docs/PROGRESS.md
+- Proof: `pytest -q` (see the PR); docs only.
+- Status in docs/TASKS.md: no status change
+- Next: Gurpreet merges this PR and sends the prompts; then L1 (`speak()` in fallback.py, task A4).
+- Broken / risks: started 20 minutes behind the 5:00 PM plan; my 5:25 and 5:45 targets will slip to about 5:45 and 6:05.
+
 ### 13 Nov 2026, 5:05 PM · re-plan for the 7:30 PM review · agent for lead
 - Did: wrote docs/PLAN.md: goal, who owns which files, order with target times, agreed signatures, 6:30 PM merge point, hand-worked test values, rehearsal checklist, and a paste-ready prompt for each teammate. Docs only.
 - Files: docs/PLAN.md (new), docs/TASKS.md (new tasks A7, B8, E9, G8; D1 = review), docs/DECISIONS.md (D25, D26), docs/PROGRESS.md

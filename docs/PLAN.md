@@ -18,14 +18,14 @@ Harassment log, evidence PDF, lender / RBI match, a real next step (a fixed line
 
 | Person | Tool | Job | Only these files |
 |---|---|---|---|
-| Lead | Claude Code | Calls to the AI services, reading photos and text, second reading, joining everything in the API | `api/core/fallback.py`, `api/core/extract.py`, `api/core/schemas.py`, `api/main.py`, `api/tests/test_extract.py`, `api/tests/test_pipeline.py`, `api/tests/test_smoke.py`, `docs/` |
-| Claude Code teammate | Claude Code | Rupee maths, verdict, Hindi sentence + MP3, Telegram bot | `api/core/maths.py`, `api/core/verdict.py`, `api/core/speak.py`, `bot/main.py`, `api/tests/test_maths.py`, `api/tests/test_verdict.py`, `api/tests/test_speak.py` |
-| PWA teammate | Antigravity | The web app: `/check` page and the Raju card | `web/src/` only |
-| Data teammate | Antigravity | Printed demo ads, text offers, expected numbers, RBI list | `api/data/` only |
+| Lead (Gurpreet) | Claude Code | Calls to the AI services, reading photos and text, second reading, joining everything in the API | `api/core/fallback.py`, `api/core/extract.py`, `api/core/schemas.py`, `api/main.py`, `api/tests/test_extract.py`, `api/tests/test_pipeline.py`, `api/tests/test_smoke.py`, `docs/` |
+| Claude Code teammate (Siddeshwar) | Claude Code | Rupee maths, verdict, Hindi sentence + MP3, Telegram bot | `api/core/maths.py`, `api/core/verdict.py`, `api/core/speak.py`, `bot/main.py`, `api/tests/test_maths.py`, `api/tests/test_verdict.py`, `api/tests/test_speak.py` |
+| PWA teammate | Antigravity | The web app: `/check` page, the Raju card, home-screen app setup | `web/src/`, `web/public/`, `web/index.html` only |
+| Data teammate | Antigravity | Printed demo ads, text offers, 30 test offers, harassment samples, RBI list, vendor notes, backup video | `api/data/` only |
 
 Nobody edits a file in another person's row. If you need a change there, ask that person.
 
-**Getting code onto main:** pull main before each item. Push each finished item on its own, straight away (a branch and a pull request if GitHub refuses a direct push; the lead merges at once). Small and often, never one big push at 6:55.
+**Getting code onto main (D27):** nobody pushes to main. For each finished item: pull main, make a branch, push it, open a pull request. CI (tests, web build, key scan) must be green. Then tell Gurpreet; he merges. One small PR per item, never one big PR at 6:55.
 
 ## Order and target times (IST)
 
@@ -52,7 +52,7 @@ Nobody edits a file in another person's row. If you need a change there, ask tha
 |---|---|
 | 5:45 | `RajuCard` component showing the sample check from the API |
 | 6:15 | `/check`: photo upload + text box -> card + audio player |
-| 6:45 | Loading, error and not-a-loan states; Raju mode toggle; pushed |
+| 6:45 | Loading, error and not-a-loan states; Raju mode toggle; home-screen app setup (manifest + icons) |
 
 The API already answers every call with a sample check, so the page can be built and tested now. Real answers arrive at about 6:30 with no change on the web side.
 
@@ -61,7 +61,10 @@ The API already answers every call with a sample check, so the page can be built
 |---|---|
 | 6:00 | 3 demo ads printed in colour, two copies each, and `api/data/offers/demo_expected.json` |
 | 6:15 | 5 text offers with expected numbers in `api/data/offers/sms_offers.json` |
-| after the review | `api/data/rbi_dla.csv` filled in (the lender check is skipped tonight) |
+| 9:00 | 30 test offers with answers (G1) |
+| 10:00 | 10 harassment samples with expected rules (G2) |
+| after that | `api/data/rbi_dla.csv` filled in (G4) |
+| 7:00 to 7:30 | Screen-record the rehearsal as the backup video (I3); 3 mentor questions written before 7:30 (I1) |
 
 ## Merge point: 6:30 PM
 
@@ -202,58 +205,139 @@ Six photo reads in a row is more than Groq's free limit of about 3 a minute, so 
 
 ## Ready-to-paste prompts
 
-### For the Claude Code teammate
+Each person pulls main, then pastes their prompt into their own agent (Claude Code or Antigravity) opened in the repo folder.
+
+### For Siddeshwar (Claude Code teammate)
 
 ```
-Read AGENTS.md, CLAUDE.md and docs/PLAN.md first, then docs/PROGRESS.md and docs/DECISIONS.md (D25, D26). Follow "How to report while working" in CLAUDE.md.
+I am Siddeshwar. In docs/PLAN.md I am the "Claude Code teammate"; Gurpreet is the "Lead".
+
+Read AGENTS.md, CLAUDE.md and docs/PLAN.md first, then docs/PROGRESS.md and docs/DECISIONS.md (D25, D26, D27). Follow "How to report while working" in CLAUDE.md.
 
 You are doing the "Claude Code teammate" row of docs/PLAN.md. You may edit ONLY these files:
 api/core/maths.py, api/core/verdict.py, api/core/speak.py, bot/main.py,
 api/tests/test_maths.py, api/tests/test_verdict.py, api/tests/test_speak.py
-Do not edit any other file (not api/main.py, fallback.py, extract.py, schemas.py, config.py, web/, docs/PLAN.md). If you think another file must change, stop and tell me; the lead owns it.
+Do not edit any other file (not api/main.py, fallback.py, extract.py, schemas.py, config.py, web/, docs/PLAN.md). If you think another file must change, stop and tell me; Gurpreet owns it.
 
-Do these in order, one at a time. After each: run pytest -q, show the output, commit as "<area>: <what changed>", pull main, push (a branch + pull request if the push is refused).
+Do these in order, one at a time. Before each, tell me "We are doing <task>". After each: run pytest -q and show the output; pull main; make a branch; commit as "<area>: <what changed>"; push the branch; open a pull request with gh pr create; check CI with gh pr checks. Never push to main and never merge: Gurpreet merges. Never add Claude as co-author or a "Generated with Claude Code" line.
 T1 by 5:45 PM: maths.py: cross_check, fill_gaps, compute, with test_maths.py (tasks B3, B4).
 T2 by 6:00 PM: verdict.py: decide, with test_verdict.py (task B5). Thresholds come from settings in config.py; do not hard-code them.
 T3 by 6:20 PM: speak.py: speech_text, make_audio, with test_speak.py (task D2). Call fallback.speak for the audio; never import edge-tts yourself. In tests, replace fallback.speak with a fake.
 T4 by 6:45 PM: bot/main.py (tasks D3, D4): add a verdict line to the card; after the card, download audio_url from the API and send it with sendAudio (no ffmpeg, no sendVoice); if audio_url is null or the download fails, send the card alone; a plain text message is posted to /api/checks as JSON {"text", "lang": "hi", "source": "telegram"}; on status 422 reply with detail.text_hi; hide the lender line when lender.match is null.
 
-Use the signatures and the "Rules inside the maths" section of docs/PLAN.md exactly; the lead's code calls them at 6:30 PM. Use the hand-worked table in docs/PLAN.md (rows 1 to 10, plus the cross-check, verdict-edge, speech and audio cases) as your tests, with those exact values. No test may call the internet.
+Use the signatures and the "Rules inside the maths" section of docs/PLAN.md exactly; Gurpreet's code calls them at 6:30 PM. Use the hand-worked table in docs/PLAN.md (rows 1 to 10, plus the cross-check, verdict-edge, speech and audio cases) as your tests, with those exact values. No test may call the internet.
 
-Hard stop 7:00 PM. When done, add an entry at the top of docs/PROGRESS.md and set your tasks to "review" in docs/TASKS.md (those two doc files are the only exception to the file list).
+Hard stop 7:00 PM. In each PR, add an entry at the top of docs/PROGRESS.md and set the task to "review" in docs/TASKS.md (those two doc files are the only exception to the file list).
+
+Start by telling me in 3 lines which task you are on, which files you will touch and how you will prove it works. Then begin T1.
 ```
 
 ### For the PWA teammate (Antigravity)
 
 ```
-Read AGENTS.md, CLAUDE.md and docs/PLAN.md first. You may edit ONLY files inside web/src/. Do not touch anything outside web/src/ (no api/, bot/, docs/, no package.json, no config files). Do not add any npm package: use what is installed (React, Tailwind, shadcn/ui, lucide-react). No animation libraries.
+Read AGENTS.md, CLAUDE.md and docs/PLAN.md first, then the top of docs/PROGRESS.md and decisions D25 to D27 in docs/DECISIONS.md.
 
-Build the /check page of the helper web app for the 7:30 PM review:
-1. web/src/components/RajuCard.tsx: ONE card component, used everywhere a result is shown. It takes a CheckResult (shape in CLAUDE.md). It shows four big numbers with an icon and a colour each: in hand, to repay, days, extra. Numbers are 36 to 48 px. A verdict badge: USUAL, COSTLY, VERY_COSTLY, CANNOT_SAY, each with a colour AND an icon. Any number whose status is "unverified" shows a grey "couldn't verify" chip, never a 0 and never a guess. Show next_step.text_hi. Hide the lender line when lender.match is null.
-2. web/src/pages/Check.tsx: a photo upload (on a phone it opens the camera or gallery) and a text box for a pasted SMS offer. Photo -> POST /api/checks as form data with the field "image", plus lang=hi and source=web. Text -> POST /api/checks as JSON {"text": "...", "lang": "hi", "source": "web"}. Show the RajuCard and an audio player for audio_url (the URL is relative to the API address; hide the player when audio_url is null).
-3. States: loading (the answer can take 10 seconds), server off, and status 422 where the body is {"detail": {"code": "NOT_A_LOAN" or "UNREADABLE", "text_hi": "..."}}: show text_hi as it is. Never show an error code to the user.
-4. A "Raju mode" toggle: details hidden, one big camera button and one big play button, every button at least 56 px tall.
-It must look right at 400 px wide, in light and dark.
+YOUR FILES. You may edit ONLY:
+- anything inside web/src/
+- web/public/ (manifest and icons)
+- web/index.html
+Do not touch api/, bot/, docs/ (except the two lines at the end), web/package.json, web/vite.config.ts or any other config file. Do not add any npm package. Use only what is installed: React 19, Tailwind 4, shadcn/ui components in web/src/components/ui/, lucide-react icons, sonner. No animation libraries, no service worker, no offline mode, no login.
 
-The API already answers every request with a sample check, so you can build and test now; real answers start at about 6:30 PM with no change needed. Put shared types and fetch calls in web/src/lib/api.ts.
-Targets: RajuCard by 5:45 PM, /check by 6:15 PM, states and Raju mode pushed by 6:45 PM. Before pushing run "npm run build" inside web/ and fix every error. Push on a branch and open a pull request; tell the lead.
+WHAT YOU ARE BUILDING. A web app that feels like a phone app, for Raju (a vegetable vendor who cannot read loan terms) and the helper sitting next to him. He photographs a loan ad or pastes an SMS, and sees and hears what he gets, what he repays and how much extra that is. Hindi first, in Latin letters (Hinglish), with small English below where it helps.
+
+RUN IT. In web/: npm ci, then npm run dev. Open http://localhost:5173/check. The API runs on port 8000 (ask Gurpreet, or run scripts/run_api); the dev server already passes every /api call to it. Right now the API always answers with one sample check (chk_0042). Real answers start about 6:30 PM with no change on your side. To try it on a phone, open http://<laptop wifi address>:5173/check on the same wifi.
+
+STEP 1 (by 5:45 PM): web/src/components/RajuCard.tsx
+- ONE component, used everywhere a result is shown. Props: { result: CheckResult; raju?: boolean }. Types are in web/src/lib/api.ts.
+- Four rows, each with an icon, a colour and a big number (36 to 48 px, tabular figures, rupees with the ₹ sign and Indian commas: ₹3,800):
+  - haath mein (in hand): numbers.in_hand, green, lucide HandCoins
+  - lautana hai (to repay): numbers.repay_total, blue, lucide Undo2
+  - din (days): numbers.tenure_days, neutral, lucide CalendarDays
+  - zyada (extra): numbers.extra, red, lucide TriangleAlert
+- A number whose status is "unverified" (or value null) shows a grey chip "pata nahi chala / couldn't verify". Never a 0, never a guess.
+- A verdict badge at the top, colour AND icon together: USUAL "Theek hai" green CircleCheck; COSTLY "Mehenga" amber CircleAlert; VERY_COSTLY "Bahut mehenga" red OctagonAlert; CANNOT_SAY "Keh nahi sakte" grey CircleHelp.
+- next_step.text_hi as a line under the numbers.
+- Lender line: hide it completely when lender.match is null (tonight it is always null).
+- When raju is false, a small details section under the card: per_day and apr_simple (label apr_simple "saal ka hisaab, %"; it is our own estimate, not an RBI number), engines.read, seconds.
+- Check: the sample check shows ₹3,800 / ₹5,000 / 7 din / ₹1,200 and "Bahut mehenga", at 400 px wide, in light and dark.
+
+STEP 2 (by 6:15 PM): web/src/pages/Check.tsx
+- Replace the placeholder. Two ways in:
+  - A big "Photo lo" button: a hidden <input type="file" accept="image/*" capture="environment">; on a phone it opens the camera. A smaller "Gallery se" button without capture.
+  - A text box "SMS yahan chipkao" with a "Bhejo" button.
+- Photo -> api.checkImage(file). Text -> api.checkText(text). Both already exist in web/src/lib/api.ts.
+- While waiting: a large spinner made with Tailwind only (animate-spin) and "Padh rahe hain…". The answer can take up to 15 seconds. Disable the buttons meanwhile.
+- Then: the RajuCard, then an <audio controls> player for audio_url (hide it when audio_url is null), then a "Naya check" button that clears everything.
+- audio_url is like "/api/audio/chk_0001.mp3"; use it as it is (the dev server passes it on).
+
+STEP 3 (by 6:45 PM): errors, Raju mode, home-screen app
+- Errors in web/src/lib/api.ts. Change request() so that:
+  - a 422 answer throws an error that carries body.detail.text_hi;
+  - a network failure throws an error with "Server abhi band hai, thodi der mein try karo.";
+  - anything else throws "Kuch gadbad hui, dobara try karo.".
+  Show that text in the page, big, with a "Dobara try karo" button. Never show a status code or English error text to the user.
+  The 422 body looks like {"detail": {"code": "NOT_A_LOAN" | "UNREADABLE", "text_hi": "..."}}.
+  Also make lender.match nullable in the CheckResult type (LenderMatch | null). Keep every other type as it is.
+- Raju mode: a switch at the top of /check ("Raju mode"), remembered in localStorage (wrap it in try/catch). In Raju mode the page shows only: one huge camera button, the card with no details, and one huge play button for the audio. Every button at least 56 px tall.
+- Home-screen app (task E6):
+  - web/public/manifest.json: name "KarzSamjho", short_name "KarzSamjho", start_url "/check", display "standalone", background_color and theme_color matching the app, icons 192x192 and 512x512 PNG (draw a simple icon: a ₹ sign on a coloured rounded square; make an SVG, export both sizes; also save it as apple-touch-icon.png 180x180).
+  - web/index.html: add <link rel="manifest" href="/manifest.json">, <meta name="theme-color" content="...">, <link rel="apple-touch-icon" href="/apple-touch-icon.png">, and change the viewport to "width=device-width, initial-scale=1.0, viewport-fit=cover".
+- App feel on a phone: the page fills the screen height (min-h-svh); padding respects the notch (env(safe-area-inset-*)); main actions sit in a bottom bar within thumb reach; nothing works only on hover; text at least 16 px; tap targets at least 56 px.
+
+BEFORE EACH PULL REQUEST
+- In web/: npm run build must finish with no errors.
+- Look at /check at 400 px wide and at laptop width, in light and dark.
+- On a phone over wifi: take a photo, see the card, play the audio. In Chrome, "Add to home screen" must open the app without the browser bar.
+
+HANDING OVER. One pull request per step (3 in total). Never push to main and never merge. For each: pull main, make a branch, commit as "web: <what changed>", push, open a pull request, and tell Gurpreet. In the same pull request, add a short entry at the top of docs/PROGRESS.md and set the task status to "review" in docs/TASKS.md (E2 for step 1; E3 and E9 for step 2; E6 and E7 for step 3). Those two lines are the only docs you may touch.
+Before each step, tell me in 3 lines what you will build, which files you will touch and how you will check it.
 ```
 
 ### For the data teammate (Antigravity)
 
 ```
-Read AGENTS.md, CLAUDE.md and docs/PLAN.md first. You may edit ONLY files inside api/data/. Do not touch any other folder. Synthetic data only: invented lender names, no real people, no real phone or Aadhaar numbers.
+Read AGENTS.md, CLAUDE.md and docs/PLAN.md first, especially the "Tests with hand-worked values" table in docs/PLAN.md.
 
-1. By 6:00 PM: three loan ads for the live demo, as images in api/data/offers/ (ad1.png, ad2.png, ad3.png), then printed in colour, two copies each. They should look like real loan-app ads, with every number printed large in digits and the loan length printed in DAYS.
-   - ad1: a fee taken upfront on a short loan. Prints: loan amount, processing fee, amount to repay, days. Example: loan 5000, fee 1200, repay 5000 in 7 days.
-   - ad2: a plain loan with no fee. Prints: loan amount, amount to repay, days.
-   - ad3: an EMI loan. Prints: loan amount, EMI amount, number of EMIs, total to repay, days. EMI x number must equal the total.
-   Write the expected answers BY HAND (a calculator is fine, no AI) in api/data/offers/demo_expected.json:
-   [{"file": "ad1.png", "principal": 5000, "fees": 1200, "in_hand": 3800, "repay_total": 5000, "tenure_days": 7, "extra": 1200}]
-   where in_hand = loan amount minus fee, and extra = repay_total minus in_hand.
-2. By 6:15 PM: five SMS-style text offers in api/data/offers/sms_offers.json, a mix of English and Hinglish, each stating a loan amount, the amount to repay and the days (some with a fee, one with EMIs):
-   [{"id": "sms1", "text": "...", "expected": {"in_hand": 4500, "repay_total": 5600, "tenure_days": 7, "extra": 1100}}]
-3. After those: fill api/data/rbi_dla.csv from RBI's public directory of digital lending apps. Keep the header dla_name,regulated_entity,list_date and put the date of the list in every row. This is needed after the review, not before it.
+YOUR FILES. You may edit ONLY files inside api/data/. Do not touch any other folder. Synthetic data only: invented app and lender names (except the real public RBI list in step 5), no real people, no real phone, Aadhaar or account numbers.
 
-Write expected numbers before anyone runs the app on the ads. Do not change any existing file except api/data/rbi_dla.csv and api/data/README.md. Push on a branch and open a pull request; hand the printed ads to the lead by 6:00 PM.
+GOLDEN RULE: every expected answer is worked out BY HAND with a calculator before anyone runs the app. Never ask an AI to calculate an expected number. These files are how we prove the app never shows a wrong rupee number.
+
+STEP 1 (by 6:00 PM): 3 demo ads for the live demo (task G3)
+- Make them in Canva (free) or Google Slides, size 1080 x 1350 (phone ad). Make them look like real loan-app ads: bright colours, an invented app name and logo, "Instant loan in 5 minutes!", but every number printed large in digits and the loan length in DAYS.
+  - ad1.png, a fee taken upfront: loan 5000, processing fee 1200, repay 5000, 7 days.
+  - ad2.png, plain, no fee: loan 10000, repay 10600, 30 days.
+  - ad3.png, EMI: loan 20000, EMI 2000 x 12, total repay 24000, 360 days.
+- Save them in api/data/offers/. Print each in colour, two copies. Photograph each print with a phone (slight angle, normal room light) and save as ad1_photo.jpg, ad2_photo.jpg, ad3_photo.jpg. That is what Raju's photos look like.
+- Write api/data/offers/demo_expected.json by hand:
+  [{"file": "ad1.png", "principal": 5000, "fees": 1200, "in_hand": 3800, "repay_total": 5000, "tenure_days": 7, "extra": 1200, "verdict": "VERY_COSTLY"}, ...]
+  in_hand = loan minus fee (or the loan if there is no fee). extra = repay minus in_hand. Use the verdict column of the PLAN.md table.
+- Hand the printed copies to Gurpreet by 6:00 PM.
+
+STEP 2 (by 6:15 PM): 5 SMS-style text offers (task G8), in api/data/offers/sms_offers.json
+- A mix: 2 in English, 2 in Hinglish, 1 in Hindi script. One EMI offer. One with the fee written as a percentage ("processing fee 10%").
+  [{"id": "sms1", "text": "Congrats! Rs 5000 loan approved. Fee Rs 500. Repay Rs 5600 in 7 days.", "expected": {"principal": 5000, "fees": 500, "in_hand": 4500, "repay_total": 5600, "tenure_days": 7, "extra": 1100}}, ...]
+- Write null for a number the SMS does not state.
+
+STEP 3 (by 9:00 PM): 30 test offers (task G1), in api/data/offers/
+- Files offer01.png to offer30.png, plus answers.json in the same shape as demo_expected.json, written before any run. Add "is_loan_ad": false for the non-loans.
+- Cover every case: fee upfront on a short loan (6); plain loan, cheap and dear (5); EMI with the total printed (3); EMI without the total (3); in-hand amount printed (2); days missing (2); an ad whose numbers contradict each other, e.g. loan 5000, fee 1200, "you get 4000" (2); weekly wording ("2 weeks") (2); a blurry or dark phone photo of a printed ad (2); not a loan: a menu, an electricity bill, a shop poster (3).
+- For a blurry photo or a contradicting ad, the expected verdict is CANNOT_SAY.
+
+STEP 4 (by 10:00 PM): 10 harassment samples (task G2), in api/data/harassment/samples.json
+- Each: {"id": "h01", "at": "2026-11-13T21:40:00+05:30", "channel": "call|sms|whatsapp|telegram|visit", "contacted": "borrower|family|employer|contacts", "text": "...", "expected_rules": ["H1", "H2"]}
+- Rules (CLAUDE.md): H1 contact before 08:00 or after 19:00; H2 threats or abuse; H3 contacting family, friends, employer or contacts; H4 public shaming; H5 false claims of arrest, court or police; H6 5 or more calls in one day (make 5 call samples on one date for this).
+- Every rule must appear at least once. Include a polite reminder at 11:00 AM that matches NO rule. Mix Hinglish and English. One sample contains an invented 12-digit number (e.g. "Aadhaar 1234 5678 9012") so we can test that the PDF masks it.
+
+STEP 5 (after step 4): RBI directory (task G4)
+- RBI publishes a public directory of digital lending apps (DLAs) and the regulated lenders behind them. Find it on rbi.org.in (search the site for "digital lending apps") and download or copy it.
+- Save it as api/data/rbi_dla.csv. Keep the header exactly: dla_name,regulated_entity,list_date. Put the date of the list in every row as YYYY-MM-DD.
+- In api/data/README.md write the source URL and the date you downloaded it. If you cannot get the full list, copy at least 30 real rows and write that it is partial.
+
+ALSO
+- I1, before 7:30 PM: write 3 risky questions to ask the mentor at the review (e.g. "Would a judge trust our cost bands?") and send them to Gurpreet.
+- I3, at 7:00 PM: screen-record the rehearsal, a 60-second backup video of photo -> card + voice. Keep it on your laptop; do not commit it.
+- Vendor talks, when you can: speak to 2 or 3 street vendors. No names, no phone numbers, no photos of people. Ask: Have you taken a loan from an app? How much did you get in hand? Did you understand the terms? Did agents call you or your family? Would a voice message in Hindi help? Write short notes under "Field notes" in api/data/README.md.
+
+HANDING OVER. One pull request per step. Never push to main and never merge. For each: pull main, make a branch, commit as "data: <what changed>", push, open a pull request, and tell Gurpreet. Do not change any existing file except api/data/rbi_dla.csv and api/data/README.md.
+Before each step, tell me in 3 lines what you will make, which files, and how you checked the expected numbers.
 ```

@@ -190,7 +190,7 @@ All changes go through a pull request that Gurpreet merges (D27).
 - Done when: A forwarded message creates a case event and the PDF arrives in the chat
 
 ### D6 · Voice-note input with Whisper
-- Status: doing (Siddeshwar, all of it: bot and API side, D35). Server side in review (PR "Voice notes, server side"); bot side next
+- Status: review (Siddeshwar, D35): server side + bot side built; proven with the real API and real Whisper (Telegram faked); real Telegram voice note still to do
 - Type: Stretch
 - Depends on: D3, B2
 - Files: bot/main.py (Siddeshwar); api/core/fallback.py, api/core/extract.py, api/main.py, api/core/schemas.py (Gurpreet)

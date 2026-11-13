@@ -331,7 +331,7 @@ All changes go through a pull request that Gurpreet merges (D27).
 - Done when: A new event appears without a page reload; PDF downloads; verify shows ✓
 
 ### E6 · Manifest so the app can be added to a home screen
-- Status: todo (Tejaswini)
+- Status: review (Tejaswini)
 - Type: Must
 - Depends on: E1
 - Files: web/public/manifest.json, icons

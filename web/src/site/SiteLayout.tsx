@@ -4,7 +4,7 @@ import { useEffect, useState } from 'react'
 import { Link, NavLink, Outlet, useLocation } from 'react-router-dom'
 import { buttonVariants } from '@/components/ui/button'
 import { useTheme } from '@/lib/theme'
-import { NAV } from './shell'
+import { DARK_TOP, NAV } from './shell'
 
 // Layout of the public website (D47). It is separate from the PWA layout in App.tsx: its own
 // borderless nav and footer, full width, and the PWA never links back here.
@@ -18,6 +18,11 @@ function SiteNav() {
   const [scrolled, setScrolled] = useState(false)
 
   useMotionValueEvent(scrollY, 'change', (y) => setScrolled(y > 24))
+  // Pages that open on a dark block (DARK_TOP) need light nav text until the bar frosts over.
+  const { pathname } = useLocation()
+  const light = DARK_TOP.includes(pathname) && !scrolled
+  const idle = light ? 'text-background/60 hover:text-background' : 'text-muted-foreground hover:text-foreground'
+  const on = light ? 'text-background' : 'text-foreground'
 
   return (
     <header
@@ -26,7 +31,7 @@ function SiteNav() {
       }`}
     >
       <div className="flex h-[4.5rem] items-center gap-8 px-[3vw]">
-        <Link to="/" className="text-xl font-semibold tracking-tight">
+        <Link to="/" className={`text-xl font-semibold tracking-tight transition-colors ${on}`}>
           Karz<span className="text-primary">Samjho</span>
         </Link>
         <nav className="hidden flex-1 items-center gap-8 sm:flex">
@@ -35,7 +40,7 @@ function SiteNav() {
               key={item.to}
               to={item.to}
               className={({ isActive }) =>
-                `group relative py-2 text-sm font-medium transition-colors hover:text-foreground ${isActive ? 'text-foreground' : 'text-muted-foreground'}`
+                `group relative py-2 text-sm font-medium transition-colors ${isActive ? on : idle}`
               }
             >
               {({ isActive }) => (
@@ -55,7 +60,7 @@ function SiteNav() {
             type="button"
             aria-label={dark ? 'Switch to light theme' : 'Switch to dark theme'}
             onClick={() => setTheme(dark ? 'light' : 'dark')}
-            className="flex size-10 items-center justify-center rounded-full text-muted-foreground transition-colors hover:text-foreground"
+            className={`flex size-10 items-center justify-center rounded-full transition-colors ${idle}`}
           >
             {dark ? <Sun className="size-4" /> : <Moon className="size-4" />}
           </button>

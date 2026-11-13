@@ -514,6 +514,13 @@ All changes go through a pull request that Gurpreet merges (D27).
 - Files: web/src/site/QrLink.tsx
 - Done when: the website shows a QR for <this address>/check?mode=raju (Raju) and /check (bank mitra), drawn in the browser, and a phone on the same Wi-Fi opens the page
 
+### H8 · `/join`: the call-to-action page for foundations, NGOs and other backers
+- Status: review (Gurpreet): inverted opening, sideways-scrolling "three ways to back it", a role picker that writes the message, copy or send as a pre-filled public post on the repo
+- Type: Stretch (added 2:25 AM by the lead, D47)
+- Depends on: H1
+- Files: web/src/pages/Join.tsx, web/src/site/shell.ts, web/src/site/SiteLayout.tsx, web/src/App.tsx
+- Done when: a visitor can pick who they are, read a ready message and copy it or open it as a pre-filled post; no invented contact details or costs; nothing claimed as running; no forms, no login
+
 ## I. Pitch and demo
 
 ### I1 · Mentor questions for both rounds

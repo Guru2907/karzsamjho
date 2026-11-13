@@ -190,3 +190,13 @@ Login/accounts, guided tours, Bhashini, 3D or animated backgrounds, scroll libra
 6. If the same error survives two attempts, stop and tell the human what you tried.
 7. If you change anything the demo shows, say so, so the demo script is updated in the same change.
 8. Commit message format: "<area>: <what changed>" e.g. "maths: add EMI repay total + tests".
+
+
+## How to report while working (the human is watching in the chat window)
+Explain as you go, in plain English, short:
+1. Before starting: 2-3 lines on what this task does for Raju (the user) and which files you will touch.
+2. While working: before each file change, one line saying what you are changing and why.
+3. After each file change: show the 5-15 most important lines you wrote (not the whole file) in a code block, with one line explaining what they do.
+4. When you run something (tests, server, a script): say what you ran and what the result means ("6 passed = the maths matches our expected answers").
+5. At the end: a short summary with what works now, how to try it yourself (exact command or what to send in Telegram), and what is still missing.
+No jargon without a one-line explanation. Never say "should work": show the run.

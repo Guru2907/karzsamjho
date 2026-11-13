@@ -21,7 +21,7 @@ Every agent session and every person adds an entry here at the end of each task,
 
 ## Log
 
-### 13 Nov 2026, 6:25 PM · D3 D4 (T4) · agent for Siddeshwar
+### 13 Nov 2026, 5:26 PM · D3 D4 (T4) · agent for Siddeshwar
 - Did: bot/main.py. Card now HTML (names escaped): verdict line, 4 symbols with bold rupees, RBI line (hidden when lender.match is null, never "illegal"), next step. After the card, the MP3 from audio_url goes by sendAudio; no audio_url or a failed download -> card alone. Pasted text -> POST /api/checks JSON {text, lang "hi", source "telegram"}. 422 -> detail.text_hi; server off / other errors -> Hindi messages.
 - Files: bot/main.py, docs/TASKS.md, docs/PROGRESS.md
 - Proof: `pytest -q` 6 passed (no bot test file in my list). Handler check script (not committed): 21/21, against the real API app (sample data) and a fake API: card then MP3, card alone, 422 text, server off, JSON body, escaping.

@@ -22,6 +22,10 @@ class Lender(BaseModel):
     score: Optional[float] = None
     closest: Optional[str] = None
     list_date: Optional[str] = None
+    # D51 (additive, null by default). Without these two lines FastAPI's response_model dropped them, so the
+    # bot never saw the RBI cancelled-registration line or the registered-NBFC line (finding F-1, D52 run).
+    nbfc: Optional[dict] = None           # {name, list_date}: an NBFC registered with RBI
+    warning: Optional[dict] = None        # {list, name, source_type, date, source}: RBI cancelled registration
 
 
 class NextStep(BaseModel):

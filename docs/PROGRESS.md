@@ -6,7 +6,7 @@ Every agent session and every person adds an entry here at the end of each task,
 - Now (6:30 PM): backend + bot for the review are merged on main (PRs #1 to #11; 152 tests pass): photo or pasted SMS in Telegram -> card + Hindi MP3, second reading on a mismatch. Waiting for: the web /check page (PWA teammate, no PR yet) and the printed ads + SMS offers (data teammate, nothing in api/data yet). Next: real Telegram test on the server laptop, then the 7:00 PM rehearsal. Harassment, lender, database and cache come after the review.
 - Gates: 2:00 PM [x] · 7:30 PM [ ] · 12:30 AM [ ] · 3:30 AM freeze [ ]
 - Known broken: none in code. Missing for 7:30: printed ads, web /check page, a real Telegram run. Results vanish on API restart (no database yet).
-- Groq photo reads used today on the server account: 0 of about 80 (Gurpreet's own account: 4)
+- Groq photo reads used today on the server account: 0 of about 80 (Gurpreet's own account: 6)
 
 ## Entry template (copy, fill, paste at the top of the log below)
 ```
@@ -20,6 +20,14 @@ Every agent session and every person adds an entry here at the end of each task,
 ```
 
 ## Log
+
+### 13 Nov 2026, 7:00 PM · A4 photo cache · agent for Gurpreet
+- Did: cache.py stores each photo's CheckResult by SHA-256 of the bytes (one JSON file in CACHE_DIR, written via .part + rename). main.py checks it before any AI call; a hit returns cached=true and the same MP3; a missing MP3 is made again with edge-tts only; check ids continue from the highest id on disk, so a new check never overwrites a cached MP3. Text and not-a-loan answers are not cached.
+- Files: api/core/cache.py, api/main.py, api/tests/test_cache.py (new), api/tests/test_pipeline.py, docs/ARCHITECTURE.md, RUNBOOK.md, DEMO.md
+- Proof: `pytest -q` 164 passed (12 new). Real: same photo 3 times with an API restart in between -> 1 Qwen call (1.83 s), then 2 cache hits in 0.0 s, MP3 still served after the restart.
+- Status in docs/TASKS.md: A4 = review
+- Next: A3 database.
+- Broken / risks: a cached ad shows "⏱ 0.0 sec" on the card; decide for the demo (DEMO.md checklist).
 
 ### 13 Nov 2026, 6:30 PM · docs brought up to date with main · agent for Gurpreet
 - Did: all PRs #1 to #11 are merged; local main matches GitHub (7e7b7cb). Updated every doc the code now contradicts: START_HERE (checks are real, merge rules), ARCHITECTURE (what is built, second reading only on a mismatch), TESTING (152 tests, real-run results), RUNBOOK (new symptoms), README, DEMO (seconds stamp, LIVE 2 needs C1/C2), PLAN (status), TASKS (B3, B4, B5, D2 = done after an independent check; D3, D4 review until real Telegram), DECISIONS D28 to D31.

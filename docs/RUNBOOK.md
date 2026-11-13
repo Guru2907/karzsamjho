@@ -38,6 +38,7 @@ Health check: open http://localhost:8000/api/health
 | Bot says "Server abhi band hai" | The API is not running, or API_URL in .env points elsewhere. The bot waits up to 45 s (from the config timeouts) before saying this |
 | Old checks or their MP3 gone | Expected: checks live in memory until the database (A3); a restart clears them |
 | A photo says "Photo saaf nahi hai" | Both readers failed or nothing readable; check the API log for `read_image: engine=... failed (...)` lines (type and status only) |
+| A photo keeps giving an old answer | It is cached by its exact bytes (A4). To read it fresh, stop the API and delete that photo's file in `cache/` (or the whole folder). Never delete `audio/` while cached results point at it; a missing MP3 is made again anyway |
 | How many Groq photo reads are left? | API log lines `read_image: engine=qwen ok ... remaining_tokens=... remaining_requests=...` |
 
 ## Network switch-over

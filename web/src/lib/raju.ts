@@ -1,6 +1,7 @@
-import { useState, useCallback } from 'react'
+import { useState, useEffect, useCallback } from 'react'
 
 const STORAGE_KEY = 'ks-raju'
+const EVENT_NAME = 'ks-raju-change'
 
 export function useRajuMode(): [boolean, (val: boolean | ((prev: boolean) => boolean)) => void] {
   const [on, setOnState] = useState<boolean>(() => {
@@ -17,11 +18,26 @@ export function useRajuMode(): [boolean, (val: boolean | ((prev: boolean) => boo
     }
   })
 
+  useEffect(() => {
+    const handleSync = () => {
+      try {
+        setOnState(localStorage.getItem(STORAGE_KEY) === 'true')
+      } catch {}
+    }
+    window.addEventListener(EVENT_NAME, handleSync)
+    window.addEventListener('storage', handleSync)
+    return () => {
+      window.removeEventListener(EVENT_NAME, handleSync)
+      window.removeEventListener('storage', handleSync)
+    }
+  }, [])
+
   const setOn = useCallback((val: boolean | ((prev: boolean) => boolean)) => {
     setOnState((prev) => {
       const next = typeof val === 'function' ? val(prev) : val
       try {
         localStorage.setItem(STORAGE_KEY, String(next))
+        window.dispatchEvent(new Event(EVENT_NAME))
       } catch {}
       return next
     })

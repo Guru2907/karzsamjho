@@ -1,11 +1,16 @@
-import { useRef, useState } from 'react'
+import { useEffect, useRef, useState } from 'react'
 import {
   Camera,
+  Clock,
   Image as ImageIcon,
+  ImageOff,
   IndianRupee,
+  Pause,
+  Play,
   RotateCcw,
   Share2,
   Volume2,
+  WifiOff,
 } from 'lucide-react'
 import { toast } from 'sonner'
 import { Button } from '@/components/ui/button'
@@ -68,6 +73,7 @@ export default function Check() {
   const [rajuMode] = useRajuMode()
   const cameraInputRef = useRef<HTMLInputElement>(null)
   const galleryInputRef = useRef<HTMLInputElement>(null)
+  const audioRef = useRef<HTMLAudioElement>(null)
 
   const [view, setView] = useState<'start' | 'waiting' | 'result' | 'error'>(() => {
     if (typeof window === 'undefined') return 'start'
@@ -85,9 +91,34 @@ export default function Check() {
 
   const [error, setError] = useState<{ code?: string; text_hi: string } | null>(null)
   const [smsText, setSmsText] = useState('')
+  const [isPlaying, setIsPlaying] = useState(false)
+
+  // Auto-play audio in Raju mode when result arrives
+  useEffect(() => {
+    if (rajuMode && view === 'result' && result?.audio_url && audioRef.current) {
+      audioRef.current
+        .play()
+        .then(() => setIsPlaying(true))
+        .catch(() => setIsPlaying(false))
+    }
+  }, [rajuMode, view, result])
+
+  const togglePlay = () => {
+    if (!audioRef.current) return
+    if (isPlaying) {
+      audioRef.current.pause()
+      setIsPlaying(false)
+    } else {
+      audioRef.current
+        .play()
+        .then(() => setIsPlaying(true))
+        .catch(() => setIsPlaying(false))
+    }
+  }
 
   const runCheck = async (fn: () => Promise<CheckResult>) => {
     setView('waiting')
+    setIsPlaying(false)
     try {
       const res = await fn()
       setResult(res)
@@ -142,10 +173,17 @@ export default function Check() {
     setResult(null)
     setError(null)
     setSmsText('')
+    setIsPlaying(false)
     setView('start')
     if (typeof window !== 'undefined' && window.location.search) {
       window.history.replaceState({}, '', window.location.pathname)
     }
+  }
+
+  const getErrorIcon = (code?: string) => {
+    if (code === 'SERVER_OFF') return WifiOff
+    if (code === 'TIMEOUT') return Clock
+    return ImageOff
   }
 
   return (
@@ -169,73 +207,99 @@ export default function Check() {
 
       {/* 1. START state */}
       {view === 'start' && (
-        <div className="space-y-6">
-          <div className="text-center space-y-1">
-            <h1 className="text-2xl font-bold tracking-tight text-foreground">
-              Check a loan ad or SMS
-            </h1>
-          </div>
-
-          <div className="space-y-3">
-            <Button
-              type="button"
-              onClick={() => cameraInputRef.current?.click()}
-              className="w-full h-24 text-lg font-semibold flex flex-col gap-1 items-center justify-center rounded-2xl shadow-sm"
-            >
-              <Camera className="size-8" />
-              <span>Take photo</span>
-            </Button>
-
-            <Button
-              type="button"
-              variant="outline"
-              onClick={() => galleryInputRef.current?.click()}
-              className="w-full h-14 text-base font-medium flex items-center justify-center gap-2 rounded-xl"
-            >
-              <ImageIcon className="size-5" />
-              <span>Choose from gallery</span>
-            </Button>
-          </div>
-
-          <div className="relative my-4">
-            <div className="absolute inset-0 flex items-center">
-              <div className="w-full border-t border-border" />
+        <>
+          {rajuMode ? (
+            /* Raju mode: ONE giant camera button, nothing else */
+            <div className="py-6 flex flex-col items-center justify-center">
+              <Button
+                type="button"
+                aria-label="Photo lo"
+                onClick={() => cameraInputRef.current?.click()}
+                className="w-full min-h-[45vh] h-80 sm:h-96 rounded-3xl flex items-center justify-center shadow-md bg-primary text-primary-foreground hover:bg-primary/90 active:scale-[0.98] transition-transform"
+              >
+                <Camera className="size-20" />
+              </Button>
             </div>
-            <div className="relative flex justify-center text-xs uppercase">
-              <span className="bg-background px-3 text-muted-foreground font-medium">or</span>
+          ) : (
+            /* Normal mode: heading, camera, gallery, divider, textarea, send */
+            <div className="space-y-6">
+              <div className="text-center space-y-1">
+                <h1 className="text-2xl font-bold tracking-tight text-foreground">
+                  Check a loan ad or SMS
+                </h1>
+              </div>
+
+              <div className="space-y-3">
+                <Button
+                  type="button"
+                  onClick={() => cameraInputRef.current?.click()}
+                  className="w-full h-24 text-lg font-semibold flex flex-col gap-1 items-center justify-center rounded-2xl shadow-sm"
+                >
+                  <Camera className="size-8" />
+                  <span>Take photo</span>
+                </Button>
+
+                <Button
+                  type="button"
+                  variant="outline"
+                  onClick={() => galleryInputRef.current?.click()}
+                  className="w-full h-14 text-base font-medium flex items-center justify-center gap-2 rounded-xl"
+                >
+                  <ImageIcon className="size-5" />
+                  <span>Choose from gallery</span>
+                </Button>
+              </div>
+
+              <div className="relative my-4">
+                <div className="absolute inset-0 flex items-center">
+                  <div className="w-full border-t border-border" />
+                </div>
+                <div className="relative flex justify-center text-xs uppercase">
+                  <span className="bg-background px-3 text-muted-foreground font-medium">or</span>
+                </div>
+              </div>
+
+              <div className="space-y-3">
+                <textarea
+                  value={smsText}
+                  onChange={(e) => setSmsText(e.target.value)}
+                  placeholder="Paste the SMS here"
+                  rows={4}
+                  className="w-full p-4 rounded-xl border border-border bg-card text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-ring resize-none text-sm leading-relaxed"
+                />
+
+                <Button
+                  type="button"
+                  disabled={!smsText.trim()}
+                  onClick={handleSendSms}
+                  className="w-full h-14 text-base font-semibold rounded-xl"
+                >
+                  Send
+                </Button>
+              </div>
             </div>
-          </div>
-
-          <div className="space-y-3">
-            <textarea
-              value={smsText}
-              onChange={(e) => setSmsText(e.target.value)}
-              placeholder="Paste the SMS here"
-              rows={4}
-              className="w-full p-4 rounded-xl border border-border bg-card text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-ring resize-none text-sm leading-relaxed"
-            />
-
-            <Button
-              type="button"
-              disabled={!smsText.trim()}
-              onClick={handleSendSms}
-              className="w-full h-14 text-base font-semibold rounded-xl"
-            >
-              Send
-            </Button>
-          </div>
-        </div>
+          )}
+        </>
       )}
 
       {/* 2. WAITING state */}
       {view === 'waiting' && (
-        <div className="py-20 flex flex-col items-center justify-center text-center space-y-4">
-          <div className="p-6 rounded-full bg-muted">
-            <IndianRupee className="size-16 text-primary animate-pulse" />
-          </div>
-          <p className="text-lg font-medium text-foreground">Reading your offer…</p>
-          <p className="text-xs text-muted-foreground">can take up to 15 seconds</p>
-        </div>
+        <>
+          {rajuMode ? (
+            /* Raju mode: pulsing IndianRupee icon only */
+            <div className="py-32 flex flex-col items-center justify-center">
+              <IndianRupee className="size-24 text-primary animate-pulse" />
+            </div>
+          ) : (
+            <div className="py-20 flex flex-col items-center justify-center text-center space-y-4">
+              <div className="p-6 rounded-full bg-muted">
+                <IndianRupee className="size-16 text-primary animate-pulse" />
+              </div>
+              <p className="text-lg font-medium text-foreground">Reading your offer…</p>
+              <p className="text-xs text-muted-foreground">can take up to 15 seconds</p>
+            </div>
+          )}
+        </>
       )}
 
       {/* 3. RESULT state */}
@@ -247,49 +311,116 @@ export default function Check() {
 
           <RajuCard result={result} raju={rajuMode} />
 
-          {result.audio_url && (
-            <div className="rounded-2xl border border-border bg-card p-4 space-y-2">
-              <div className="flex items-center gap-2 text-xs font-medium text-muted-foreground">
-                <Volume2 className="size-4" />
-                <span>Listen · Suno</span>
-              </div>
-              <audio controls src={result.audio_url} className="w-full" />
+          {rajuMode ? (
+            /* Raju mode: Giant round play button + camera button to check again */
+            <div className="space-y-6 pt-2">
+              {result.audio_url && (
+                <>
+                  <audio
+                    ref={audioRef}
+                    src={result.audio_url}
+                    onPlay={() => setIsPlaying(true)}
+                    onPause={() => setIsPlaying(false)}
+                    onEnded={() => setIsPlaying(false)}
+                    className="hidden"
+                  />
+                  <div className="flex justify-center">
+                    <button
+                      type="button"
+                      aria-label={isPlaying ? 'Awaaz roko' : 'Awaaz suno'}
+                      onClick={togglePlay}
+                      className="size-24 rounded-full bg-primary text-primary-foreground shadow-lg flex items-center justify-center active:scale-95 transition-transform"
+                    >
+                      {isPlaying ? (
+                        <Pause className="size-12" />
+                      ) : (
+                        <Play className="size-12 ml-1" />
+                      )}
+                    </button>
+                  </div>
+                </>
+              )}
+
+              <Button
+                type="button"
+                aria-label="Photo lo"
+                onClick={() => cameraInputRef.current?.click()}
+                className="w-full h-16 rounded-2xl flex items-center justify-center shadow-sm"
+              >
+                <Camera className="size-8" />
+              </Button>
             </div>
+          ) : (
+            /* Normal mode: audio player, share button, new check button, helper details */
+            <>
+              {result.audio_url && (
+                <div className="rounded-2xl border border-border bg-card p-4 space-y-2">
+                  <div className="flex items-center gap-2 text-xs font-medium text-muted-foreground">
+                    <Volume2 className="size-4" />
+                    <span>Listen · Suno</span>
+                  </div>
+                  <audio controls src={result.audio_url} className="w-full" />
+                </div>
+              )}
+
+              <div className="grid grid-cols-2 gap-3">
+                <Button
+                  type="button"
+                  onClick={handleShare}
+                  className="h-14 font-semibold flex items-center justify-center gap-2 rounded-xl"
+                >
+                  <Share2 className="size-5" />
+                  <span>Share with helper</span>
+                </Button>
+
+                <Button
+                  type="button"
+                  variant="outline"
+                  onClick={handleReset}
+                  className="h-14 font-semibold flex items-center justify-center gap-2 rounded-xl"
+                >
+                  <RotateCcw className="size-5" />
+                  <span>New check</span>
+                </Button>
+              </div>
+
+              <HelperDetails result={result} />
+            </>
           )}
-
-          <div className="grid grid-cols-2 gap-3">
-            <Button
-              type="button"
-              onClick={handleShare}
-              className="h-14 font-semibold flex items-center justify-center gap-2 rounded-xl"
-            >
-              <Share2 className="size-5" />
-              <span>Share with helper</span>
-            </Button>
-
-            <Button
-              type="button"
-              variant="outline"
-              onClick={handleReset}
-              className="h-14 font-semibold flex items-center justify-center gap-2 rounded-xl"
-            >
-              <RotateCcw className="size-5" />
-              <span>New check</span>
-            </Button>
-          </div>
-
-          <HelperDetails result={result} />
         </div>
       )}
 
       {/* 4. ERROR state */}
       {view === 'error' && error && (
-        <ErrorView
-          code={error.code}
-          text_hi={error.text_hi}
-          onRetry={handleReset}
-          raju={rajuMode}
-        />
+        <>
+          {rajuMode ? (
+            /* Raju mode: icon only + big camera button */
+            <div className="py-16 flex flex-col items-center justify-center space-y-12">
+              <div className="p-8 rounded-full bg-muted text-muted-foreground">
+                {(() => {
+                  const Icon = getErrorIcon(error.code)
+                  return <Icon className="size-20" />
+                })()}
+              </div>
+              <Button
+                type="button"
+                onClick={() => cameraInputRef.current?.click()}
+                aria-label="Photo lo"
+                className="w-full h-24 rounded-2xl flex items-center justify-center shadow-sm"
+              >
+                <Camera className="size-10" />
+              </Button>
+            </div>
+          ) : (
+            /* Normal mode: ErrorView with icon, Hindi text, try again */
+            <ErrorView
+              code={error.code}
+              text_hi={error.text_hi}
+              onRetry={handleReset}
+              raju={false}
+            />
+          )}
+        </>
       )}
     </div>
   )

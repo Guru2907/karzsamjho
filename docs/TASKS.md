@@ -38,7 +38,7 @@ All changes go through a pull request that Gurpreet merges (D27).
 - Done when: Every route in section 5 returns sample data by 12:30 PM
 
 ### A3 · `db.py`: tables for checks, cases, events
-- Status: todo (Gurpreet)
+- Status: review (Gurpreet): SQLite checks/cases/events; checks survive a restart (proven 11:43 PM)
 - Type: Must
 - Depends on: A1
 - Files: api/core/db.py
@@ -52,7 +52,7 @@ All changes go through a pull request that Gurpreet merges (D27).
 - Done when: With the Groq key removed, a check still answers through Gemini Flash-Lite; a repeated photo answers instantly
 
 ### A5 · `/api/health`, `/api/stats`
-- Status: todo (Gurpreet; partly: stats from memory, health shows keys only)
+- Status: review (Gurpreet): live engine pings (free calls, cached 60 s), database state, stats from the database; proven with a wrong Groq key (12:35 AM)
 - Type: Must
 - Depends on: A3
 - Files: api/main.py
@@ -154,7 +154,7 @@ All changes go through a pull request that Gurpreet merges (D27).
 - Done when: "पहले 1500 रुपये प्रोसेसिंग शुल्क भेजो", "আগে 1499 টাকা প্রসেসিং ফি পাঠান" and "आधी 999 रुपये नोंदणी शुल्क पाठवा" each trigger the warning even when the AI misses it; normal offers in those scripts do not
 
 ### B11 · Gemini as backup for SMS and voice when Groq is down
-- Status: todo (Gurpreet)
+- Status: review (Gurpreet): drill with a wrong Groq key passed (12:45 AM): SMS and Hindi voice note answered by Gemini, numbers right
 - Type: Must
 - Depends on: B2, D6
 - Files: api/core/fallback.py, api/tests/test_fallback.py
@@ -163,7 +163,7 @@ All changes go through a pull request that Gurpreet merges (D27).
 ## C. Lender check and next step
 
 ### C1 · Load `rbi_dla.csv`; `lender.py` with RapidFuzz
-- Status: todo (Gurpreet; name + website domain, D37)
+- Status: review (Gurpreet): name + website match, clone check, list date; proven with a made-up directory + real AI (12:20 AM); real RBI CSV (G4) still missing
 - Type: Must
 - Depends on: A1, G4
 - Files: api/core/lender.py, api/data/rbi_dla.csv, api/tests/test_lender.py
@@ -177,7 +177,7 @@ All changes go through a pull request that Gurpreet merges (D27).
 - Done when: Every verdict maps to exactly one next step
 
 ### C4 · Speak the lender result (mentor feedback, D37)
-- Status: todo (Siddeshwar)
+- Status: review (Siddeshwar): speak.lender_sentence, hi exact, bn/mr drafts for the native-speaker OK; main.py wiring by Gurpreet
 - Type: Must
 - Depends on: C1 (shape only)
 - Files: api/core/speak.py, api/tests/test_speak.py (Siddeshwar); api/main.py adds the sentence after the numbers (Gurpreet)
@@ -222,7 +222,7 @@ All changes go through a pull request that Gurpreet merges (D27).
 - Done when: A pasted SMS returns a reply
 
 ### D5 · Bot: forward a message → harassment event; send the PDF back
-- Status: todo (Siddeshwar)
+- Status: review (Siddeshwar): forward or /log -> case event -> Hindi rules -> PDF; real PDF needs F2 + endpoint
 - Type: Must
 - Depends on: F2, F3
 - Files: bot/main.py
@@ -347,21 +347,21 @@ All changes go through a pull request that Gurpreet merges (D27).
 ## F. Evidence and harassment
 
 ### F1 · `harass.py`: rules H1–H6, text labelling with keyword backup
-- Status: todo (Siddeshwar)
+- Status: review (Siddeshwar): H1-H6, AI + keyword safety net, 10/10 real samples
 - Type: Must
 - Depends on: A4
 - Files: api/core/harass.py, api/tests/test_harass.py
 - Done when: The 10 samples get exactly the expected rules; the polite 11 AM reminder matches none
 
 ### F2 · Events endpoint with hash chain
-- Status: todo (Gurpreet)
+- Status: review (Gurpreet): real cases/events, hash chain, rules from F1, day counter; chain proven across a restart (11:52 PM)
 - Type: Must
 - Depends on: A3, F1
 - Files: api/main.py, api/core/db.py
 - Done when: Each event stores its hash and the previous hash
 
 ### F3 · `evidence.py`: PDF with timeline, rules, hashes, masking, complaint draft
-- Status: todo (Siddeshwar)
+- Status: review (Siddeshwar): build_pdf + mask + hash helpers; endpoint wiring in main.py by Gurpreet
 - Type: Must
 - Depends on: F2
 - Files: api/core/evidence.py

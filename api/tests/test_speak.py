@@ -107,3 +107,62 @@ def test_unsafe_check_id_is_refused(audio_dir, monkeypatch):
     monkeypatch.setattr(fallback, "speak", speak)
     assert asyncio.run(make_audio("../../evil", "text")) is None
     assert calls == []
+
+
+# ---------------------------------------------------------------- C4: the spoken lender result
+from api.core.speak import LENDER_SENTENCES, lender_sentence  # noqa: E402
+
+FOUND = {"name_read": "PaisaTurant", "match": "FOUND", "score": 96,
+         "closest": "PaisaTurant (Example Finance Ltd)", "list_date": "2026-11-12"}
+
+
+def test_lender_found_hindi_exact():
+    assert lender_sentence(FOUND) == ("Yeh app RBI ki list mein hai, "
+                                      "PaisaTurant (Example Finance Ltd) se juda hai.")
+
+
+def test_lender_similar_hindi_exact():
+    similar = {**FOUND, "match": "SIMILAR", "closest": "PaisaTurnt (Example Finance Ltd)"}
+    assert lender_sentence(similar) == ("RBI ki list mein milta-julta naam hai: "
+                                        "PaisaTurnt (Example Finance Ltd). Sahi naam check karo.")
+
+
+def test_lender_not_found_hindi_exact():
+    assert lender_sentence({**FOUND, "match": "NOT_FOUND", "closest": None}) == \
+        "Yeh app RBI ki list mein nahi mila."
+
+
+@pytest.mark.parametrize("lender", [None, {}, {"match": None}, {"match": "MAYBE"}, "FOUND"])
+def test_lender_not_checked_says_nothing(lender):
+    assert lender_sentence(lender) is None
+
+
+def test_found_without_a_name_and_similar_without_a_name():
+    assert lender_sentence({"match": "FOUND", "closest": None}) == "Yeh app RBI ki list mein hai."
+    assert lender_sentence({"match": "SIMILAR", "closest": ""}) is None
+
+
+@pytest.mark.parametrize("lang", ["bn", "mr"])
+def test_lender_bn_mr_drafts(lang):
+    for match in ("FOUND", "SIMILAR"):
+        text = lender_sentence({**FOUND, "match": match}, lang)
+        assert "PaisaTurant (Example Finance Ltd)" in text and "RBI" in text
+    assert lender_sentence({"match": "NOT_FOUND"}, lang) == LENDER_SENTENCES[lang]["NOT_FOUND"]
+
+
+def test_unknown_language_is_hindi():
+    assert lender_sentence(FOUND, "kn") == lender_sentence(FOUND, "hi")
+
+
+def test_closest_is_one_short_line():
+    long_name = "A\nVery " + "Long " * 40 + "Name"
+    text = lender_sentence({"match": "FOUND", "closest": long_name})
+    assert "\n" not in text and len(text) < 200
+
+
+def test_lender_sentences_never_promise_safety_or_accuse():
+    forbidden = ("safe", "unsafe", "illegal", "fake", "fraud", "surakshit", "gair", "nakli", "farzi",
+                 "নিরাপদ", "অবৈধ", "ভুয়া", "सुरक्षित", "बेकायदेशीर", "बनावट", "अवैध", "नकली")
+    for lang, sentences in LENDER_SENTENCES.items():
+        for key, text in sentences.items():
+            assert not any(word in text.lower() for word in forbidden), (lang, key)

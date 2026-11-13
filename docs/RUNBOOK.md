@@ -17,7 +17,7 @@ Builders use their own Gemini and Groq keys and the TEST bot token. Only the ser
 | API | `uvicorn api.main:app --host 0.0.0.0 --port 8000 --reload` | drop --reload on the demo laptop |
 | Bot | `python -m bot.main` | long polling; one program per bot token |
 | Web | `cd web && npm run dev -- --host` | Vite proxies /api to localhost:8000 |
-Health check: open http://localhost:8000/api/health
+Health check: open http://localhost:8000/api/health (add `?fresh=true` to re-check now). It shows each engine (Groq, Gemini, edge-tts) up or down with the reason, `can_read_photos`, `can_speak` and the database. Check it before going on stage
 
 ## Phones on the same network
 - Laptop address: `ipconfig` -> IPv4 Address. Phone opens `http://<address>:5173`.
@@ -36,7 +36,7 @@ Health check: open http://localhost:8000/api/health
 | `ModuleNotFoundError` | venv not active, or `pip install -r api/requirements.txt` |
 | Everything slow | Check network; switch to hotspot; demo uses cached ads |
 | Bot says "Server abhi band hai" | The API is not running, or API_URL in .env points elsewhere. The bot waits up to 45 s (from the config timeouts) before saying this |
-| Old checks or their MP3 gone | Expected: checks live in memory until the database (A3); a restart clears them |
+| Old checks gone | Checks are in `karzsamjho.db` (A3). If it was deleted or DB_PATH changed, old checks are gone; new ones still work. Never delete it before the demo |
 | A photo says "Photo saaf nahi hai" | Both readers failed or nothing readable; check the API log for `read_image: engine=... failed (...)` lines (type and status only) |
 | A photo keeps giving an old answer | It is cached by its exact bytes (A4). To read it fresh, stop the API and delete that photo's file in `cache/` (or the whole folder). Never delete `audio/` while cached results point at it; a missing MP3 is made again anyway |
 | How many Groq photo reads are left? | API log lines `read_image: engine=qwen ok ... remaining_tokens=... remaining_requests=...` |

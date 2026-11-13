@@ -24,11 +24,12 @@ Helper's browser (PWA)  ──► web/ (Vite)  ─┼──► FastAPI api/main.
 | Telegram card + MP3, pasted SMS, seconds stamp | yes | bot/main.py |
 | Voice notes (Hindi speech) | yes: Whisper -> number words to digits (gpt-oss) -> read like an SMS (D6) | fallback.transcribe, extract.extract_from_voice |
 | Bengali + Marathi voice, /bhasha | yes: bn-IN-TanishaaNeural, mr-IN-AarohiNeural; card stays Hinglish; sentences await the native-speaker OK (D7, D32) | speak.py, bot/main.py |
-| Results stored | in memory only (lost on restart) | main.py `CHECKS`; db.py is task A3 |
+| Results stored | yes: SQLite file (DB_PATH, default ./karzsamjho.db); survives a restart; main.py keeps a fast in-memory copy (A3) | db.py, main.py |
 | Cache by SHA-256 (photos) | yes: one JSON per photo in CACHE_DIR, survives a restart; a repeat makes no AI call; a missing MP3 is made again with edge-tts only | cache.py, main.py |
-| Lender match | not yet: `lender.match` is null and the card hides the line (D26) | lender.py, task C1 |
+| Lender match | yes: app/lender name (RapidFuzz, generic words stripped) + any website or Play Store link in the SMS, against the local copy of RBI's directory api/data/rbi_dla.csv; a listed name with a different link = SIMILAR (possible clone); empty directory = null (not checked); spoken via C4 when present (C1, D37) | lender.py, main.py |
 | Next step | one fixed line: "Loan lene se pehle bank mitra se poochho." (D26) | main.py; next_step.py is task C2 |
-| Harassment log, PDF, verify | sample data | tasks F1 to F5 |
+| Harassment cases + events | yes: real cases in SQLite; each event gets rules from harass.label (F1) and hash = SHA-256(prev_hash + fields), first prev = 64 zeros; day counter (F2) | main.py, db.py |
+| PDF, verify, complaint route | not yet (F3, F4, F5) | |
 
 No card -> `422 {"detail": {"code": "NOT_A_LOAN" | "UNREADABLE", "text_hi": "..."}}`; the bot and web page show `text_hi` as it is (D26).
 
@@ -53,10 +54,10 @@ No card -> `422 {"detail": {"code": "NOT_A_LOAN" | "UNREADABLE", "text_hi": "...
 |---|---|---|---|
 | Photo reading: Qwen (Groq) | 6 s | Gemini 3.5 Flash-Lite, 12 s | "Photo saaf nahi hai, dobara bhejo"; helper page offers manual entry |
 | Second reading (the other reader) | 12 s / 6 s | none | disputed fields shown as "couldn't verify" |
-| Text reading: gpt-oss-20b | 5 s | regex for rupee amounts and days | more "couldn't verify" chips |
+| Text reading: gpt-oss-20b | 5 s | Gemini Flash-Lite (12 s), then regex for rupee amounts and days (B11) | more "couldn't verify" chips |
 | Harassment labelling: gpt-oss-20b | 5 s | keyword list + time rule | H1/H6 still fire; text rules "needs review" |
 | Voice out: edge-tts | 6 s | none | card alone |
-| Voice-note in: Whisper (stretch) | 8 s | none | "Photo ya message bhejo" |
+| Voice-note in: Whisper | 8 s | Gemini Flash-Lite listens to the audio (12 s, B11) | "Awaaz saaf nahi aayi, dobara bolo ya photo bhejo" |
 | Telegram | n/a | web /check | pitch continues in browser |
 | Venue Wi-Fi | checked every 30 min | phone hotspot | nothing |
 | Everything | n/a | cached demo ads, then backup video | demo runs from cache |

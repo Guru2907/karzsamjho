@@ -21,6 +21,14 @@ Every agent session and every person adds an entry here at the end of each task,
 
 ## Log
 
+### 13 Nov 2026, 5:20 PM · L1 speak() (part of A4) · agent for Gurpreet
+- Did: `fallback.speak(text, out_path) -> bool`: edge-tts hi-IN-SwaraNeural, timeout from config, writes a .part file then renames, never raises (False = send the card alone). Added `EngineError` and the agreed `read_image` / `read_text` signatures (still stubs).
+- Files: api/core/fallback.py, api/tests/test_fallback.py (new)
+- Proof: `pytest -q` 11 passed (5 new: ok, no internet, timeout, empty audio, empty text). Real run: sample sentence -> 72 KB MP3 in 3.05 s and 1.51 s.
+- Status in docs/TASKS.md: A4 = doing (Gurpreet); speak part ready for Siddeshwar's make_audio (T3)
+- Next: L2 `read_image()` (Qwen -> Gemini) and `read_text()` (gpt-oss-20b).
+- Broken / risks: speak needs internet; the venue network is untested.
+
 ### 13 Nov 2026, 5:15 PM · teammate prompts + PR workflow · agent for Gurpreet
 - Did: full paste-ready prompts in docs/PLAN.md for Siddeshwar (Claude Code), the PWA teammate (RajuCard, /check, errors, Raju mode, home-screen app) and the data teammate (demo ads, SMS offers, 30 offers, harassment samples, RBI list, vendor notes). Every change now goes through a PR; Gurpreet merges (D27).
 - Files: docs/PLAN.md, docs/TASKS.md (E6 into tonight; G1, G2, I1, I3 to the data teammate), docs/DECISIONS.md (D27), docs/PROGRESS.md

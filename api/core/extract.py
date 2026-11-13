@@ -6,12 +6,15 @@ Every function returns  {"fields": {<the 10 keys>}, "engines": {"read": ..., "se
 or raises NotALoan / Unreadable, each carrying the Hindi message (text_hi) the user sees.
 """
 import json
+import logging
 import re
 from typing import Any, Optional
 
 from pydantic import BaseModel, ConfigDict, field_validator, model_validator
 
 from api.core import fallback
+
+log = logging.getLogger("extract")
 
 FIELD_KEYS = ("is_loan_ad", "principal", "in_hand", "fees", "repay_total", "emi_amount",
               "emi_count", "tenure_days", "lender_name", "app_name", "pay_first")
@@ -44,6 +47,7 @@ never calculate, add, subtract or guess a number;
 use null for anything not clearly written; is_loan_ad is false for anything that is not a loan offer."""
 
 DEVANAGARI_DIGITS = str.maketrans("०१२३४५६७८९", "0123456789")
+BENGALI_DIGITS = str.maketrans("০১২৩৪৫৬৭৮৯", "0123456789")
 _NUMBER = re.compile(r"\d[\d,]*(?:\.\d+)?")
 # A number with an optional Indian unit after it: "5 lakh", "1.5 lac", "2 crore", "50 hazaar", "5k" (B10).
 _UNITS = (("crore", 1e7), ("cr", 1e7), ("करोड़", 1e7), ("करोड", 1e7),
@@ -63,7 +67,10 @@ def _amount(match: re.Match) -> float:
             return number * factor
     return number
 _UNIT_DAYS = (("week", 7), ("hafte", 7), ("hafta", 7), ("saptah", 7), ("month", 30),
-              ("mahin", 30), ("year", 365), ("saal", 365), ("varsh", 365))
+              ("mahin", 30), ("year", 365), ("saal", 365), ("varsh", 365),
+              # B13: Bengali, Marathi and Devanagari Hindi units (days need no entry)
+              ("সপ্তাহ", 7), ("सप्ताह", 7), ("आठवड", 7), ("हफ्त", 7), ("মাস", 30), ("महिन", 30), ("महीन", 30),
+              ("বছর", 365), ("वर्ष", 365), ("साल", 365))
 
 
 class NotALoan(Exception):
@@ -195,12 +202,40 @@ def extract_from_image(image_bytes: bytes) -> dict:
         raw, engine, _ = fallback.read_image(image_bytes, PROMPT, check=parse)
     except fallback.EngineError:
         raise Unreadable(MSG_BAD_PHOTO)
-    fields = _settle_pay_first(parse(raw))      # photos: only the AI reads them (known limit, B9c)
+    fields = parse(raw)
+    second_engine = None
+    if fields.get("pay_first"):                 # B12: a photo has no text to check, so ask the other AI
+        fields["pay_first"], second_engine = confirm_pay_first(image_bytes, engine, fields["pay_first"])
+    fields = _settle_pay_first(fields)          # the fee leaves the maths only on a confirmed claim
     _check_loan(fields, MSG_BAD_PHOTO)
-    return {"fields": fields, "engines": {"read": engine, "second_read": None}}
+    return {"fields": fields, "engines": {"read": engine, "second_read": second_engine}}
 
 
 OTHER_READER = {"qwen": "gemini", "gemini": "qwen"}
+
+
+def confirm_pay_first(image_bytes: bytes, first_engine: str, claimed: float) -> tuple[Optional[float], Optional[str]]:
+    """B12: keep a photo's "pay first" only if the OTHER reader also reports it within Rs 1.
+
+    -> (pay_first to keep or None, engine of the second reading or None).
+    The other reader disagrees, fails or returns invalid JSON: no warning (None) and the fee stays,
+    because one AI's word alone must not drop a fee from Raju's numbers (D42, K = 0).
+    """
+    other = OTHER_READER.get(first_engine)
+    if other is None:
+        log.warning("pay_first %s from %s not confirmed: no other reader", claimed, first_engine)
+        return None, None
+    try:
+        raw, engine, _ = fallback.read_image(image_bytes, PROMPT, engines=(other,), check=parse)
+        second = parse(raw).get("pay_first")
+    except Exception:   # EngineError, or a reply that will not parse: no confirmation
+        log.warning("pay_first %s from %s not confirmed: %s failed", claimed, first_engine, other)
+        return None, None
+    if second is not None and abs(second - claimed) <= 1:
+        log.info("pay_first %s confirmed by %s", claimed, engine)
+        return claimed, engine
+    log.warning("pay_first %s from %s not confirmed: %s read %s", claimed, first_engine, engine, second)
+    return None, engine
 
 
 def disputed_fields(first: dict, second: dict, tolerance: float = 1.0) -> list[str]:
@@ -317,23 +352,38 @@ def _drop_unwritten(fields: dict, text: str) -> dict:
 
 _RS = r"(?:rs\.?|inr|₹|rupees?|rupaye)?\s*"
 _AMT = r"(\d[\d,]*(?:\.\d+)?(?:\s*(?:crores?|cr\b|lakhs?|lacs?|hazaar|hazar|thousand|k\b))?)"
-_GAP = r"[^\d.!?\n]{0,25}?"          # a label and its number must be in the same sentence
+_GAP = r"[^\d.!?\n।॥]{0,25}?"       # a label and its number must be in the same sentence (। = danda)
+# B13: Bengali, Marathi and Devanagari Hindi labels. In those scripts the currency word comes AFTER
+# the number ("5000 টাকার লোন", "10000 रुपयांचे कर्ज", "5000 रुपये का लोन").
+_CUR = r"\s*(?:টাকার|টাকা|रुपयांचे|रुपयांचा|रुपयांची|रुपये|रुपए|रुपयों)?\s*(?:का|की|के)?\s*"
+_LOAN_NATIVE = r"লোন|ঋণ|कर्ज|लोन|ऋण"
+_HAND_NATIVE = r"হাতে|हातात|हाथ में"
+_FEE_NATIVE = r"প্রসেসিং ফি|ফি|ফী|শুল্ক|চার্জ|फीस|फी|शुल्क|चार्ज"
+_REPAY_NATIVE = r"ফেরত|परत|लौटाने|लौटाना|वापस"
 _REGEX = {
     "principal": [rf"(?:loan(?: amount)?|amount|approved|udhaar|karz){_GAP}{_RS}{_AMT}",
-                  rf"{_RS}{_AMT}\s*(?:ka\s+)?(?:loan|udhaar|karz)"],
+                  rf"{_RS}{_AMT}\s*(?:ka\s+)?(?:loan|udhaar|karz)",
+                  rf"(?:{_LOAN_NATIVE}){_GAP}{_AMT}",
+                  rf"{_AMT}{_CUR}(?:{_LOAN_NATIVE})"],
     "in_hand": [rf"(?:in hand|you get|you will get|disbursed|credited|haath mein|milenge){_GAP}{_RS}{_AMT}",
-                rf"{_RS}{_AMT}\s*(?:haath mein|in hand|milenge)"],
-    "fees": [rf"(?:processing fee|fees?|charges?|kharcha){_GAP}{_RS}{_AMT}\s*(%)?"],
+                rf"{_RS}{_AMT}\s*(?:haath mein|in hand|milenge)",
+                rf"(?:{_HAND_NATIVE}){_GAP}{_AMT}",
+                rf"{_AMT}{_CUR}(?:{_HAND_NATIVE})"],
+    "fees": [rf"(?:processing fee|fees?|charges?|kharcha){_GAP}{_RS}{_AMT}\s*(%)?",
+             rf"(?:{_FEE_NATIVE}){_GAP}{_AMT}\s*(%)?"],
     "repay_total": [rf"(?:repay|return|pay back|payback|total|lautana|lautane|chukana|wapas){_GAP}{_RS}{_AMT}",
-                    rf"{_RS}{_AMT}\s*(?:lautana|lautane|chukana|wapas|repay)"],
+                    rf"{_RS}{_AMT}\s*(?:lautana|lautane|chukana|wapas|repay)",
+                    rf"(?:{_REPAY_NATIVE}){_GAP}{_AMT}",
+                    rf"{_AMT}{_CUR}(?:{_REPAY_NATIVE})"],
     "emi": [rf"emi{_GAP}{_RS}{_AMT}\s*(?:x|\*|×)\s*(\d+)"],
-    "tenure": [r"(\d+)\s*(days?|din|weeks?|hafte?|months?|mahine?|years?|saal)"],
+    "tenure": [r"(\d+)\s*(days?|din|weeks?|hafte?|months?|mahine?|years?|saal"
+               r"|দিন|দিবস|সপ্তাহ|মাস|বছর|दिवस|दिन|सप्ताह|आठवड|हफ्त|महिन|महीन|वर्ष|साल)"],
 }
 
 
 def regex_fields(text: str) -> dict:
     """Backup when the text model is down. Only picks up numbers written next to their label."""
-    t = text.lower().translate(DEVANAGARI_DIGITS)
+    t = text.lower().translate(DEVANAGARI_DIGITS).translate(BENGALI_DIGITS)
     out = {k: None for k in FIELD_KEYS}
 
     def first(key):
@@ -383,9 +433,11 @@ def extract_from_text(text: str) -> dict:
 
 
 # ---------------------------------------------------------------- voice note (task D6)
-DIGITS_PROMPT = """Rewrite this Hindi/Hinglish message with every number written in full digits.
+DIGITS_PROMPT = """Rewrite this Hindi/Hinglish, Bengali or Marathi message with every number written in full digits.
 Examples: "paanch hazaar" -> 5000, "पांच हजार" -> 5000, "chhe hazaar" -> 6000, "saat din" -> 7 din,
 "सात दिन" -> 7 दिन, "barah sau" -> 1200, "dedh lakh" -> 150000.
+Bengali: "পাঁচ হাজার" -> 5000, "ছয় হাজার" -> 6000, "সাত দিন" -> 7 দিন, "বারোশো" -> 1200, "দেড় লাখ" -> 150000.
+Marathi: "पाच हजार" -> 5000, "सहा हजार" -> 6000, "सात दिवस" -> 7 दिवस, "बाराशे" -> 1200, "दीड लाख" -> 150000.
 The word "saath"/"साथ" next to "din"/"दिन" means seven (7).
 Change nothing else: keep every other word as it is, do not add or calculate anything.
 Return only the rewritten message.
@@ -396,11 +448,13 @@ MESSAGE:
 # "6 हजार" -> 6000, "1.5 lakh" -> 150000, "12 सौ" -> 1200: the multiplier word turned into
 # digits by code, like weeks -> days (D31), so the "drop unwritten numbers" rule sees 6000.
 _MULTIPLIERS = re.compile(
-    r"(\d+(?:\.\d+)?)\s*(hazaar|hazar|hajar|हज़ार|हजार|thousand|lakh|lac|लाख|sau|सौ|hundred)",
+    r"(\d+(?:\.\d+)?)\s*(hazaar|hazar|hajar|हज़ार|हजार|thousand|lakh|lac|लाख|sau|सौ|hundred"
+    r"|হাজার|লাখ|শো|शे)(?!\w)",                     # D8: Bengali + Marathi; never inside a longer word
     re.IGNORECASE)
 _MULTIPLIER_VALUE = {"hazaar": 1000, "hazar": 1000, "hajar": 1000, "हज़ार": 1000, "हजार": 1000,
                      "thousand": 1000, "lakh": 100000, "lac": 100000, "लाख": 100000,
-                     "sau": 100, "सौ": 100, "hundred": 100}
+                     "sau": 100, "सौ": 100, "hundred": 100,
+                     "হাজার": 1000, "লাখ": 100000, "শো": 100, "शे": 100}
 
 
 def expand_multipliers(text: str) -> str:
@@ -408,7 +462,7 @@ def expand_multipliers(text: str) -> str:
     def full(m: re.Match) -> str:
         value = float(m.group(1)) * _MULTIPLIER_VALUE[m.group(2).lower()]
         return str(int(value)) if value == int(value) else str(value)
-    return _MULTIPLIERS.sub(full, text.translate(DEVANAGARI_DIGITS))
+    return _MULTIPLIERS.sub(full, text.translate(DEVANAGARI_DIGITS).translate(BENGALI_DIGITS))
 
 
 def _has_text(raw: str) -> None:
@@ -417,15 +471,16 @@ def _has_text(raw: str) -> None:
         raise ValueError("empty rewrite")
 
 
-def extract_from_voice(audio_bytes: bytes) -> dict:
+def extract_from_voice(audio_bytes: bytes, lang: str = "hi") -> dict:
     """Voice note -> fields, like a pasted SMS (D6, D22, D33).
 
     Whisper writes down what was said; gpt-oss-20b turns number words into digits (if that
     fails, the raw transcript is used); then extract_from_text reads it, including its rule
     that drops any number not written in the text. engines["listen"] = "whisper".
+    D8: lang ("hi", "bn", "mr", the /bhasha choice) tells the listener which language to expect.
     """
     try:
-        transcript, listen, _ = fallback.transcribe(audio_bytes)
+        transcript, listen, _ = fallback.transcribe(audio_bytes, lang)
     except fallback.EngineError:
         raise Unreadable(MSG_BAD_VOICE)
     try:

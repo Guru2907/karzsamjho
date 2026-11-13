@@ -240,3 +240,55 @@ def test_second_reader_down_keeps_the_problem_fields(monkeypatch):
     result, disputed = extract.second_reading(b"jpeg", first_read(in_hand=4000.0), ["principal", "fees", "in_hand"])
     assert disputed == ["principal", "fees", "in_hand"]
     assert result["engines"]["second_read"] is None
+
+
+# ---------------------------------------------------------------- B13: regex backup in bn / mr / Devanagari
+@pytest.mark.parametrize("sms, expected", [
+    ("অভিনন্দন! আপনার 5000 টাকার লোন মঞ্জুর। প্রসেসিং ফি 500 টাকা। 7 দিনে 5600 টাকা ফেরত দিতে হবে।",
+     {"principal": 5000, "fees": 500, "repay_total": 5600, "tenure_days": 7}),
+    ("অভিনন্দন! আপনার ৫০০০ টাকার লোন মঞ্জুর। প্রসেসিং ফি ৫০০ টাকা। ৭ দিনে ৫৬০০ টাকা ফেরত দিতে হবে।",
+     {"principal": 5000, "fees": 500, "repay_total": 5600, "tenure_days": 7}),     # Bengali digits
+    ("আপনি হাতে 4500 টাকা পাবেন। 3 মাসে 6000 টাকা ফেরত।",
+     {"in_hand": 4500, "repay_total": 6000, "tenure_days": 90}),
+    ("अभिनंदन! तुमचे 10000 रुपयांचे कर्ज मंजूर. प्रोसेसिंग फी 1000 रुपये. 30 दिवसांत 11500 रुपये परत करा.",
+     {"principal": 10000, "fees": 1000, "repay_total": 11500, "tenure_days": 30}),
+    ("तुम्हाला हातात 3800 रुपये मिळतील. 7 दिवसांत 5000 रुपये परत करावे लागतील.",
+     {"in_hand": 3800, "repay_total": 5000, "tenure_days": 7}),
+    ("आपका 5000 रुपये का लोन मंजूर। प्रोसेसिंग फीस 500 रुपये। 7 दिन में 5600 रुपये लौटाने होंगे।",
+     {"principal": 5000, "fees": 500, "repay_total": 5600, "tenure_days": 7}),     # Devanagari Hindi
+])
+def test_regex_backup_reads_bengali_marathi_and_devanagari(sms, expected):
+    fields = extract.regex_fields(sms)
+    for key, value in expected.items():
+        assert fields[key] == value, key
+    assert fields["is_loan_ad"] is True
+
+
+def test_danda_ends_the_sentence_for_a_label():
+    # "লোন মঞ্জুর।" has no number in its own sentence: the fee in the next one is not the loan
+    fields = extract.regex_fields("লোন মঞ্জুর। প্রসেসিং ফি 500 টাকা।")
+    assert fields["principal"] is None and fields["fees"] == 500
+
+
+def test_months_in_devanagari_are_days_too():
+    assert extract.to_days("3 महीने") == 90 and extract.to_days("3 মাস") == 90
+    assert extract.to_days("2 সপ্তাহ") == 14 and extract.to_days("2 सप्ताह") == 14
+    assert extract.to_days("2 आठवडे") == 14 and extract.to_days("1 বছর") == 365
+    assert extract.to_days("7 দিন") == 7 and extract.to_days("30 दिवस") == 30
+
+
+@pytest.mark.parametrize("sms, card", [
+    ("অভিনন্দন! আপনার 5000 টাকার লোন মঞ্জুর। প্রসেসিং ফি 500 টাকা। 7 দিনে 5600 টাকা ফেরত দিতে হবে।",
+     (5000, 500, 5600, 7)),
+    ("अभिनंदन! तुमचे 10000 रुपयांचे कर्ज मंजूर. प्रोसेसिंग फी 1000 रुपये. 30 दिवसांत 11500 रुपये परत करा.",
+     (10000, 1000, 11500, 30)),
+])
+def test_text_model_off_bn_mr_sms_still_read(monkeypatch, sms, card):
+    def down(prompt, check=None):
+        raise fallback.EngineError("down")
+    monkeypatch.setattr(fallback, "read_text", down)
+    result = extract.extract_from_text(sms)
+    f = result["fields"]
+    assert result["engines"]["read"] == "regex"
+    assert (f["principal"], f["fees"], f["repay_total"], f["tenure_days"]) == card
+    assert f["pay_first"] is None                                   # a deducted fee, not a scam

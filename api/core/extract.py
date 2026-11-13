@@ -6,12 +6,15 @@ Every function returns  {"fields": {<the 10 keys>}, "engines": {"read": ..., "se
 or raises NotALoan / Unreadable, each carrying the Hindi message (text_hi) the user sees.
 """
 import json
+import logging
 import re
 from typing import Any, Optional
 
 from pydantic import BaseModel, ConfigDict, field_validator, model_validator
 
 from api.core import fallback
+
+log = logging.getLogger("extract")
 
 FIELD_KEYS = ("is_loan_ad", "principal", "in_hand", "fees", "repay_total", "emi_amount",
               "emi_count", "tenure_days", "lender_name", "app_name", "pay_first")
@@ -195,12 +198,40 @@ def extract_from_image(image_bytes: bytes) -> dict:
         raw, engine, _ = fallback.read_image(image_bytes, PROMPT, check=parse)
     except fallback.EngineError:
         raise Unreadable(MSG_BAD_PHOTO)
-    fields = _settle_pay_first(parse(raw))      # photos: only the AI reads them (known limit, B9c)
+    fields = parse(raw)
+    second_engine = None
+    if fields.get("pay_first"):                 # B12: a photo has no text to check, so ask the other AI
+        fields["pay_first"], second_engine = confirm_pay_first(image_bytes, engine, fields["pay_first"])
+    fields = _settle_pay_first(fields)          # the fee leaves the maths only on a confirmed claim
     _check_loan(fields, MSG_BAD_PHOTO)
-    return {"fields": fields, "engines": {"read": engine, "second_read": None}}
+    return {"fields": fields, "engines": {"read": engine, "second_read": second_engine}}
 
 
 OTHER_READER = {"qwen": "gemini", "gemini": "qwen"}
+
+
+def confirm_pay_first(image_bytes: bytes, first_engine: str, claimed: float) -> tuple[Optional[float], Optional[str]]:
+    """B12: keep a photo's "pay first" only if the OTHER reader also reports it within Rs 1.
+
+    -> (pay_first to keep or None, engine of the second reading or None).
+    The other reader disagrees, fails or returns invalid JSON: no warning (None) and the fee stays,
+    because one AI's word alone must not drop a fee from Raju's numbers (D42, K = 0).
+    """
+    other = OTHER_READER.get(first_engine)
+    if other is None:
+        log.warning("pay_first %s from %s not confirmed: no other reader", claimed, first_engine)
+        return None, None
+    try:
+        raw, engine, _ = fallback.read_image(image_bytes, PROMPT, engines=(other,), check=parse)
+        second = parse(raw).get("pay_first")
+    except Exception:   # EngineError, or a reply that will not parse: no confirmation
+        log.warning("pay_first %s from %s not confirmed: %s failed", claimed, first_engine, other)
+        return None, None
+    if second is not None and abs(second - claimed) <= 1:
+        log.info("pay_first %s confirmed by %s", claimed, engine)
+        return claimed, engine
+    log.warning("pay_first %s from %s not confirmed: %s read %s", claimed, first_engine, engine, second)
+    return None, engine
 
 
 def disputed_fields(first: dict, second: dict, tolerance: float = 1.0) -> list[str]:

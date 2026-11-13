@@ -3,9 +3,9 @@
 Every agent session and every person adds an entry here at the end of each task, before committing. Never delete or edit someone else's entry. Keep each entry under 12 lines.
 
 ## Current status (update this block when a gate passes or the plan changes)
-- Now (5:45 PM): the whole backend pipeline incl. second reading works on Gurpreet's laptop (PRs #2 #5 #8 #9 #10 + Siddeshwar's #3 #4 #6, bot #7); nothing merged to main yet. Everyone follows docs/PLAN.md: photo or text -> card + Hindi voice, with second reading, merged and tested by 7:00 PM, rehearsal 7:00 to 7:30 PM. Harassment, lender, database and cache wait until after the review.
+- Now (6:30 PM): backend + bot for the review are merged on main (PRs #1 to #11; 152 tests pass): photo or pasted SMS in Telegram -> card + Hindi MP3, second reading on a mismatch. Waiting for: the web /check page (PWA teammate, no PR yet) and the printed ads + SMS offers (data teammate, nothing in api/data yet). Next: real Telegram test on the server laptop, then the 7:00 PM rehearsal. Harassment, lender, database and cache come after the review.
 - Gates: 2:00 PM [x] · 7:30 PM [ ] · 12:30 AM [ ] · 3:30 AM freeze [ ]
-- Known broken: (none yet)
+- Known broken: none in code. Missing for 7:30: printed ads, web /check page, a real Telegram run. Results vanish on API restart (no database yet).
 - Groq photo reads used today on the server account: 0 of about 80 (Gurpreet's own account: 4)
 
 ## Entry template (copy, fill, paste at the top of the log below)
@@ -20,6 +20,14 @@ Every agent session and every person adds an entry here at the end of each task,
 ```
 
 ## Log
+
+### 13 Nov 2026, 6:30 PM · docs brought up to date with main · agent for Gurpreet
+- Did: all PRs #1 to #11 are merged; local main matches GitHub (7e7b7cb). Updated every doc the code now contradicts: START_HERE (checks are real, merge rules), ARCHITECTURE (what is built, second reading only on a mismatch), TESTING (152 tests, real-run results), RUNBOOK (new symptoms), README, DEMO (seconds stamp, LIVE 2 needs C1/C2), PLAN (status), TASKS (B3, B4, B5, D2 = done after an independent check; D3, D4 review until real Telegram), DECISIONS D28 to D31.
+- Files: README.md, docs/START_HERE.md, ARCHITECTURE.md, TESTING.md, RUNBOOK.md, DEMO.md, PLAN.md, TASKS.md, DECISIONS.md, PROGRESS.md
+- Proof: `pytest -q` 152 passed on main before this docs-only change.
+- Status in docs/TASKS.md: see above
+- Next: real Telegram on the server laptop; printed ads from the data teammate; web PRs from the PWA teammate; rehearsal 7:00 PM.
+- Broken / risks: no web or data PRs yet (nothing pushed by either Antigravity teammate as of 6:30 PM).
 
 ### 13 Nov 2026, 5:50 PM · bot fixes after reviewing PR #7 (D3, D4) · agent for Gurpreet
 - Did: on Gurpreet's request, fixed 3 small things in Siddeshwar's bot on a separate branch: the API wait comes from the config timeouts (45 s; the worst photo check needs 36 s, so the bot no longer says "server band hai" while the server is still working); rupees in Indian grouping (₹1,00,000); first bot tests.

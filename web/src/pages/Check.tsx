@@ -1,53 +1,427 @@
-import { useEffect, useState } from 'react'
-import { Placeholder } from '@/components/Placeholder'
-import { Badge } from '@/components/ui/badge'
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
-import { api, type CheckResult } from '@/lib/api'
+import { useEffect, useRef, useState } from 'react'
+import {
+  Camera,
+  Clock,
+  Image as ImageIcon,
+  ImageOff,
+  IndianRupee,
+  Pause,
+  Play,
+  RotateCcw,
+  Share2,
+  Volume2,
+  WifiOff,
+} from 'lucide-react'
+import { toast } from 'sonner'
+import { Button } from '@/components/ui/button'
+import { RajuCard } from '@/components/RajuCard'
+import { HelperDetails } from '@/components/check/HelperDetails'
+import { PayFirstBanner } from '@/components/check/PayFirstBanner'
+import { ErrorView } from '@/components/check/ErrorView'
+import { api, ApiError, type CheckResult } from '@/lib/api'
+import { days, ERROR_MESSAGES, rupees } from '@/lib/format'
+import { useRajuMode } from '@/lib/raju'
+import { sampleResults } from '@/lib/sample'
 
-// Wiring check only: shows the sample check from the API as raw numbers.
-// Tasks E2, E3 and E7 replace this with the real Raju card and helper view.
+function buildShareText(result: CheckResult): string {
+  const lines: string[] = []
+  const { numbers, lender, next_step } = result
+
+  if (numbers?.in_hand?.value != null) {
+    lines.push(`In hand: ${rupees(numbers.in_hand.value)}`)
+  }
+  if (numbers?.repay_total?.value != null) {
+    lines.push(`You repay: ${rupees(numbers.repay_total.value)}`)
+  }
+  if (numbers?.tenure_days?.value != null) {
+    lines.push(`Days: ${days(numbers.tenure_days.value)}`)
+  }
+  if (numbers?.extra?.value != null) {
+    lines.push(`Extra you pay: +${rupees(numbers.extra.value)}`)
+  }
+
+  if (lender?.warning) {
+    let warn = `RBI cancelled this company's NBFC registration`
+    if (lender.warning.date) warn += ` · list as on ${lender.warning.date}`
+    lines.push(`RBI: ${warn}`)
+  } else if (lender?.match != null) {
+    let rbi = ''
+    if (lender.match === 'FOUND') {
+      rbi = `Found in RBI's directory, linked to ${lender.closest || lender.name_read || 'registered lender'}`
+    } else if (lender.match === 'SIMILAR') {
+      rbi = `A similar name is in RBI's directory: ${lender.closest}. Check the exact name`
+    } else if (lender.match === 'NOT_FOUND') {
+      rbi = `Not found in RBI's directory`
+    }
+    if (lender.list_date) {
+      rbi += ` · RBI list as on ${lender.list_date}`
+    }
+    lines.push(`RBI: ${rbi}`)
+  }
+
+  if (next_step?.text_hi) {
+    lines.push(`Next step: ${next_step.text_hi}`)
+  }
+
+  lines.push('')
+  lines.push('Checked with KarzSamjho')
+
+  return lines.join('\n')
+}
+
 export default function Check() {
-  const [check, setCheck] = useState<CheckResult | null>(null)
-  const [error, setError] = useState<string | null>(null)
+  const [rajuMode] = useRajuMode()
+  const cameraInputRef = useRef<HTMLInputElement>(null)
+  const galleryInputRef = useRef<HTMLInputElement>(null)
+  const audioRef = useRef<HTMLAudioElement>(null)
 
+  const [view, setView] = useState<'start' | 'waiting' | 'result' | 'error'>(() => {
+    if (typeof window === 'undefined') return 'start'
+    const params = new URLSearchParams(window.location.search)
+    const sampleKey = params.get('sample')
+    return sampleKey && sampleResults[sampleKey] ? 'result' : 'start'
+  })
+
+  const [result, setResult] = useState<CheckResult | null>(() => {
+    if (typeof window === 'undefined') return null
+    const params = new URLSearchParams(window.location.search)
+    const sampleKey = params.get('sample')
+    return (sampleKey && sampleResults[sampleKey]) || null
+  })
+
+  const [error, setError] = useState<{ code?: string; text_hi: string } | null>(null)
+  const [smsText, setSmsText] = useState('')
+  const [isPlaying, setIsPlaying] = useState(false)
+
+  // Auto-play audio in Raju mode when result arrives
   useEffect(() => {
-    api
-      .getCheck('chk_0042')
-      .then(setCheck)
-      .catch(() => setError('Could not reach the API. Is it running on port 8000?'))
-  }, [])
+    if (rajuMode && view === 'result' && result?.audio_url && audioRef.current) {
+      audioRef.current
+        .play()
+        .then(() => setIsPlaying(true))
+        .catch(() => setIsPlaying(false))
+    }
+  }, [rajuMode, view, result])
+
+  const togglePlay = () => {
+    if (!audioRef.current) return
+    if (isPlaying) {
+      audioRef.current.pause()
+      setIsPlaying(false)
+    } else {
+      audioRef.current
+        .play()
+        .then(() => setIsPlaying(true))
+        .catch(() => setIsPlaying(false))
+    }
+  }
+
+  const runCheck = async (fn: () => Promise<CheckResult>) => {
+    setView('waiting')
+    setIsPlaying(false)
+    try {
+      const res = await fn()
+      setResult(res)
+      setView('result')
+    } catch (err: unknown) {
+      if (err instanceof ApiError) {
+        setError({ code: err.code, text_hi: err.text_hi })
+      } else {
+        setError({ code: 'SERVER_OFF', text_hi: ERROR_MESSAGES.SERVER_OFF })
+      }
+      setView('error')
+    }
+  }
+
+  const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0]
+    if (file) {
+      runCheck(() => api.checkImage(file))
+    }
+    e.target.value = ''
+  }
+
+  const handleSendSms = () => {
+    const trimmed = smsText.trim()
+    if (!trimmed) return
+    runCheck(() => api.checkText(trimmed))
+  }
+
+  const handleShare = async () => {
+    if (!result) return
+    const text = buildShareText(result)
+    let shared = false
+    if (typeof navigator !== 'undefined' && navigator.share) {
+      try {
+        await navigator.share({ title: 'KarzSamjho', text })
+        shared = true
+      } catch (err: unknown) {
+        if (err instanceof Error && err.name === 'AbortError') return
+      }
+    }
+    if (!shared) {
+      try {
+        await navigator.clipboard.writeText(text)
+        toast('Copied')
+      } catch {
+        toast('Copied')
+      }
+    }
+  }
+
+  const handleReset = () => {
+    setResult(null)
+    setError(null)
+    setSmsText('')
+    setIsPlaying(false)
+    setView('start')
+    if (typeof window !== 'undefined' && window.location.search) {
+      window.history.replaceState({}, '', window.location.pathname)
+    }
+  }
+
+  const getErrorIcon = (code?: string) => {
+    if (code === 'SERVER_OFF') return WifiOff
+    if (code === 'TIMEOUT') return Clock
+    return ImageOff
+  }
 
   return (
-    <>
-      <Placeholder title="Check an offer" task="Tasks E2, E3 and E7 build this page." />
-      {error && <p className="text-sm text-destructive">{error}</p>}
-      {!check && !error && <p className="text-sm text-muted-foreground">Loading sample check…</p>}
-      {check && (
-        <Card className="max-w-md">
-          <CardHeader>
-            <CardTitle className="flex items-center justify-between gap-2">
-              <span>Sample check {check.id}</span>
-              <Badge variant="outline">{check.verdict}</Badge>
-            </CardTitle>
-          </CardHeader>
-          <CardContent>
-            <table className="w-full text-sm">
-              <tbody>
-                {Object.entries(check.numbers).map(([name, field]) => (
-                  <tr key={name} className="border-b last:border-0">
-                    <td className="py-1.5 text-muted-foreground">{name}</td>
-                    <td className="py-1.5 text-right font-medium tabular-nums">{field.value ?? '—'}</td>
-                    <td className="py-1.5 pl-3 text-right text-xs text-muted-foreground">{field.status}</td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
-            <p className="mt-3 text-xs text-muted-foreground">
-              Lender: {check.lender.name_read} · {check.lender.match} · {check.seconds} s
-            </p>
-          </CardContent>
-        </Card>
+    <div className="w-full max-w-md mx-auto py-2">
+      {/* Hidden file inputs */}
+      <input
+        ref={cameraInputRef}
+        type="file"
+        accept="image/*"
+        capture="environment"
+        className="hidden"
+        onChange={handleFileChange}
+      />
+      <input
+        ref={galleryInputRef}
+        type="file"
+        accept="image/*"
+        className="hidden"
+        onChange={handleFileChange}
+      />
+
+      {/* 1. START state */}
+      {view === 'start' && (
+        <>
+          {rajuMode ? (
+            /* Raju mode: ONE giant camera button, nothing else */
+            <div className="py-6 flex flex-col items-center justify-center">
+              <Button
+                type="button"
+                aria-label="Photo lo"
+                onClick={() => cameraInputRef.current?.click()}
+                className="w-full min-h-[45vh] h-80 sm:h-96 rounded-3xl flex items-center justify-center shadow-md bg-primary text-primary-foreground hover:bg-primary/90 active:scale-[0.98] transition-transform"
+              >
+                <Camera className="size-20" />
+              </Button>
+            </div>
+          ) : (
+            /* Normal mode: heading, camera, gallery, divider, textarea, send */
+            <div className="space-y-6">
+              <div className="text-center space-y-1">
+                <h1 className="text-2xl font-bold tracking-tight text-foreground">
+                  Check a loan ad or SMS
+                </h1>
+              </div>
+
+              <div className="space-y-3">
+                <Button
+                  type="button"
+                  onClick={() => cameraInputRef.current?.click()}
+                  className="w-full h-24 text-lg font-semibold flex flex-col gap-1 items-center justify-center rounded-2xl shadow-sm"
+                >
+                  <Camera className="size-8" />
+                  <span>Take photo</span>
+                </Button>
+
+                <Button
+                  type="button"
+                  variant="outline"
+                  onClick={() => galleryInputRef.current?.click()}
+                  className="w-full h-14 text-base font-medium flex items-center justify-center gap-2 rounded-xl"
+                >
+                  <ImageIcon className="size-5" />
+                  <span>Choose from gallery</span>
+                </Button>
+              </div>
+
+              <div className="relative my-4">
+                <div className="absolute inset-0 flex items-center">
+                  <div className="w-full border-t border-border" />
+                </div>
+                <div className="relative flex justify-center text-xs uppercase">
+                  <span className="bg-background px-3 text-muted-foreground font-medium">or</span>
+                </div>
+              </div>
+
+              <div className="space-y-3">
+                <textarea
+                  value={smsText}
+                  onChange={(e) => setSmsText(e.target.value)}
+                  placeholder="Paste the SMS here"
+                  rows={4}
+                  className="w-full p-4 rounded-xl border border-border bg-card text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-ring resize-none text-sm leading-relaxed"
+                />
+
+                <Button
+                  type="button"
+                  disabled={!smsText.trim()}
+                  onClick={handleSendSms}
+                  className="w-full h-14 text-base font-semibold rounded-xl"
+                >
+                  Send
+                </Button>
+              </div>
+            </div>
+          )}
+        </>
       )}
-    </>
+
+      {/* 2. WAITING state */}
+      {view === 'waiting' && (
+        <>
+          {rajuMode ? (
+            /* Raju mode: pulsing IndianRupee icon only */
+            <div className="py-32 flex flex-col items-center justify-center">
+              <IndianRupee className="size-24 text-primary animate-pulse" />
+            </div>
+          ) : (
+            <div className="py-20 flex flex-col items-center justify-center text-center space-y-4">
+              <div className="p-6 rounded-full bg-muted">
+                <IndianRupee className="size-16 text-primary animate-pulse" />
+              </div>
+              <p className="text-lg font-medium text-foreground">Reading your offer…</p>
+              <p className="text-xs text-muted-foreground">can take up to 15 seconds</p>
+            </div>
+          )}
+        </>
+      )}
+
+      {/* 3. RESULT state */}
+      {view === 'result' && result && (
+        <div className="space-y-6">
+          {result.next_step?.code === 'DO_NOT_PAY_FIRST' && (
+            <PayFirstBanner raju={rajuMode} />
+          )}
+
+          <RajuCard result={result} raju={rajuMode} />
+
+          {rajuMode ? (
+            /* Raju mode: Giant round play button + camera button to check again */
+            <div className="space-y-6 pt-2">
+              {result.audio_url && (
+                <>
+                  <audio
+                    ref={audioRef}
+                    src={result.audio_url}
+                    onPlay={() => setIsPlaying(true)}
+                    onPause={() => setIsPlaying(false)}
+                    onEnded={() => setIsPlaying(false)}
+                    className="hidden"
+                  />
+                  <div className="flex justify-center">
+                    <button
+                      type="button"
+                      aria-label={isPlaying ? 'Awaaz roko' : 'Awaaz suno'}
+                      onClick={togglePlay}
+                      className="size-24 rounded-full bg-primary text-primary-foreground shadow-lg flex items-center justify-center active:scale-95 transition-transform"
+                    >
+                      {isPlaying ? (
+                        <Pause className="size-12" />
+                      ) : (
+                        <Play className="size-12 ml-1" />
+                      )}
+                    </button>
+                  </div>
+                </>
+              )}
+
+              <Button
+                type="button"
+                aria-label="Photo lo"
+                onClick={() => cameraInputRef.current?.click()}
+                className="w-full h-16 rounded-2xl flex items-center justify-center shadow-sm"
+              >
+                <Camera className="size-8" />
+              </Button>
+            </div>
+          ) : (
+            /* Normal mode: audio player, share button, new check button, helper details */
+            <>
+              {result.audio_url && (
+                <div className="rounded-2xl border border-border bg-card p-4 space-y-2">
+                  <div className="flex items-center gap-2 text-xs font-medium text-muted-foreground">
+                    <Volume2 className="size-4" />
+                    <span>Listen · Suno</span>
+                  </div>
+                  <audio controls src={result.audio_url} className="w-full" />
+                </div>
+              )}
+
+              <div className="grid grid-cols-2 gap-3">
+                <Button
+                  type="button"
+                  onClick={handleShare}
+                  className="h-14 font-semibold flex items-center justify-center gap-2 rounded-xl"
+                >
+                  <Share2 className="size-5" />
+                  <span>Share with helper</span>
+                </Button>
+
+                <Button
+                  type="button"
+                  variant="outline"
+                  onClick={handleReset}
+                  className="h-14 font-semibold flex items-center justify-center gap-2 rounded-xl"
+                >
+                  <RotateCcw className="size-5" />
+                  <span>New check</span>
+                </Button>
+              </div>
+
+              <HelperDetails result={result} />
+            </>
+          )}
+        </div>
+      )}
+
+      {/* 4. ERROR state */}
+      {view === 'error' && error && (
+        <>
+          {rajuMode ? (
+            /* Raju mode: icon only + big camera button */
+            <div className="py-16 flex flex-col items-center justify-center space-y-12">
+              <div className="p-8 rounded-full bg-muted text-muted-foreground">
+                {(() => {
+                  const Icon = getErrorIcon(error.code)
+                  return <Icon className="size-20" />
+                })()}
+              </div>
+              <Button
+                type="button"
+                onClick={() => cameraInputRef.current?.click()}
+                aria-label="Photo lo"
+                className="w-full h-24 rounded-2xl flex items-center justify-center shadow-sm"
+              >
+                <Camera className="size-10" />
+              </Button>
+            </div>
+          ) : (
+            /* Normal mode: ErrorView with icon, Hindi text, try again */
+            <ErrorView
+              code={error.code}
+              text_hi={error.text_hi}
+              onRetry={handleReset}
+              raju={false}
+            />
+          )}
+        </>
+      )}
+    </div>
   )
 }

@@ -1,6 +1,8 @@
 // Typed helpers for the KarzSamjho API. Shapes match CLAUDE.md ("API contract").
 // Do not change these types without the whole team agreeing.
 
+import { ERROR_MESSAGES } from './format'
+
 export type Status = 'read' | 'derived' | 'computed' | 'unverified'
 export type Verdict = 'USUAL' | 'COSTLY' | 'VERY_COSTLY' | 'CANNOT_SAY'
 export type LenderMatch = 'FOUND' | 'SIMILAR' | 'NOT_FOUND'
@@ -17,10 +19,12 @@ export interface CheckResult {
   unverified: string[]
   lender: {
     name_read: string | null
-    match: LenderMatch
+    match: LenderMatch | null
     score: number | null
     closest: string | null
     list_date: string | null
+    nbfc?: { name: string; list_date: string | null } | null
+    warning?: { list: string; name: string; source_type: string; date: string | null; source: string } | null
   }
   next_step: { code: string; text_hi: string }
   speech_text_hi: string
@@ -58,9 +62,70 @@ export interface Stats {
   extra_rupees_flagged: number
 }
 
+export class ApiError extends Error {
+  status: number
+  code: string
+  text_hi: string
+
+  constructor(status: number, code: string, text_hi: string) {
+    super(text_hi)
+    this.name = 'ApiError'
+    this.status = status
+    this.code = code
+    this.text_hi = text_hi
+  }
+}
+
 async function request<T>(path: string, init?: RequestInit): Promise<T> {
-  const res = await fetch(path, init)
-  if (!res.ok) throw new Error(`API ${res.status} on ${path}`)
+  const controller = new AbortController()
+  const timeoutId = setTimeout(() => controller.abort(), 45000)
+
+  let res: Response
+  try {
+    res = await fetch(path, {
+      ...init,
+      signal: init?.signal ?? controller.signal,
+    })
+  } catch (err: unknown) {
+    clearTimeout(timeoutId)
+    if (err instanceof Error && err.name === 'AbortError') {
+      throw new ApiError(0, 'TIMEOUT', ERROR_MESSAGES.TIMEOUT)
+    }
+    throw new ApiError(0, 'SERVER_OFF', ERROR_MESSAGES.SERVER_OFF)
+  } finally {
+    clearTimeout(timeoutId)
+  }
+
+  if (!res.ok) {
+    if (res.status === 422) {
+      let data: any = null
+      try {
+        data = await res.json()
+      } catch {}
+      const detail = data?.detail
+      const code = typeof detail === 'object' && detail?.code ? detail.code : 'UNPROCESSABLE_ENTITY'
+      const text_hi =
+        typeof detail === 'object' && detail?.text_hi
+          ? detail.text_hi
+          : typeof detail === 'string'
+            ? detail
+            : ERROR_MESSAGES.SERVER_OFF
+      throw new ApiError(res.status, code, text_hi)
+    }
+
+    if (res.status >= 500) {
+      throw new ApiError(res.status, 'SERVER_OFF', ERROR_MESSAGES.SERVER_OFF)
+    }
+
+    let data: any = null
+    try {
+      data = await res.json()
+    } catch {}
+    const text_hi = data?.detail?.text_hi || ERROR_MESSAGES.SERVER_OFF
+    const code = data?.detail?.code || `HTTP_${res.status}`
+    throw new ApiError(res.status, code, text_hi)
+  }
+
   return res.json() as Promise<T>
 }
 

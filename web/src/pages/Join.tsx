@@ -7,7 +7,8 @@ import { SHELL } from '@/site/shell'
 
 // Public website: the call to action for foundations, NGOs, non-profits and other backers
 // (task H8, D47). Different shape from the other pages on purpose: an inverted opening, a
-// sideways scroll, and a letter the visitor builds and sends.
+// sideways scroll, and a letter the visitor builds and sends. The opening is dark in BOTH themes
+// (bg-ink / text-paper, colours that do not flip), so it never turns white in the dark theme.
 // Honesty rules: no invented contact details, no invented costs, nothing claimed as running.
 
 const REPO = 'https://github.com/Guru2907/karzsamjho'
@@ -150,7 +151,7 @@ function letterFor(role: (typeof ROLES)[number]) {
 }
 
 function Letter() {
-  const [roleId, setRoleId] = useState<(typeof ROLES)[number]['id']>('ngo')
+  const [roleId, setRoleId] = useState<(typeof ROLES)[number]['id']>('foundation')
   const [copied, setCopied] = useState(false)
   const reduce = useReducedMotion()
   const role = ROLES.find((r) => r.id === roleId) ?? ROLES[0]
@@ -231,6 +232,7 @@ function Letter() {
             <Magnetic>
               <a
                 href={issueUrl}
+                title="Opens this message as a public post on our GitHub repository. You can edit it first."
                 target="_blank"
                 rel="noreferrer"
                 className="inline-flex h-16 items-center gap-3 bg-primary px-9 text-lg font-medium text-primary-foreground transition-colors hover:bg-primary/85"
@@ -248,10 +250,6 @@ function Letter() {
               {copied ? 'Copied' : 'Copy the message'}
             </button>
           </div>
-          <p className="mt-5 max-w-xl text-sm text-muted-foreground">
-            “Send it on GitHub” opens this message as a public post on our open repository; you need a GitHub account,
-            and you can edit it first. Or copy it and reach the team in person at COLOSSUS 3.0.
-          </p>
         </div>
       </div>
     </section>
@@ -268,11 +266,11 @@ const TRUTHS = [
 export default function Join() {
   return (
     <>
-      <section className="flex min-h-svh flex-col justify-between bg-foreground px-[3vw] pt-36 pb-10 text-background">
+      <section className="flex min-h-svh flex-col justify-between bg-ink px-[3vw] pt-36 pb-10 text-paper">
         <div>
           <Reveal>
             <p className="mb-[2vw] flex items-center gap-3 text-xs font-medium tracking-[0.2em] uppercase opacity-60">
-              <span className="h-px w-8 bg-background/50" aria-hidden />
+              <span className="h-px w-8 bg-paper/50" aria-hidden />
               For foundations, NGOs and everyone who backs them
             </p>
           </Reveal>
@@ -290,7 +288,7 @@ export default function Join() {
           />
         </div>
         <Reveal delay={0.9}>
-          <div className="grid items-end gap-8 border-t border-background/25 pt-6 lg:grid-cols-12">
+          <div className="grid items-end gap-8 border-t border-paper/25 pt-6 lg:grid-cols-12">
             <p className="max-w-xl text-lg leading-relaxed opacity-75 lg:col-span-7 lg:text-xl">
               KarzSamjho reads a loan offer aloud, in rupees, before the borrower signs. The software works. What it
               needs now is not code: it is people who already sit beside borrowers.

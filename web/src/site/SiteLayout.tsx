@@ -16,18 +16,24 @@ function SiteNav() {
   const dark = theme === 'dark'
   const { scrollY } = useScroll()
   const [scrolled, setScrolled] = useState(false)
+  const [pastFirstScreen, setPastFirstScreen] = useState(false)
 
-  useMotionValueEvent(scrollY, 'change', (y) => setScrolled(y > 24))
-  // Pages that open on a dark block (DARK_TOP) need light nav text until the bar frosts over.
+  useMotionValueEvent(scrollY, 'change', (y) => {
+    setScrolled(y > 24)
+    setPastFirstScreen(y > window.innerHeight - 72)
+  })
+  // Pages in DARK_TOP open on an always-dark block. While the bar is over that block it keeps
+  // light text and frosts dark, in both themes; after it, it behaves like on every other page.
   const { pathname } = useLocation()
-  const light = DARK_TOP.includes(pathname) && !scrolled
-  const idle = light ? 'text-background/60 hover:text-background' : 'text-muted-foreground hover:text-foreground'
-  const on = light ? 'text-background' : 'text-foreground'
+  const overDark = DARK_TOP.includes(pathname) && !pastFirstScreen
+  const idle = overDark ? 'text-paper/60 hover:text-paper' : 'text-muted-foreground hover:text-foreground'
+  const on = overDark ? 'text-paper' : 'text-foreground'
+  const frost = overDark ? 'bg-ink/70' : 'bg-background/70'
 
   return (
     <header
       className={`fixed inset-x-0 top-0 z-30 transition-[background-color,backdrop-filter] duration-300 ${
-        scrolled ? 'bg-background/70 backdrop-blur-xl backdrop-saturate-150' : 'bg-transparent'
+        scrolled ? `${frost} backdrop-blur-xl backdrop-saturate-150` : 'bg-transparent'
       }`}
     >
       <div className="flex h-[4.5rem] items-center gap-8 px-[3vw]">

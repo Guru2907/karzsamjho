@@ -78,6 +78,12 @@ async def _from_cache(key: str, start: float) -> dict | None:
     return result
 
 NEXT_STEP = {"code": "ASK_BANK_MITRA", "text_hi": "Loan lene se pehle bank mitra se poochho."}  # D26
+# B9: the offer asks for money BEFORE the loan (advance-fee fraud). Fixed text, filled by code.
+PAY_FIRST_STEP = {"code": "DO_NOT_PAY_FIRST",
+                  "text_hi": "Paise mat bhejo. Loan se pehle paise maangna dhokha ho sakta hai. "
+                             "Shikayat: 1930 ya cybercrime.gov.in"}
+PAY_FIRST_WARNING = ("Savdhaan! Yeh offer loan dene se pehle aapse {amount} rupaye maang raha hai. "
+                     "Loan se pehle paise maangna dhokha ho sakta hai. Paise mat bhejo.")
 NUMBER_ORDER = ("in_hand", "repay_total", "tenure_days", "extra", "per_day", "apr_simple")
 
 
@@ -130,6 +136,9 @@ async def run_check(image: bytes | None = None, text: str | None = None,
 
     check_id = f"chk_{next(_ids):04d}"
     sentence = speak.speech_text(numbers)
+    pay_first = fields.get("pay_first")
+    if pay_first:                                    # B9: the warning comes first, then the numbers
+        sentence = PAY_FIRST_WARNING.format(amount=int(round(pay_first))) + " " + sentence
     audio_url = await speak.make_audio(check_id, sentence)
     # Names shown as "couldn't verify": every unverified number, plus any raw field that was
     # disputed or contradicts itself, unless the card still has a verified number of that name.
@@ -144,7 +153,7 @@ async def run_check(image: bytes | None = None, text: str | None = None,
         "unverified": unverified,
         "lender": {"name_read": fields["app_name"] or fields["lender_name"], "match": None,
                    "score": None, "closest": None, "list_date": None},
-        "next_step": dict(NEXT_STEP),
+        "next_step": dict(PAY_FIRST_STEP if pay_first else NEXT_STEP),
         "speech_text_hi": sentence,
         "audio_url": audio_url,
         "engines": {"read": engines["read"], "second_read": engines["second_read"],

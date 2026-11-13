@@ -19,6 +19,8 @@ Helper's browser (PWA)  ──► web/ (Vite)  ─┼──► FastAPI api/main.
 | Cross-check, fill gaps, maths, verdict | yes | maths.py, verdict.py |
 | Second reading on a mismatch | yes | extract.second_reading, main.py |
 | Hindi sentence + MP3 | yes | speak.py, fallback.speak |
+| Money asked before the loan (advance-fee fraud) | yes: `pay_first` from the reader + a code rule for SMS -> warning first in the voice, next step DO_NOT_PAY_FIRST (D36) | extract.py, main.py |
+| "5 lakh", "2 crore", "50 hazaar" | yes, converted by code (D36) | extract.py |
 | Telegram card + MP3, pasted SMS | yes | bot/main.py |
 | Results stored | in memory only (lost on restart) | main.py `CHECKS`; db.py is task A3 |
 | Cache by SHA-256 (photos) | yes: one JSON per photo in CACHE_DIR, survives a restart; a repeat makes no AI call; a missing MP3 is made again with edge-tts only | cache.py, main.py |

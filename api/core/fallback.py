@@ -271,3 +271,54 @@ def transcribe(audio_bytes: bytes) -> tuple[str, str, float]:
         log.info("transcribe: engine=%s ok seconds=%.2f chars=%d", name, seconds, len(text))
         return text, name, seconds
     raise EngineError("listener failed (tried whisper, gemini)")
+
+
+# ---------------------------------------------------------------- health pings (A5)
+PING_TIMEOUT_S = 4.0
+PING_CACHE_S = 60.0
+_ping_cache: dict = {"at": 0.0, "result": None}
+
+
+def _ping_groq() -> None:
+    Groq(api_key=settings.groq_api_key, timeout=PING_TIMEOUT_S, max_retries=0).models.list()
+
+
+def _ping_gemini() -> None:
+    client = genai.Client(api_key=settings.gemini_api_key, http_options=genai_types.HttpOptions(
+        timeout=int(PING_TIMEOUT_S * 1000), retry_options=genai_types.HttpRetryOptions(attempts=1)))
+    client.models.get(model=settings.gemini_model)
+
+
+def _ping_edge_tts() -> None:
+    asyncio.run(asyncio.wait_for(edge_tts.list_voices(), timeout=PING_TIMEOUT_S))
+
+
+_PINGS = {"groq": ("_ping_groq", "groq_api_key"), "gemini": ("_ping_gemini", "gemini_api_key"),
+          "edge-tts": ("_ping_edge_tts", None)}
+
+
+def _one_ping(name: str) -> dict:
+    fn_name, key_name = _PINGS[name]
+    if key_name and not getattr(settings, key_name):
+        return {"up": False, "why": "no key"}
+    start = time.perf_counter()
+    try:
+        globals()[fn_name]()
+    except Exception as exc:
+        return {"up": False, "why": _why(exc), "seconds": round(time.perf_counter() - start, 2)}
+    return {"up": True, "seconds": round(time.perf_counter() - start, 2)}
+
+
+def ping(force: bool = False) -> dict:
+    """Is each outside engine reachable right now? Free calls only (model list / voice list), never a
+    loan read, so no quota is spent. Run in parallel; cached for PING_CACHE_S seconds.
+    -> {"groq": {"up": True, "seconds": 0.4}, "gemini": {...}, "edge-tts": {...}}"""
+    now = time.monotonic()
+    if not force and _ping_cache["result"] is not None and now - _ping_cache["at"] < PING_CACHE_S:
+        return _ping_cache["result"]
+    from concurrent.futures import ThreadPoolExecutor
+    with ThreadPoolExecutor(max_workers=len(_PINGS)) as pool:
+        result = dict(zip(_PINGS, pool.map(_one_ping, _PINGS)))
+    _ping_cache.update(at=now, result=result)
+    log.info("ping: %s", {k: ("up" if v["up"] else f"down ({v.get('why')})") for k, v in result.items()})
+    return result

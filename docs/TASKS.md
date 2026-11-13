@@ -38,7 +38,7 @@ All changes go through a pull request that Gurpreet merges (D27).
 - Done when: Every route in section 5 returns sample data by 12:30 PM
 
 ### A3 · `db.py`: tables for checks, cases, events
-- Status: todo (Gurpreet)
+- Status: review (Gurpreet): SQLite checks/cases/events; checks survive a restart (proven 11:43 PM)
 - Type: Must
 - Depends on: A1
 - Files: api/core/db.py
@@ -52,7 +52,7 @@ All changes go through a pull request that Gurpreet merges (D27).
 - Done when: With the Groq key removed, a check still answers through Gemini Flash-Lite; a repeated photo answers instantly
 
 ### A5 · `/api/health`, `/api/stats`
-- Status: todo (Gurpreet; partly: stats from memory, health shows keys only)
+- Status: review (Gurpreet): live engine pings (free calls, cached 60 s), database state, stats from the database; proven with a wrong Groq key (12:35 AM)
 - Type: Must
 - Depends on: A3
 - Files: api/main.py
@@ -354,7 +354,7 @@ All changes go through a pull request that Gurpreet merges (D27).
 - Done when: The 10 samples get exactly the expected rules; the polite 11 AM reminder matches none
 
 ### F2 · Events endpoint with hash chain
-- Status: todo (Gurpreet)
+- Status: review (Gurpreet): real cases/events, hash chain, rules from F1, day counter; chain proven across a restart (11:52 PM)
 - Type: Must
 - Depends on: A3, F1
 - Files: api/main.py, api/core/db.py

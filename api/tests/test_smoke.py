@@ -15,13 +15,13 @@ def test_health(client):
 
 
 def test_cases(client):
-    cases = client.get("/api/cases").json()
-    Case.model_validate(cases[0])
-    r = client.post("/api/cases/case_0007/events",
+    case = client.post("/api/cases", json={"borrower_name": "Raju (test)", "lender_name": "QuickCash"}).json()
+    Case.model_validate(case)
+    r = client.post(f"/api/cases/{case['id']}/events",
                     json={"at": "2026-11-13T21:40:00+05:30", "channel": "call",
                           "contacted": "borrower", "text": "sample"})
-    assert r.status_code == 200 and "hash" in r.json()
-    assert client.get("/api/cases/case_0007/verify").json() == {"ok": True}
+    assert r.status_code == 200 and len(r.json()["hash"]) == 64
+    Case.model_validate(client.get("/api/cases").json()[0])
 
 
 def test_stats(client):

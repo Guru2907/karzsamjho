@@ -21,6 +21,14 @@ Every agent session and every person adds an entry here at the end of each task,
 
 ## Log
 
+### 13 Nov 2026, 7:00 PM · seconds stamp on the Telegram card (DEMO LIVE 1) · agent for Gurpreet
+- Did: the card ends with "⏱ 3.9 sec" from the API's `seconds`; left out when missing or not a number. One-off edit of Siddeshwar's bot/main.py before he starts D5 (D34).
+- Files: bot/main.py, api/tests/test_bot.py, docs/DEMO.md (checklist ticked)
+- Proof: `pytest -q` 157 passed (5 new).
+- Status in docs/TASKS.md: no task ID (demo fix)
+- Next: A4 cache.
+- Broken / risks: none.
+
 ### 13 Nov 2026, 6:30 PM · docs brought up to date with main · agent for Gurpreet
 - Did: all PRs #1 to #11 are merged; local main matches GitHub (7e7b7cb). Updated every doc the code now contradicts: START_HERE (checks are real, merge rules), ARCHITECTURE (what is built, second reading only on a mismatch), TESTING (152 tests, real-run results), RUNBOOK (new symptoms), README, DEMO (seconds stamp, LIVE 2 needs C1/C2), PLAN (status), TASKS (B3, B4, B5, D2 = done after an independent check; D3, D4 review until real Telegram), DECISIONS D28 to D31.
 - Files: README.md, docs/START_HERE.md, ARCHITECTURE.md, TESTING.md, RUNBOOK.md, DEMO.md, PLAN.md, TASKS.md, DECISIONS.md, PROGRESS.md

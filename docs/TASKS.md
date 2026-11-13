@@ -170,7 +170,7 @@ All changes go through a pull request that Gurpreet merges (D27).
 - Done when: a photo whose first reader claims "pay first" warns (and drops the fee) only if the other reader also reports it within Rs 1; otherwise no warning and the fee is kept; other reader down = no warning (D42 follow-up)
 
 ### B13 · Regex backup that knows Bengali / Marathi words
-- Status: todo (Siddeshwar, D45)
+- Status: review (Siddeshwar, D45): bn / mr / Devanagari Hindi labels + Bengali digits + bn/mr/hi time units; real run 2:14 AM with the AI keys invalid (SMS now in docs/TESTING.md results)
 - Type: Stretch of stretch
 - Depends on: B8
 - Files: api/core/extract.py, api/tests/test_extract.py

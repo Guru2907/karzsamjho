@@ -152,3 +152,55 @@ def test_real_rbi_list_has_no_placeholder_names(real_list):
     names = {r["dla_name"].strip().lower() for r in rows}
     assert not names & {"na", "n.a.", "nil", "nill", "none", "not applicable", "0", "1"}
     assert list_date and len(rows) > 1000
+
+
+# ---- C3 / D51: NBFC list + cancelled-registration list (made-up rows) ------------------------------
+NBFC_CSV = """nbfc_name,former_name,cin,regional_office,classification,list_date,source_url
+Alpha Finance Private Limited,Old Alpha Leasing Ltd,U1,Mumbai,ICC,2026-09-30,https://example.org/nbfc.xlsx
+"""
+WATCH_CSV = """name,website,list_name,source_type,source_url,source_date,note
+Dhokha Fincap Pvt. Ltd.,,RBI: registration cancelled,official,https://example.org/cancelled.xlsx,2026-09-30,Cancelled
+Rajmandir Estates (P) Ltd,,RBI: registration cancelled,official,https://example.org/cancelled.xlsx,2026-09-30,
+"""
+
+
+@pytest.fixture
+def lists(directory, monkeypatch, tmp_path):
+    (tmp_path / "nbfc.csv").write_text(NBFC_CSV, encoding="utf-8")
+    (tmp_path / "watch.csv").write_text(WATCH_CSV, encoding="utf-8")
+    monkeypatch.setattr(config, "settings", dataclasses.replace(
+        config.settings, rbi_nbfc_path=str(tmp_path / "nbfc.csv"), watch_list_path=str(tmp_path / "watch.csv")))
+
+
+@pytest.mark.parametrize("name", ["Dhokha Fincap Pvt. Ltd.", "dhokha fincap", "DHOKHA FINCAP LIMITED",
+                                  "Rajmandir Estates Pvt Ltd"])
+def test_cancelled_registration_warns_on_the_exact_name(lists, name):
+    r = lender.match_lender(name)
+    assert r["warning"]["list"] == "RBI: registration cancelled" and r["warning"]["date"] == "2026-09-30"
+    assert r["warning"]["source"].startswith("https://") and r["nbfc"] is None
+    assert r["match"] == "NOT_FOUND"                     # the app list result keeps its meaning
+
+
+@pytest.mark.parametrize("name", ["Dhokha Fincaps", "Dhoka Fincap", "Dhokha", "QuickRupee"])
+def test_a_similar_name_is_never_warned(lists, name):
+    assert lender.match_lender(name)["warning"] is None   # exact only: never tell off a look-alike
+
+
+def test_nbfc_found_by_name_former_name_or_the_lender_behind_an_app(lists):
+    assert lender.match_lender("Alpha Finance Pvt Ltd")["nbfc"]["name"] == "Alpha Finance Private Limited"
+    assert lender.match_lender("Old Alpha Leasing")["nbfc"]["list_date"] == "2026-09-30"
+    r = lender.match_lender("QuickRupee")                # FOUND app whose lender is Alpha Finance
+    assert r["match"] == "FOUND" and r["nbfc"]["name"] == "Alpha Finance Private Limited"
+    assert lender.match_lender("Zeta Credit")["nbfc"] is None
+
+
+def test_without_the_list_files_nbfc_and_warning_are_null(directory):
+    r = lender.match_lender("Dhokha Fincap Pvt. Ltd.")   # conftest points both paths at missing files
+    assert r["nbfc"] is None and r["warning"] is None
+
+
+def test_real_cancelled_list_warns_alok_auto_credit(real_list, monkeypatch):
+    monkeypatch.setattr(config, "settings", dataclasses.replace(
+        config.settings, watch_list_path=str(config.ROOT / "api" / "data" / "watch_list.csv")))
+    assert lender.match_lender("Alok Auto Credit Pvt. Ltd.")["warning"]["date"] == "2026-09-30"
+    assert lender.match_lender("Alok Auto Credits")["warning"] is None

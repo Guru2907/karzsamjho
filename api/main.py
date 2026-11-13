@@ -195,7 +195,8 @@ async def run_check(image: bytes | None = None, text: str | None = None,
         "numbers": numbers,
         "unverified": unverified,
         "lender": lender_result,
-        "next_step": next_step.next_step(result_verdict, lender_result.get("match"), pay_first),  # C2
+        "next_step": next_step.next_step(result_verdict, lender_result.get("match"), pay_first,
+                                         lender_result.get("warning")),  # C2, D51
         "speech_text_hi": sentence,
         "audio_url": audio_url,
         "engines": {"read": engines["read"], "second_read": engines["second_read"],

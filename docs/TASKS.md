@@ -200,7 +200,7 @@ All changes go through a pull request that Gurpreet merges (D27).
 - Done when: FOUND / SIMILAR / NOT_FOUND each add one fixed sentence to the voice (Hindi; bn/mr after the native-speaker OK); nothing is added when lender.match is null; never "safe", "illegal" or "fake"
 
 ### C3 · NBFC list as a second source
-- Status: todo (Siddeshwar, D45) - stretch; only if Anam adds api/data/rbi_nbfc.csv
+- Status: review (Gurpreet, D51): NBFC list (8,502) and RBI cancelled-registration list (6,738) from Anam's G4 data; lender gets optional nbfc + warning; warning only on the exact name; voice, Telegram line and next step "ruko"; real run 4:20 AM (Alok Auto Credit). Needs Siddeshwar's look
 - Type: Stretch
 - Depends on: C1
 - Files: api/core/lender.py

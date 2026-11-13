@@ -121,7 +121,14 @@ def lender_line(lender: dict | None) -> str | None:
 
     Never says "illegal" or "fake" (CLAUDE.md); always shows the list date.
     """
-    if not lender or not lender.get("match"):
+    if not lender:
+        return None
+    warning = lender.get("warning")
+    if isinstance(warning, dict) and warning.get("name"):         # D51: RBI cancelled the registration
+        wname = html.escape(str(warning["name"]))
+        wdate = html.escape(str(warning.get("date") or "?"))
+        return f"⚠️ RBI ne is company ka NBFC registration radd kiya hai: <b>{wname}</b> (list: {wdate})"
+    if not lender.get("match"):
         return None
     date = html.escape(str(lender.get("list_date") or "?"))
     name = html.escape(str(lender.get("closest") or lender.get("name_read") or ""))

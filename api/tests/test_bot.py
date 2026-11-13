@@ -555,3 +555,13 @@ def test_error_line_never_shows_the_bot_token(caplog, monkeypatch):
     caplog.set_level("INFO", logger="bot")
     run_error_handler(RuntimeError("GET https://api.telegram.org/bot123:SECRET/getUpdates failed"))
     assert "SECRET" not in caplog.text and "<token>" in caplog.text
+
+
+# ---- D51: card line for a lender on RBI's cancelled-registration list ----------------------------------
+def test_lender_line_shows_the_cancelled_registration_with_its_date():
+    line = bot.lender_line({"match": "NOT_FOUND", "list_date": "2026-11-14",
+                            "warning": {"name": "Dhokha & Co Fincap", "date": "2026-09-30"}})
+    assert line.startswith("⚠️ RBI ne is company ka NBFC registration radd kiya hai")
+    assert "<b>Dhokha &amp; Co Fincap</b>" in line and "2026-09-30" in line
+    assert not any(w in line.lower() for w in ("illegal", "fake", "fraud"))
+    assert bot.lender_line({"match": None, "warning": None}) is None

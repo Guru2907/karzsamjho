@@ -22,6 +22,9 @@ STEPS = {
                         "Pareshani ho to sachet.rbi.org.in par batao."),
     "CHECK_APP_NAME": ("RBI ki list mein milta-julta naam hai. Download se pehle app ka sahi naam "
                        "aur website check karo."),
+    # D51: the lender's name is on RBI's cancelled-registration list. A sourced fact, never "fraud".
+    # The card / voice already say what RBI did (lender line), so the step only says what to do.
+    "ON_WARNING_LIST": "Is company se loan lene se pehle ruko. Shikayat: sachet.rbi.org.in ya 1930.",
     "SEND_CLEARER": "Saare number saaf nahi padhe gaye. Saaf photo bhejo, ya bank mitra se poochho.",
     "FIND_CHEAPER": "Yeh loan bahut mehenga hai. Bank, SHG ya cooperative se sasta loan poochho.",
     "ASK_BANK_MITRA": "Loan mehenga hai. Lene se pehle bank mitra se poochho.",
@@ -31,14 +34,18 @@ BY_VERDICT = {"CANNOT_SAY": "SEND_CLEARER", "VERY_COSTLY": "FIND_CHEAPER",
               "COSTLY": "ASK_BANK_MITRA", "USUAL": "KEEP_PAPERS"}
 
 
-def next_step(verdict: str, lender_match: str | None, pay_first: float | None = None) -> dict:
+def next_step(verdict: str, lender_match: str | None, pay_first: float | None = None,
+              warning: dict | None = None) -> dict:
     """C2: exactly ONE next action for a check. First match wins:
-    money asked before the loan -> lender NOT_FOUND -> lender SIMILAR -> the verdict.
+    money asked before the loan -> lender on RBI's cancelled-registration list (D51)
+    -> lender NOT_FOUND -> lender SIMILAR -> the verdict.
     lender_match None (not checked, e.g. the RBI list is empty) never blocks: the verdict decides.
     An unknown verdict is treated as CANNOT_SAY (never claim more than we know, K = 0).
     """
     if pay_first:
         code = "DO_NOT_PAY_FIRST"
+    elif warning:
+        code = "ON_WARNING_LIST"
     elif lender_match == "NOT_FOUND":
         code = "NOT_IN_RBI_LIST"
     elif lender_match == "SIMILAR":

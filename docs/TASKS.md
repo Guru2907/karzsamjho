@@ -60,7 +60,7 @@ All changes go through a pull request that Gurpreet merges (D27).
 - Done when: Each `CheckResult` has `seconds` and `engines` filled
 
 ### A7 · Join the parts in `POST /api/checks`; results kept in memory
-- Status: todo
+- Status: review (Gurpreet)
 - Type: Must
 - Depends on: A4, B1, B3, B5, D2
 - Files: api/main.py, api/core/schemas.py, api/tests/test_pipeline.py, api/tests/test_smoke.py

@@ -6,7 +6,7 @@ Every agent session and every person adds an entry here at the end of each task,
 - Now: re-planned at 4:50 PM (D25); no product code yet. Everyone follows docs/PLAN.md: photo or text -> card + Hindi voice, with second reading, merged and tested by 7:00 PM, rehearsal 7:00 to 7:30 PM. Harassment, lender, database and cache wait until after the review.
 - Gates: 2:00 PM [x] · 7:30 PM [ ] · 12:30 AM [ ] · 3:30 AM freeze [ ]
 - Known broken: (none yet)
-- Groq photo reads used today on the server account: 0 of about 80 (Gurpreet's own account: 2)
+- Groq photo reads used today on the server account: 0 of about 80 (Gurpreet's own account: 3)
 
 ## Entry template (copy, fill, paste at the top of the log below)
 ```
@@ -20,6 +20,14 @@ Every agent session and every person adds an entry here at the end of each task,
 ```
 
 ## Log
+
+### 13 Nov 2026, 5:55 PM · L4 join the parts in POST /api/checks (A7) · agent for Gurpreet
+- Did: POST /api/checks is real: photo or text -> extract -> cross_check -> fill_gaps -> compute -> decide -> speech_text -> make_audio; results kept in memory; GET /api/checks, /api/checks/{id}, /api/audio/{id}.mp3 and /api/stats read them. No card -> 422 {code, text_hi} (D26). lender.match is null. Form text (urlencoded) accepted too. Merged Siddeshwar's maths, verdict and speak branches into this branch to wire against them.
+- Files: api/main.py, api/core/schemas.py (lender.match nullable), api/tests/test_pipeline.py (new), api/tests/test_smoke.py
+- Proof: `pytest -q` 119 passed (14 new pipeline tests). Real server: ad photo -> 3800/5000/7/1200, VERY_COSTLY, MP3, 3.9 s; Hinglish SMS -> 9000/11500/14/2500, VERY_COSTLY, MP3, 4.7 s (checked by hand); non-loan -> 422 Hindi.
+- Status in docs/TASKS.md: A7 = review
+- Next: L5 second reading; then Siddeshwar's bot (#7) against the real API.
+- Broken / risks: results vanish on restart (no database until A3). Cases, PDF, verify are still sample data.
 
 ### 13 Nov 2026, 5:45 PM · L3 extract.py (B1, B2, B7, B8) · agent for Gurpreet
 - Did: reading prompt; strip fences; Pydantic `Fields` that turns "Rs 5,000" -> 5000, "2 weeks" -> 14 days, "10%" fee -> rupees (in code); not-a-loan and nothing-readable raise NotALoan / Unreadable with the Hindi text; SMS numbers not written in the message are dropped (stops invented in_hand, D18); regex backup when gpt-oss is down or answers badly.

@@ -167,14 +167,14 @@ All changes go through a pull request that Gurpreet merges (D27).
 - Done when: An MP3 is produced in under 5 seconds; numbers match the card
 
 ### D3 · Bot sends formatted text + MP3
-- Status: todo
+- Status: review
 - Type: Must
 - Depends on: D1, D2
 - Files: bot/main.py
 - Done when: Both arrive for all 3 printed ads; with voice switched off, the text still arrives
 
 ### D4 · Bot accepts pasted text offers
-- Status: todo
+- Status: review
 - Type: Must
 - Depends on: B2, D1
 - Files: bot/main.py

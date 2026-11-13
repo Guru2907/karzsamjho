@@ -21,6 +21,14 @@ Every agent session and every person adds an entry here at the end of each task,
 
 ## Log
 
+### 13 Nov 2026, 6:25 PM · D3 D4 (T4) · agent for Siddeshwar
+- Did: bot/main.py. Card now HTML (names escaped): verdict line, 4 symbols with bold rupees, RBI line (hidden when lender.match is null, never "illegal"), next step. After the card, the MP3 from audio_url goes by sendAudio; no audio_url or a failed download -> card alone. Pasted text -> POST /api/checks JSON {text, lang "hi", source "telegram"}. 422 -> detail.text_hi; server off / other errors -> Hindi messages.
+- Files: bot/main.py, docs/TASKS.md, docs/PROGRESS.md
+- Proof: `pytest -q` 6 passed (no bot test file in my list). Handler check script (not committed): 21/21, against the real API app (sample data) and a fake API: card then MP3, card alone, 422 text, server off, JSON body, escaping.
+- Status in docs/TASKS.md: D3, D4 = review
+- Next: live Telegram run with the test bot once the 6:30 PM merge gives real answers; then "Done when" with the 3 printed ads.
+- Broken / risks: not yet run against real Telegram. The Telegram card wording changed (verdict line, RBI line): docs/DEMO.md is the lead's file, please update it.
+
 ### 13 Nov 2026, 5:15 PM · teammate prompts + PR workflow · agent for Gurpreet
 - Did: full paste-ready prompts in docs/PLAN.md for Siddeshwar (Claude Code), the PWA teammate (RajuCard, /check, errors, Raju mode, home-screen app) and the data teammate (demo ads, SMS offers, 30 offers, harassment samples, RBI list, vendor notes). Every change now goes through a PR; Gurpreet merges (D27).
 - Files: docs/PLAN.md, docs/TASKS.md (E6 into tonight; G1, G2, I1, I3 to the data teammate), docs/DECISIONS.md (D27), docs/PROGRESS.md

@@ -83,7 +83,7 @@ Start the API first. You only need the parts your task touches (web-only work = 
 - Send something that is not a loan: a polite Hindi "Yeh loan ka offer nahi lagta" and no card
 - Tests: `.venv\Scripts\python -m pytest -q` (266 passed on main at 9:00 PM, 13 Nov)
 
-Checks are **real** since 6:00 PM, 13 Nov (photo/text -> AI reads -> Python maths -> verdict -> Hindi voice). Still sample data: cases, events, evidence PDF, verify. The `/check` page still shows the old placeholder until the PWA work (E2, E3, E9) is merged. Results are kept in memory, so they disappear when the API restarts (database: task A3).
+Checks are **real** since 6:00 PM, 13 Nov (photo/text -> AI reads -> Python maths -> verdict -> Hindi voice). Still sample data: cases, events, evidence PDF, verify. The `/check` page still shows the old placeholder until the PWA work (E2, E3, E9) is merged. Results are stored in a SQLite file (`karzsamjho.db`, not committed), so they survive an API restart (A3).
 
 ---
 

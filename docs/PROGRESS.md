@@ -36,6 +36,13 @@ Every agent session and every person adds an entry here at the end of each task,
 - Status in docs/TASKS.md: C4 = review (wiring into the voice is Gurpreet's main.py, after C1)
 - Next: F3 evidence PDF, then D5.
 - Broken / risks: not spoken yet: main.py must append lender_sentence(...) after speech_text(...) once C1 fills lender.match. bn / mr wording needs a native speaker.
+### 13 Nov 2026, 11:55 PM · F2 cases, events, hash chain · agent for Gurpreet
+- Did: /api/cases, /api/cases/{id} and POST /api/cases/{id}/events are real (A3 database, sample data removed). Each event: time normalised to IST, rules from Siddeshwar's harass.label (calls that day INCLUDING this one, for H6), hash = SHA-256(prev_hash + compact sorted JSON of at/channel/contacted/text/rules), first prev_hash = 64 zeros; one lock so the chain never forks. If harass.label is missing or fails, the event is still stored with no rules. Day counter (day 1 = opening day, IST). `event_hash` is shared with F4.
+- Files: api/main.py, api/tests/test_cases.py (new), api/tests/test_smoke.py, docs/ARCHITECTURE.md, TASKS.md
+- Proof: `pytest -q` 283 passed (9 new); with Siddeshwar's F1 (#27) merged in a throwaway copy: 328 passed. Real run with F1 + real AI: night threat -> H1 H2; message to the son -> H3; polite 11:30 AM reminder -> none; 5th call in a day -> H6; API restarted -> 8 events, every link and every hash recomputes.
+- Status in docs/TASKS.md: F2 = review
+- Next: B9b, then C1. Siddeshwar's F3 (PDF) and D5 (bot) can now build on these routes.
+- Broken / risks: verify (F4) still answers ok=true for everything until F4. Merge order: #26 (A3) -> #27 (F1) -> this.
 
 ### 13 Nov 2026, 11:46 PM · F1 harassment rules · agent for Siddeshwar
 - Did: harass.label(event, calls_that_day) -> sorted rule ids. H1 (before 08:00 / after 19:00 IST, hours from config), H6 (calls_that_day >= h6_calls_per_day, "our threshold") and H3 when contacted is family/employer/contacts are plain code. H2-H5: gpt-oss-20b JSON (check= parser) plus a Hinglish/English/Devanagari keyword list, used alone when the model is down and added as a safety net when it answers. RULES (English meanings) and RULES_BASIS for the PDF.
@@ -44,6 +51,13 @@ Every agent session and every person adds an entry here at the end of each task,
 - Status in docs/TASKS.md: F1 = review
 - Next: C4 lender sentence, then F3 PDF, then D5 bot.
 - Broken / risks: the old skeleton name label_event is replaced by label (docs/PLAN.md signature). No G2 samples in api/data/harassment yet, so the samples are in the test file.
+### 13 Nov 2026, 11:45 PM · A3 SQLite database · agent for Gurpreet
+- Did: db.py stores checks, cases and events in SQLite (DB_PATH, *.db not committed); one short connection per call; helpers for F2: last_event_hash (chain start = 64 zeros) and calls_on (H6). main.py writes every check to the database (cache hits never overwrite the first answer), reads /api/checks, /api/checks/{id} and /api/stats from it, keeps CHECKS only as a fast in-memory copy, and never reuses a check id after a restart. Every test now gets its own temp database (conftest.py). /api/cases is still sample data until F2.
+- Files: api/core/db.py, api/main.py, api/tests/test_db.py (new), api/tests/conftest.py, docs/ARCHITECTURE.md, START_HERE.md, RUNBOOK.md, TASKS.md
+- Proof: `pytest -q` 274 passed (8 new), no real database file created by the tests. Real: SMS check chk_0001 (4500 / 5600 / 7 / 1100) -> API fully stopped -> started again -> same check returned from the database; stats and health count it.
+- Status in docs/TASKS.md: A3 = review
+- Next: F2 events + hash chain (unblocks Siddeshwar's F3 and D5).
+- Broken / risks: none. Before the demo, copy karzsamjho.db with cache/ and audio/ to the backup laptop (RUNBOOK).
 
 ### 13 Nov 2026, 9:15 PM · WhatsApp skipped · agent for Gurpreet
 - Did: the lead skipped WhatsApp: D41 reverses D39, D12 dropped, CLAUDE.md and AGENTS.md list WhatsApp as plain out of scope again; removed from Siddeshwar's prompt.

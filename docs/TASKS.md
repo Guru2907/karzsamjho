@@ -9,10 +9,11 @@ Type: M = must build. S = stretch, only after the 7:30 PM gate on 13 Nov has pas
 Owners, order, target times and signatures are in docs/PLAN.md. In scope tonight:
 - Lead: A4 (without the cache), A6, A7, B1, B2, B6, B7, B8
 - Claude Code teammate: B3, B4, B5, D2, D3, D4
-- PWA teammate: E2, E3, E7, E9
-- Data teammate: G3, G8, then G4
+- PWA teammate: E2, E3, E9, E6, E7
+- Data teammate: G3, G8, then G1, G2, G4; also I1 (mentor questions) and I3 (backup video)
 
-Waiting until after the review: A3 (database), the cache half of A4, A5, C1 to C3, D5, E4 to E6, E8, all of F, G1, G2.
+Waiting until after the review: A3 (database), the cache half of A4, A5, C1 to C3, D5, E4, E5, E8, all of F.
+All changes go through a pull request that Gurpreet merges (D27).
 
 ## A. Server and setup
 
@@ -243,6 +244,7 @@ Waiting until after the review: A3 (database), the cache half of A4, A5, C1 to C
 - Depends on: E1
 - Files: web/public/manifest.json, icons
 - Done when: Manifest has name, icons (192 and 512 px), start URL, display mode
+- Note: moved into tonight's PWA work (D27). Also allowed: web/index.html (manifest link, theme-color, apple-touch-icon, viewport-fit). Added done when: "Add to home screen" in Chrome on a phone opens /check without the browser bar.
 
 ### E7 · Raju mode (details hidden, big camera and play buttons)
 - Status: todo

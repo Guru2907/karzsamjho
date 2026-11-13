@@ -23,7 +23,7 @@ from fastapi.concurrency import run_in_threadpool
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import FileResponse, Response
 
-from api.core import cache, config, db, evidence, extract, fallback, harass, lender, maths, speak, verdict
+from api.core import cache, config, db, evidence, extract, fallback, harass, lender, maths, next_step, speak, verdict
 from api.core.config import ensure_dirs
 from api.core.schemas import (Case, CaseIn, CheckResult, Event, EventIn, Stats,
                               VerifyResult)
@@ -291,11 +291,24 @@ def _ist(at: str) -> datetime:
     return when if when.tzinfo else when.replace(tzinfo=db.IST)
 
 
+def _lender_match(case: dict) -> str | None:
+    """F5: is this case's lender in RBI's directory? The linked check already knows (C1); otherwise
+    the case's lender name is checked now. None = not checked (e.g. no RBI list loaded)."""
+    if case.get("check_id"):
+        check = CHECKS.get(case["check_id"]) or db.get_check(case["check_id"])
+        match = ((check or {}).get("lender") or {}).get("match")
+        if match:
+            return match
+    return lender.match_lender(case.get("lender_name"))["match"]
+
+
 def _with_day(case: dict) -> dict:
-    """Adds the day counter: day 1 is the day the case was opened (IST)."""
+    """Adds the day counter (day 1 = the day the case was opened, IST) and the one complaint route
+    that fits this lender (F5, next_step.complaint_route). The evidence PDF prints this route."""
     opened = _ist(case["opened_at"]).astimezone(db.IST).date()
-    today = datetime.now(db.IST).date()
-    return {**case, "day": (today - opened).days + 1}
+    day = (datetime.now(db.IST).date() - opened).days + 1
+    route = case.get("route") or next_step.complaint_route(_lender_match(case), day)
+    return {**case, "day": day, "route": route}
 
 
 def _rules(event: dict, calls_that_day: int) -> list[str]:

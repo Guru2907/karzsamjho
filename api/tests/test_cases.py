@@ -192,3 +192,70 @@ def test_verify_agrees_with_the_pdf_helper(client, fake_label):
     cid = _three_events(client)
     events = client.get(f"/api/cases/{cid}").json()["events"]
     assert main.chain_ok(events) is evidence.verify_chain(events) is True
+
+
+# ---------------------------------------------------------------- F5 complaint route + day counter
+from api.core import next_step as next_step_mod  # noqa: E402
+
+
+@pytest.fixture
+def rbi_list(monkeypatch, tmp_path):
+    """A made-up RBI directory (no real company names)."""
+    import dataclasses
+    path = tmp_path / "rbi.csv"
+    path.write_text("dla_name,regulated_entity,website,list_date\n"
+                    "QuickRupee,Alpha Finance Pvt Ltd,https://quickrupee.in,2026-11-10\n", encoding="utf-8")
+    monkeypatch.setattr(config, "settings", dataclasses.replace(config.settings, rbi_dla_path=str(path)))
+
+
+def case_for(client, lender_name, check_id=None):
+    return client.post("/api/cases", json={"borrower_name": "Raju (test)", "lender_name": lender_name,
+                                           "check_id": check_id}).json()
+
+
+@pytest.mark.parametrize("match, expect", [
+    ("FOUND", "grievance officer"), ("NOT_FOUND", "Sachet portal"), ("SIMILAR", "Check the exact app name"),
+    (None, "Check the exact app name")])
+def test_complaint_route_per_match(match, expect):
+    route = next_step_mod.complaint_route(match)
+    assert expect in route
+    for word in ("illegal", "fake", "safe"):
+        assert word not in route.lower()
+
+
+def test_regulated_route_counts_the_30_days():
+    assert next_step_mod.complaint_route("FOUND", 3).endswith("today is day 3 of 30.")
+    assert "go to the RBI Ombudsman now" in next_step_mod.complaint_route("FOUND", 31)
+    assert "day" not in next_step_mod.complaint_route("NOT_FOUND", 3)          # no 30-day wait there
+
+
+def test_case_route_from_the_lender_name(client, rbi_list):
+    assert "grievance officer" in case_for(client, "QuickRupee")["route"]
+    assert "day 1 of 30" in case_for(client, "QuickRupee")["route"]
+    assert "Sachet portal" in case_for(client, "ZapCash Express")["route"]
+
+
+def test_case_route_without_an_rbi_list_is_unsure(client):
+    # the real CSV on main is still only a header: "not checked" -> both routes, never "Sachet only"
+    assert "Check the exact app name" in case_for(client, "QuickRupee")["route"]
+
+
+def test_case_route_from_the_linked_check(client, rbi_list):
+    db.save_check({"id": "chk_0042", "verdict": "VERY_COSTLY", "seconds": 4.0,
+                   "numbers": {"extra": {"value": 1200, "status": "computed"}},
+                   "lender": {"match": "NOT_FOUND"}}, None, "test")
+    # the linked check said NOT_FOUND, even though this name would match the list
+    assert "Sachet portal" in case_for(client, "QuickRupee", "chk_0042")["route"]
+
+
+def test_pdf_prints_the_chosen_route(client, rbi_list, fake_label, monkeypatch):
+    from api.core import evidence
+    seen = {}
+    real = evidence.build_pdf
+    monkeypatch.setattr(evidence, "build_pdf", lambda case, **kw: (seen.update(case=case), real(case))[1])
+    case = case_for(client, "ZapCash Express")
+    log_event(client, case["id"], "2026-11-13T21:40:00+05:30", "Paisa do warna")
+    client.get(f"/api/cases/{case['id']}/evidence.pdf")
+    assert "Sachet portal" in seen["case"]["route"]
+    lines = evidence.where_to_complain(seen["case"], {"H2": 1})
+    assert len(lines) == 2 and "police" in lines[1]                      # the one route + police for threats

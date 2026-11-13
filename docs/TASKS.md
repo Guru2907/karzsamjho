@@ -186,7 +186,7 @@ All changes go through a pull request that Gurpreet merges (D27).
 - Done when: A listed app returns FOUND with its lender; a made-up app returns NOT_FOUND; a near-miss spelling returns SIMILAR; a link or website in the SMS/ad is matched against the directory's website column too (D37); wording never says safe, illegal or fake
 
 ### C2 · `next_step.py`
-- Status: todo (Siddeshwar, D45) - Must: one next step per verdict x lender match x pay_first
+- Status: review (Siddeshwar, D45): one next step per verdict x lender match x pay_first; all 48 combinations tested; real run 1:31 AM, one SMS per verdict
 - Type: Must
 - Depends on: B5, C1
 - Files: api/core/next_step.py

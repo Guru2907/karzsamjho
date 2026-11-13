@@ -27,7 +27,7 @@ Helper's browser (PWA)  ──► web/ (Vite)  ─┼──► FastAPI api/main.
 | Results stored | yes: SQLite file (DB_PATH, default ./karzsamjho.db); survives a restart; main.py keeps a fast in-memory copy (A3) | db.py, main.py |
 | Cache by SHA-256 (photos) | yes: one JSON per photo in CACHE_DIR, survives a restart; a repeat makes no AI call; a missing MP3 is made again with edge-tts only | cache.py, main.py |
 | Lender match | yes: app/lender name (RapidFuzz, generic words stripped) + any website or Play Store link in the SMS, against the local copy of RBI's directory api/data/rbi_dla.csv; a listed name with a different link = SIMILAR (possible clone); empty directory = null (not checked); spoken via C4 when present (C1, D37) | lender.py, main.py |
-| Next step | one fixed line: "Loan lene se pehle bank mitra se poochho." (D26) | main.py; next_step.py is task C2 |
+| Next step | yes: exactly ONE fixed Hinglish step per check, first match wins: money asked first -> DO_NOT_PAY_FIRST; lender NOT_FOUND -> NOT_IN_RBI_LIST; SIMILAR -> CHECK_APP_NAME; else by verdict: CANNOT_SAY -> SEND_CLEARER, VERY_COSTLY -> FIND_CHEAPER, COSTLY -> ASK_BANK_MITRA, USUAL -> KEEP_PAPERS. Lender not checked (null) never blocks (C2) | next_step.next_step, main.py |
 | Harassment cases + events | yes: real cases in SQLite; each event gets rules from harass.label (F1) and hash = SHA-256(prev_hash + fields), first prev = 64 zeros; day counter (F2) | main.py, db.py |
 | Evidence PDF | yes: built fresh from the database by evidence.build_pdf (F3), served at /api/cases/{id}/evidence.pdf; English, 12-digit numbers masked, hash chain, complaint draft | evidence.py, main.py |
 | Bot harassment log | yes: forward a message (or /log) -> case event -> Hindi rules -> PDF in the chat (D5) | bot/main.py |
@@ -44,7 +44,7 @@ No card -> `422 {"detail": {"code": "NOT_A_LOAN" | "UNREADABLE", "text_hi": "...
 4. If the cross-check fails (photos only): second reading by the OTHER reader (Gemini after Qwen, Qwen after Gemini). Fields more than Rs 1 apart, or seen by only one reader, are disputed and set aside; numbers that then cannot be worked out are unverified. A missing key number alone does NOT trigger a second reading; it is simply "couldn't verify" (D30). Text offers never get a second reading.
 5. verdict.py: cost band from config thresholds; CANNOT_SAY if a key number is unverified.
 6. lender.py: RapidFuzz against data/rbi_dla.csv -> FOUND / SIMILAR / NOT_FOUND + list date.
-7. next_step.py: exactly one next step for the verdict.
+7. next_step.py: exactly one next step: pay-first first, then the RBI match (not found / similar), then the verdict (C2).
 8. speak.py: fill the fixed Hindi template from the numbers; edge-tts -> MP3 in AUDIO_DIR. If it fails, no audio, card still returned.
 9. db.py: save the CheckResult with engines used and seconds taken. cache.py: store it.
 

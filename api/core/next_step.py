@@ -13,8 +13,39 @@ ROUTE_UNSURE = ("Check the exact app name first. If it is a regulated lender: it
                 "(sachet.rbi.org.in) and cybercrime.gov.in, phone 1930.")
 
 
-def next_step(verdict: str, lender_match: str) -> dict:
-    raise NotImplementedError("next_step: see docs/TASKS.md C2")
+# C2: one fixed Hinglish sentence per situation, written by code, never by AI.
+# Never "safe", "illegal" or "fake" (D6, D37).
+STEPS = {
+    "DO_NOT_PAY_FIRST": ("Paise mat bhejo. Loan se pehle paise maangna dhokha ho sakta hai. "
+                         "Shikayat: 1930 ya cybercrime.gov.in"),
+    "NOT_IN_RBI_LIST": ("Yeh app RBI ki list mein nahi mila. Loan lene se pehle bank mitra se poochho. "
+                        "Pareshani ho to sachet.rbi.org.in par batao."),
+    "CHECK_APP_NAME": ("RBI ki list mein milta-julta naam hai. Download se pehle app ka sahi naam "
+                       "aur website check karo."),
+    "SEND_CLEARER": "Saare number saaf nahi padhe gaye. Saaf photo bhejo, ya bank mitra se poochho.",
+    "FIND_CHEAPER": "Yeh loan bahut mehenga hai. Bank, SHG ya cooperative se sasta loan poochho.",
+    "ASK_BANK_MITRA": "Loan mehenga hai. Lene se pehle bank mitra se poochho.",
+    "KEEP_PAPERS": "Kharcha aam loan jaisa hai. Saare kagaz sambhal ke rakho aur EMI time par bharo.",
+}
+BY_VERDICT = {"CANNOT_SAY": "SEND_CLEARER", "VERY_COSTLY": "FIND_CHEAPER",
+              "COSTLY": "ASK_BANK_MITRA", "USUAL": "KEEP_PAPERS"}
+
+
+def next_step(verdict: str, lender_match: str | None, pay_first: float | None = None) -> dict:
+    """C2: exactly ONE next action for a check. First match wins:
+    money asked before the loan -> lender NOT_FOUND -> lender SIMILAR -> the verdict.
+    lender_match None (not checked, e.g. the RBI list is empty) never blocks: the verdict decides.
+    An unknown verdict is treated as CANNOT_SAY (never claim more than we know, K = 0).
+    """
+    if pay_first:
+        code = "DO_NOT_PAY_FIRST"
+    elif lender_match == "NOT_FOUND":
+        code = "NOT_IN_RBI_LIST"
+    elif lender_match == "SIMILAR":
+        code = "CHECK_APP_NAME"
+    else:
+        code = BY_VERDICT.get(verdict, "SEND_CLEARER")
+    return {"code": code, "text_hi": STEPS[code]}
 
 
 def complaint_route(lender_match: str | None, day: int | None = None) -> str:

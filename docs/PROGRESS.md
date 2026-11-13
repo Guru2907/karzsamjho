@@ -21,6 +21,14 @@ Every agent session and every person adds an entry here at the end of each task,
 
 ## Log
 
+### 14 Nov 2026, 12:35 AM · evidence PDF route connected (F3 wiring) · agent for Gurpreet
+- Did: found in the 11-PR merge check: Siddeshwar's build_pdf (F3) and his bot's PDF download (D5) were done, but /api/cases/{id}/evidence.pdf in main.py still answered 404. It now builds the PDF fresh from the database (with the day counter) and returns application/pdf. The fingerprint formula in evidence.py and main.py was checked to be identical.
+- Files: api/main.py, api/tests/test_cases.py
+- Proof: `pytest -q` 377 passed (2 new: real %PDF, every event, 12-digit number masked). Real: case with a 9:40 PM threat + Aadhaar 1234 5678 9012 and a message to the son -> PDF with H1, H2, H3, the timeline, "XXXX XXXX 9012", the hash chain, where to complain and a complaint draft.
+- Status in docs/TASKS.md: no own task ID (connects F3 to the API)
+- Next: F4 verify (the PDF says /verify checks the chain, but it still always answers ok).
+- Broken / risks: built on #35 (+ #26, #29) with #30 merged in: merge after #30 and #35.
+
 ### 14 Nov 2026, 12:35 AM · A5 health: engines up or down · agent for Gurpreet
 - Did: fallback.ping() checks Groq (model list), Gemini (model lookup) and edge-tts (voice list) in parallel: free calls, no loan reads, 4 s timeout, cached 60 s (`?fresh=true` re-checks). /api/health adds engines up/down with the reason, can_read_photos, can_speak and the database state; it still answers if the database is broken; keys only as set / not set. Stats come from the database (A3); a test checks they match. Tests never ping the internet (conftest.py).
 - Files: api/core/fallback.py, api/main.py, api/tests/test_health.py (new), api/tests/conftest.py, docs/RUNBOOK.md, TASKS.md

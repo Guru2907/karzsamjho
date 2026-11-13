@@ -44,6 +44,13 @@ Every agent session and every person adds an entry here at the end of each task,
 - Status in docs/TASKS.md: A4 = doing (Gurpreet); speak part ready for Siddeshwar's make_audio (T3)
 - Next: L2 `read_image()` (Qwen -> Gemini) and `read_text()` (gpt-oss-20b).
 - Broken / risks: speak needs internet; the venue network is untested.
+### 13 Nov 2026, 5:08 PM · B3 B4 (T1) · agent for Siddeshwar
+- Did: maths.py to docs/PLAN.md "Rules inside the maths": cross_check, fill_gaps(fields, disputed), compute. Whole numbers round half up. A sum cross_check still finds broken is treated as disputed (safety net). A fee that was printed but disputed is not treated as "no fee": in_hand stays unverified.
+- Files: api/core/maths.py, api/tests/test_maths.py, docs/TASKS.md, docs/PROGRESS.md
+- Proof: `pytest -q` 25 passed (19 maths: PLAN.md rows 1-10 + cross-check + safety cases; 6 smoke).
+- Status in docs/TASKS.md: B3, B4 = review
+- Next: T2 verdict.py (B5), then T3 speak.py (D2), T4 bot (D3, D4).
+- Broken / risks: none known. maths.py is not called by api/main.py until the lead's 6:30 PM merge.
 
 ### 13 Nov 2026, 5:15 PM · teammate prompts + PR workflow · agent for Gurpreet
 - Did: full paste-ready prompts in docs/PLAN.md for Siddeshwar (Claude Code), the PWA teammate (RajuCard, /check, errors, Raju mode, home-screen app) and the data teammate (demo ads, SMS offers, 30 offers, harassment samples, RBI list, vendor notes). Every change now goes through a PR; Gurpreet merges (D27).

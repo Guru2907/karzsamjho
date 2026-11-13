@@ -128,8 +128,27 @@ def where_to_complain(case: dict, counts: dict[str, int]) -> list[str]:
     return lines
 
 
+def letter_addressee(route: str | None, lender_name: str | None) -> str:
+    """F6: the letter goes where the case's route (F5, next_step.complaint_route) says. English (D44).
+
+    grievance officer only -> the lender's Grievance Redressal Officer
+    Sachet only            -> Sachet portal (RBI) / National Cyber Crime Reporting Portal
+    both, or no route yet  -> unsure: the grievance officer, or Sachet if not a regulated lender
+    """
+    text = (route or "").lower()
+    grievance, sachet = "grievance officer" in text, "sachet" in text
+    officer = (f"the Grievance Redressal Officer, {lender_name}" if lender_name
+               else "the Grievance Redressal Officer of the lender")
+    if grievance and not sachet:
+        return f"To: {officer}"
+    if sachet and not grievance:
+        return "To: Sachet portal (RBI) / National Cyber Crime Reporting Portal"
+    return (f"To: the Grievance Redressal Officer of {lender_name or 'the lender'}, or the Sachet "
+            "portal (RBI) if the app is not a regulated lender")
+
+
 def complaint_draft(case: dict, counts: dict[str, int]) -> list[str]:
-    """A ready complaint letter in English, as paragraphs."""
+    """A ready complaint letter in English, as paragraphs. The addressee follows the route (F6)."""
     events = case.get("events") or []
     lender = pdf_text(case.get("lender_name")) or "the lender"
     borrower = pdf_text(case.get("borrower_name")) or "the borrower"
@@ -138,7 +157,7 @@ def complaint_draft(case: dict, counts: dict[str, int]) -> list[str]:
     broken = "; ".join(f"{r} {RULES[r].lower()} ({n} time{'s' if n != 1 else ''})"
                        for r, n in counts.items()) or "repeated recovery contact"
     return [
-        "To: the Grievance Redressal Officer / the authority named above",
+        letter_addressee(case.get("route"), pdf_text(case.get("lender_name")) or None),
         f"Subject: Complaint about harassment by recovery agents of {lender}",
         f"I, {borrower}, have a loan with {lender}. {span[0].upper() + span[1:]}, its recovery "
         f"agents contacted me {len(events)} time{'s' if len(events) != 1 else ''} in ways that go "

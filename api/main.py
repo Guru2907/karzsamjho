@@ -366,9 +366,27 @@ def evidence_pdf(case_id: str):
                     headers={"Content-Disposition": f'inline; filename="{case_id}_evidence.pdf"'})
 
 
+def chain_ok(events: list[dict]) -> bool:
+    """F4: every event links to the one before it (the first to 64 zeros) and its hash still matches
+    its stored fields. Any hand edit, deletion or reordering of a stored event makes this False."""
+    prev = db.GENESIS_HASH
+    for ev in events:
+        if ev.get("prev_hash") != prev or ev.get("hash") != event_hash(prev, ev):
+            return False
+        prev = ev["hash"]
+    return True
+
+
 @app.get("/api/cases/{case_id}/verify", response_model=VerifyResult)
 def verify_case(case_id: str):
-    return {"ok": True}
+    """Recompute the whole chain from what is stored (F4). The evidence PDF points readers here."""
+    case = db.get_case(case_id)
+    if case is None:
+        raise HTTPException(404, "Case not found.")
+    ok = chain_ok(case["events"])
+    if not ok:
+        log.warning("verify: case %s chain BROKEN (a stored event was changed)", case_id)
+    return {"ok": ok}
 
 
 # ---------------------------------------------------------------- stats, health

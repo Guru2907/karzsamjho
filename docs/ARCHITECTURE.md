@@ -31,7 +31,7 @@ Helper's browser (PWA)  ──► web/ (Vite)  ─┼──► FastAPI api/main.
 | Harassment cases + events | yes: real cases in SQLite; each event gets rules from harass.label (F1) and hash = SHA-256(prev_hash + fields), first prev = 64 zeros; day counter (F2) | main.py, db.py |
 | Evidence PDF | yes: built fresh from the database by evidence.build_pdf (F3), served at /api/cases/{id}/evidence.pdf; English, 12-digit numbers masked, hash chain, complaint draft | evidence.py, main.py |
 | Bot harassment log | yes: forward a message (or /log) -> case event -> Hindi rules -> PDF in the chat (D5) | bot/main.py |
-| Verify | not yet: always answers ok (F4) | main.py |
+| Verify | yes: recomputes every hash and link from the database; any edit, deletion or reordering -> ok false (F4) | main.py `chain_ok` |
 | Complaint route + day counter | day counter yes (F2); the PDF lists every route that may apply until F5 picks one | evidence.py; F5 |
 | Health | yes: each engine up/down (free pings, cached 60 s), database state, can_read_photos / can_speak (A5) | fallback.ping, main.py |
 

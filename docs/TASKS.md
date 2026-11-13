@@ -163,7 +163,7 @@ All changes go through a pull request that Gurpreet merges (D27).
 - Done when: with Groq failing (429 or no key), a pasted SMS is read by Gemini Flash-Lite (regex only as the last resort) and a Hindi voice note is transcribed by Gemini; engines show "gemini" (Hindi audio test passed at 8:00 PM: 2.4 to 3.1 s, digits right)
 
 ### B12 · Photo pay-first must be confirmed by the second reader
-- Status: review (Siddeshwar, D45, D46): confirm_pay_first asks the other reader; agree within Rs 1 -> warning, else no warning and the fee stays; real run 2:05 AM (Gemini confirmed a synthetic scam ad)
+- Status: review (Siddeshwar, D45, D48): confirm_pay_first asks the other reader; agree within Rs 1 -> warning, else no warning and the fee stays; real run 2:05 AM (Gemini confirmed a synthetic scam ad)
 - Type: Stretch
 - Depends on: B9, B9c, B6
 - Files: api/core/extract.py, api/tests/test_advance_fee.py

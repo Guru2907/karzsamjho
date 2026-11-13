@@ -326,3 +326,182 @@ def test_chosen_language_is_sent_with_photo_text_and_voice(monkeypatch):
 
 def test_card_text_stays_hinglish_whatever_the_language():
     assert "haath mein" in bot.card_text(RESULT) and "lautana hai" in bot.card_text(RESULT)
+
+
+# ---------------------------------------------------------------- harassment log (D5)
+from datetime import datetime as _dt, timezone as _tz  # noqa: E402
+
+from api.core import evidence  # noqa: E402
+
+ORIGINAL_TIME = _dt(2026, 11, 13, 16, 10, tzinfo=_tz.utc)            # = 9:40 PM IST
+THREAT = "Paisa do warna ghar aa jayenge."
+
+
+class LogMessage(FakeMessage):
+    """A Telegram message that can be forwarded and can receive a document."""
+    def __init__(self, text=THREAT, forwarded=True):
+        super().__init__()
+        self.text, self.caption = text, None
+        self.date = _dt(2026, 11, 13, 18, 0, tzinfo=_tz.utc)          # when it reached the bot
+        self.forward_origin = SimpleNamespace(date=ORIGINAL_TIME) if forwarded else None
+
+    async def reply_document(self, document, filename=None, caption=None):
+        self.sent.append(("document", filename, document[:4], caption))
+
+
+def log_update(**kwargs):
+    update = FakeUpdate()
+    update.message = LogMessage(**kwargs)
+    return update
+
+
+def fake_cases_api(monkeypatch, rules=("H1", "H2"), event_status=200, pdf_status=200,
+                   case_lost_once=False, down=False):
+    """A fake API for /api/cases. The PDF it serves is the REAL F3 evidence PDF."""
+    calls = []
+    state = {"lost": case_lost_once, "cases": 0}
+
+    class Client:
+        def __init__(self, timeout):
+            pass
+
+        async def __aenter__(self):
+            return self
+
+        async def __aexit__(self, *a):
+            return False
+
+        async def post(self, url, json=None, **kwargs):
+            calls.append(("POST", url.split("/api", 1)[1], json))
+            if down:
+                raise httpx.ConnectError("refused")
+            if url.endswith("/api/cases"):
+                state["cases"] += 1
+                case_id = "case_000" + str(state["cases"])
+                return httpx.Response(200, json={"id": case_id, "borrower_name": "x",
+                                                 "lender_name": "x", "opened_at": "x", "events": []})
+            if state["lost"]:
+                state["lost"] = False
+                return httpx.Response(404, json={"detail": "Case not found."})
+            return httpx.Response(event_status, json={"id": "evt_0001", "at": json["at"],
+                                                      "rules": list(rules), "hash": "a" * 64,
+                                                      "prev_hash": "0" * 64})
+
+        async def get(self, url):
+            calls.append(("GET", url.split("/api", 1)[1], None))
+            if pdf_status != 200:
+                return httpx.Response(pdf_status, json={"detail": "No PDF yet."})
+            return httpx.Response(200, content=evidence.build_pdf({"id": "case_0001", "events": []}))
+
+    monkeypatch.setattr(bot, "_http", Client)
+    return calls
+
+
+def test_forwarded_threat_becomes_event_then_rules_then_pdf(monkeypatch):
+    calls = fake_cases_api(monkeypatch)
+    context = SimpleNamespace(chat_data={})
+    update = log_update()
+    asyncio.run(bot.on_forward(update, context))
+    assert calls[0][:2] == ("POST", "/cases")
+    assert calls[1] == ("POST", "/cases/case_0001/events",
+                        {"at": "2026-11-13T21:40:00+05:30", "channel": "telegram",
+                         "contacted": "borrower", "text": THREAT})     # the ORIGINAL time, in IST
+    assert calls[2] == ("GET", "/cases/case_0001/evidence.pdf", None)
+    kind, text = update.message.sent[0]
+    assert kind == "text" and text.startswith("Darj ho gaya.")
+    assert "H1 raat" in text and "H2 dhamki" in text
+    doc = update.message.sent[1]
+    assert doc[0] == "document" and doc[1] == "case_0001_saboot.pdf" and doc[2] == b"%PDF"
+    assert context.chat_data["case_id"] == "case_0001"
+
+
+def test_case_is_created_once_per_chat(monkeypatch):
+    calls = fake_cases_api(monkeypatch)
+    context = SimpleNamespace(chat_data={})
+    asyncio.run(bot.on_forward(log_update(), context))
+    asyncio.run(bot.on_forward(log_update(text="Kal phir call karenge."), context))
+    assert [c[1] for c in calls if c[0] == "POST"].count("/cases") == 1
+
+
+def test_case_names_the_lender_he_checked(monkeypatch):
+    calls = fake_cases_api(monkeypatch)
+    context = SimpleNamespace(chat_data={})
+    bot.remember_check(context, {"id": "chk_0009", "lender": {"name_read": "QuickCash", "closest": None}})
+    asyncio.run(bot.on_forward(log_update(), context))
+    assert calls[0][2] == {"borrower_name": "Borrower (Telegram)", "lender_name": "QuickCash",
+                           "check_id": "chk_0009"}
+
+
+def test_log_then_next_message_is_logged_not_checked(monkeypatch):
+    calls = fake_cases_api(monkeypatch)
+    context = SimpleNamespace(chat_data={}, args=[])
+    first = log_update(forwarded=False)
+    asyncio.run(bot.log_command(first, context))
+    assert first.message.sent == [("text", bot.MSG_LOG_ASK)] and context.chat_data["log_next"]
+    second = log_update(text="Tumhare office mein sabko bata denge.", forwarded=False)
+    asyncio.run(bot.on_text(second, context))
+    assert not any(c[1] == "/checks" for c in calls)                   # not treated as a loan offer
+    assert calls[1][2]["text"] == "Tumhare office mein sabko bata denge."
+    assert calls[1][2]["at"] == "2026-11-13T23:30:00+05:30"            # its own time (18:00 UTC)
+    assert "log_next" not in context.chat_data
+
+
+def test_log_with_words_logs_them_at_once(monkeypatch):
+    calls = fake_cases_api(monkeypatch)
+    context = SimpleNamespace(chat_data={}, args=["Police", "bhejenge"])
+    asyncio.run(bot.log_command(log_update(forwarded=False), context))
+    assert calls[1][2]["text"] == "Police bhejenge"
+
+
+def test_no_rules_broken_is_still_logged(monkeypatch):
+    fake_cases_api(monkeypatch, rules=())
+    update = log_update(text="Namaste, EMI kal due hai.")
+    asyncio.run(bot.on_forward(update, SimpleNamespace(chat_data={})))
+    assert update.message.sent[0] == ("text", bot.MSG_LOGGED_NONE)
+
+
+def test_pdf_not_ready_says_so_in_hindi(monkeypatch):
+    fake_cases_api(monkeypatch, pdf_status=404)
+    update = log_update()
+    asyncio.run(bot.on_forward(update, SimpleNamespace(chat_data={})))
+    assert update.message.sent[-1] == ("text", bot.MSG_PDF_LATER)
+
+
+def test_case_lost_on_a_server_restart_is_made_again_once(monkeypatch):
+    calls = fake_cases_api(monkeypatch, case_lost_once=True)
+    context = SimpleNamespace(chat_data={"case_id": "case_0099"})
+    update = log_update()
+    asyncio.run(bot.on_forward(update, context))
+    posts = [c[1] for c in calls if c[0] == "POST"]
+    assert posts == ["/cases/case_0099/events", "/cases", "/cases/case_0001/events"]
+    assert context.chat_data["case_id"] == "case_0001" and update.message.sent[1][0] == "document"
+
+
+def test_server_down_while_logging(monkeypatch):
+    fake_cases_api(monkeypatch, down=True)
+    update = log_update()
+    asyncio.run(bot.on_forward(update, SimpleNamespace(chat_data={})))
+    assert update.message.sent == [("text", bot.MSG_SERVER_DOWN)]
+
+
+def test_empty_forward_is_not_logged(monkeypatch):
+    calls = fake_cases_api(monkeypatch)
+    update = log_update(text="   ")
+    asyncio.run(bot.on_forward(update, SimpleNamespace(chat_data={})))
+    assert calls == [] and update.message.sent == [("text", bot.MSG_LOG_EMPTY)]
+
+
+def test_pdf_command(monkeypatch):
+    fake_cases_api(monkeypatch)
+    none = log_update(forwarded=False)
+    asyncio.run(bot.pdf_command(none, SimpleNamespace(chat_data={})))
+    assert none.message.sent == [("text", bot.MSG_NO_CASE)]
+    has_case = log_update(forwarded=False)
+    asyncio.run(bot.pdf_command(has_case, SimpleNamespace(chat_data={"case_id": "case_0001"})))
+    assert has_case.message.sent[0][0] == "document"
+
+
+def test_log_messages_are_hindi_never_error_codes():
+    for msg in (bot.MSG_LOG_ASK, bot.MSG_LOGGED_NONE, bot.MSG_PDF_LATER, bot.MSG_NO_CASE, bot.MSG_LOG_EMPTY):
+        assert "error" not in msg.lower() and "404" not in msg
+    assert set(bot.RULE_HI) == {"H1", "H2", "H3", "H4", "H5", "H6"}

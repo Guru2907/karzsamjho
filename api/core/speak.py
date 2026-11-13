@@ -42,6 +42,46 @@ NOT_CLEAR_BY_LANG = {
 }
 SAFE_ID = re.compile(r"^[A-Za-z0-9_-]{1,64}$")
 
+# C4 (D37, mentor feedback): the RBI-directory result is SPOKEN, because Raju cannot read the card.
+# Fixed sentences filled by code. Never "safe", "unsafe", "illegal" or "fake": the directory is
+# self-reported, so "found" is not a safety promise. Hindi wording is from docs/PLAN.md
+# "Night plan"; the bn / mr wording is a DRAFT that a native speaker must approve (D32).
+LENDER_SENTENCES = {
+    "hi": {"FOUND": "Yeh app RBI ki list mein hai, {closest} se juda hai.",
+           "FOUND_NO_NAME": "Yeh app RBI ki list mein hai.",
+           "SIMILAR": "RBI ki list mein milta-julta naam hai: {closest}. Sahi naam check karo.",
+           "NOT_FOUND": "Yeh app RBI ki list mein nahi mila."},
+    "bn": {"FOUND": "এই অ্যাপটি RBI-এর তালিকায় আছে, {closest}-এর সঙ্গে যুক্ত।",            # draft, needs OK
+           "FOUND_NO_NAME": "এই অ্যাপটি RBI-এর তালিকায় আছে।",                                # draft, needs OK
+           "SIMILAR": "RBI-এর তালিকায় একই রকম একটি নাম আছে: {closest}। সঠিক নামটি যাচাই করুন।",  # draft
+           "NOT_FOUND": "এই অ্যাপটি RBI-এর তালিকায় পাওয়া যায়নি।"},                            # draft
+    "mr": {"FOUND": "हे ॲप RBI च्या यादीत आहे, {closest} शी जोडलेले आहे.",                    # draft, needs OK
+           "FOUND_NO_NAME": "हे ॲप RBI च्या यादीत आहे.",                                       # draft, needs OK
+           "SIMILAR": "RBI च्या यादीत मिळतेजुळते नाव आहे: {closest}. नेमके नाव तपासा.",          # draft
+           "NOT_FOUND": "हे ॲप RBI च्या यादीत सापडले नाही."},                                  # draft
+}
+
+
+def lender_sentence(lender: dict | None, lang: str = "hi") -> str | None:
+    """The spoken RBI-directory sentence (task C4), or None when the check was not run (match null).
+
+    lender = CheckResult["lender"]: {"match": "FOUND"|"SIMILAR"|"NOT_FOUND"|None, "closest", "list_date"}.
+    FOUND with no name -> the short sentence; SIMILAR with no name -> None (nothing to compare with).
+    Unknown language -> Hindi. main.py (Gurpreet) speaks it after the numbers sentence.
+    """
+    if not isinstance(lender, dict):
+        return None
+    match = lender.get("match")
+    if match not in ("FOUND", "SIMILAR", "NOT_FOUND"):
+        return None
+    sentences = LENDER_SENTENCES.get(lang, LENDER_SENTENCES["hi"])
+    closest = " ".join(str(lender.get("closest") or "").split())[:80]   # one line, never a paragraph
+    if match == "NOT_FOUND":
+        return sentences["NOT_FOUND"]
+    if not closest:
+        return sentences["FOUND_NO_NAME"] if match == "FOUND" else None
+    return sentences[match].format(closest=closest)
+
 
 def _spoken(numbers: dict, key: str) -> str | None:
     """A verified number as whole digits with no commas ("3800"), or None."""

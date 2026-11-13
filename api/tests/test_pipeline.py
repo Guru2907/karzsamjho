@@ -4,6 +4,7 @@ Expected numbers are the hand-worked rows in docs/PLAN.md.
 """
 import dataclasses
 import json
+from pathlib import Path
 
 import pytest
 
@@ -23,12 +24,14 @@ SENTENCE_ROW1 = ("Aapko haath mein 3800 rupaye milenge. 7 din mein 5000 rupaye "
 def env(monkeypatch, tmp_path):
     """Fresh in-memory store, audio in a temp folder, fake voice that writes a small MP3."""
     monkeypatch.setattr(config, "settings", dataclasses.replace(
-        config.settings, audio_dir=str(tmp_path), voice_enabled=True))
+        config.settings, audio_dir=str(tmp_path / "audio"), cache_dir=str(tmp_path / "cache"),
+        voice_enabled=True))
     monkeypatch.setattr(main, "CHECKS", {})
     spoken = []
 
     async def fake_speak(text, out_path):
         spoken.append(text)
+        Path(out_path).parent.mkdir(parents=True, exist_ok=True)   # like the real fallback.speak
         with open(out_path, "wb") as f:
             f.write(b"\xff\xf3fake-mp3")
         return True
@@ -279,3 +282,78 @@ def test_text_never_gets_a_second_reading(client, env, monkeypatch):
     body = client.post("/api/checks", json={"text": "Loan Rs 5000. Fee Rs 500. You get Rs 4000. "
                                                     "Repay Rs 5600 in 7 days."}).json()
     assert called == [] and body["verdict"] == "CANNOT_SAY"
+
+
+# ---------------------------------------------------------------- cache (A4)
+def counting_reader(monkeypatch, reply=ROW1):
+    calls = []
+
+    def read_image(image_bytes, prompt, engines=("qwen", "gemini"), check=None):
+        calls.append(engines)
+        return json.dumps(reply), engines[0], 1.0
+    monkeypatch.setattr(fallback, "read_image", read_image)
+    return calls
+
+
+def test_repeated_photo_never_calls_ai(client, env, monkeypatch):
+    calls = counting_reader(monkeypatch)
+    first = post_photo(client).json()
+    second = post_photo(client).json()
+    assert len(calls) == 1                                  # the repeat made no AI call
+    assert first["cached"] is False and second["cached"] is True
+    assert second["id"] == first["id"] and second["numbers"] == first["numbers"]
+    assert second["audio_url"] == first["audio_url"] and len(env) == 1   # MP3 not made again
+    assert client.get(second["audio_url"]).status_code == 200
+
+
+def test_cache_survives_a_restart(client, env, monkeypatch):
+    calls = counting_reader(monkeypatch)
+    first = post_photo(client).json()
+    monkeypatch.setattr(main, "CHECKS", {})                 # what a restart loses
+    second = post_photo(client).json()
+    assert len(calls) == 1 and second["cached"] is True
+    assert client.get(f"/api/checks/{first['id']}").json()["id"] == first["id"]
+
+
+def test_missing_mp3_is_made_again_without_ai(client, env, monkeypatch, tmp_path):
+    calls = counting_reader(monkeypatch)
+    first = post_photo(client).json()
+    (tmp_path / "audio" / f"{first['id']}.mp3").unlink()
+    second = post_photo(client).json()
+    assert len(calls) == 1 and len(env) == 2                # voice again, reader not again
+    assert second["audio_url"] == first["audio_url"]
+    assert client.get(second["audio_url"]).status_code == 200
+
+
+def test_different_photo_is_a_miss(client, env, monkeypatch):
+    calls = counting_reader(monkeypatch)
+    post_photo(client, data=b"photo one")
+    post_photo(client, data=b"photo two")
+    assert len(calls) == 2
+
+
+def test_not_a_loan_is_not_cached(client, env, monkeypatch):
+    calls = counting_reader(monkeypatch, {"is_loan_ad": False})
+    assert post_photo(client).status_code == 422
+    assert post_photo(client).status_code == 422
+    assert len(calls) == 2
+
+
+def test_text_is_not_cached(client, env, monkeypatch):
+    asked = []
+
+    def read_text(prompt, check=None):
+        asked.append(1)
+        return json.dumps(SMS_REPLY), "gpt-oss-20b", 0.8
+    monkeypatch.setattr(fallback, "read_text", read_text)
+    client.post("/api/checks", json={"text": SMS})
+    client.post("/api/checks", json={"text": SMS})
+    assert len(asked) == 2
+
+
+def test_ids_continue_after_a_restart(env, tmp_path):
+    from api.core import cache
+    cache.put(cache.image_key(b"old"), {"id": "chk_0041"})
+    (tmp_path / "audio").mkdir(exist_ok=True)
+    (tmp_path / "audio" / "chk_0057.mp3").write_bytes(b"x")
+    assert main._first_free_id() == 58                      # never reuses an id that has an MP3

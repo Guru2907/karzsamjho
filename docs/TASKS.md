@@ -41,7 +41,7 @@ All changes go through a pull request that Gurpreet merges (D27).
 - Done when: A check and a case survive a server restart
 
 ### A4 · `fallback.py` + `cache.py`
-- Status: doing (Gurpreet): speak(), read_image(), read_text() done 5:40 PM; cache after the review
+- Status: review (Gurpreet): speak, read_image, read_text (5:40 PM) and the photo cache (7:00 PM) done
 - Type: Must
 - Depends on: A2
 - Files: api/core/fallback.py, api/core/cache.py

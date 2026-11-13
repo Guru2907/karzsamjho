@@ -19,7 +19,7 @@ from fastapi.concurrency import run_in_threadpool
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import FileResponse
 
-from api.core import config, extract, maths, speak, verdict
+from api.core import cache, config, extract, maths, speak, verdict
 from api.core.config import ensure_dirs
 from api.core.schemas import (Case, CaseIn, CheckResult, Event, EventIn, Stats,
                               VerifyResult)
@@ -40,8 +40,42 @@ ensure_dirs()
 
 # ---------------------------------------------------------------- checks (real, in memory)
 CHECKS: dict[str, dict] = {}          # check id -> CheckResult dict, newest last
-_ids = itertools.count(1)
 SAFE_ID = re.compile(r"^chk_\d{4,}$")
+
+
+def _first_free_id() -> int:
+    """Continue after the highest check id on disk (cached results and MP3s), so a new
+    check after a restart never overwrites the MP3 of a cached one."""
+    numbers = [int(r["id"][4:]) for r in cache.all_results()
+               if isinstance(r.get("id"), str) and SAFE_ID.match(r["id"])]
+    audio = Path(config.settings.audio_dir)
+    if audio.is_dir():
+        numbers += [int(p.stem[4:]) for p in audio.glob("chk_*.mp3") if SAFE_ID.match(p.stem)]
+    return max(numbers, default=0) + 1
+
+
+_ids = itertools.count(_first_free_id())
+
+
+async def _from_cache(key: str, start: float) -> dict | None:
+    """A repeated photo: the stored result, no AI call. Makes the MP3 again only if it is gone
+    (edge-tts is not an AI reader)."""
+    hit = cache.get(key)
+    if hit is None:
+        return None
+    try:
+        result = CheckResult.model_validate(hit).model_dump()
+    except ValueError:
+        return None                                   # an old or broken entry is a miss
+    mp3 = Path(config.settings.audio_dir) / f"{result['id']}.mp3"
+    if config.settings.voice_enabled and (not result["audio_url"] or not mp3.is_file()):
+        result["audio_url"] = await speak.make_audio(result["id"], result["speech_text_hi"])
+        result["engines"]["speak"] = "edge-tts" if result["audio_url"] else None
+        cache.put(key, result)
+    result.update(cached=True, seconds=round(time.perf_counter() - start, 1))
+    CHECKS[result["id"]] = result
+    log.info("check %s: cache hit, no AI call, seconds=%s", result["id"], result["seconds"])
+    return result
 
 NEXT_STEP = {"code": "ASK_BANK_MITRA", "text_hi": "Loan lene se pehle bank mitra se poochho."}  # D26
 NUMBER_ORDER = ("in_hand", "repay_total", "tenure_days", "extra", "per_day", "apr_simple")
@@ -55,6 +89,11 @@ def _no_card(code: str, text_hi: str) -> HTTPException:
 async def run_check(image: bytes | None = None, text: str | None = None) -> dict:
     """One check, start to finish. The AI only reads; every number below is plain Python."""
     start = time.perf_counter()
+    key = cache.image_key(image) if image is not None else None
+    if key:
+        hit = await _from_cache(key, start)
+        if hit:
+            return hit
     try:
         if image is not None:
             read = await run_in_threadpool(extract.extract_from_image, image)
@@ -111,6 +150,11 @@ async def run_check(image: bytes | None = None, text: str | None = None) -> dict
     }
     CheckResult.model_validate(result)        # the contract shape, checked before anyone sees it
     CHECKS[check_id] = result
+    if key:
+        try:
+            cache.put(key, result)            # photos only (A4); a failed write never stops the answer
+        except OSError as exc:
+            log.warning("cache write failed for %s: %s", check_id, type(exc).__name__)
     log.info("check %s: verdict=%s read=%s seconds=%s audio=%s", check_id, result_verdict,
              engines["read"], result["seconds"], bool(audio_url))
     return result

@@ -11,7 +11,7 @@ function SiteNav() {
   const { theme, setTheme } = useTheme()
   const dark = theme === 'dark'
   return (
-    <header className="sticky top-0 z-20 border-b border-border bg-background/95">
+    <header className="sticky top-0 z-20 border-b border-border bg-background">
       <div className={`${SHELL} flex h-16 items-center gap-4`}>
         <Link to="/" className="text-lg font-semibold tracking-tight">
           Karz<span className="text-primary">Samjho</span>

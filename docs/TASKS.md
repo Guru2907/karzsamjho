@@ -466,21 +466,21 @@ All changes go through a pull request that Gurpreet merges (D27).
 ## H. Public website (D47): /, /how, /partners, 404. Separate layout, never linked from the PWA; `motion` allowed here
 
 ### H1 · Split hero with the real card in a phone frame; top bar with theme toggle
-- Status: doing (Gurpreet): W1 done 2:00 AM: palette tokens, website layout apart from the PWA, split hero with phone card, count-up and sample Hindi audio; waiting for Gurpreet's OK on the look
+- Status: review (Gurpreet): full-width type hero + pinned scroll story (ad -> AI reads -> maths.py -> answer card), desktop first; static version on small screens and with reduced motion
 - Type: Stretch
 - Depends on: E2
 - Files: web/src/pages/Landing.tsx
 - Done when: Looks right in light and dark, on phone and laptop
 
 ### H2 · Live numbers from `/api/stats`
-- Status: todo (Gurpreet, D47): live numbers with count-up; loading, empty and error states
+- Status: review (Gurpreet): live numbers from /api/stats with count-up, refreshed every 15 s; loading, empty and server-off states
 - Type: Stretch
 - Depends on: A5, H1
 - Files: web/src/pages/Landing.tsx
 - Done when: Numbers change after a new check
 
 ### H3 · Story, how it works, who it helps, limits, footer
-- Status: todo (Gurpreet, D47): the Rs 1,200 scroll receipt, what it catches, call to action, footer
+- Status: review (Gurpreet): scam wall with the Savdhaan stamp, the two big numbers, what it catches, call to action, footer
 - Type: Stretch
 - Depends on: H1
 - Files: web/src/pages/Landing.tsx
@@ -508,7 +508,7 @@ All changes go through a pull request that Gurpreet merges (D27).
 - Done when: an unknown address shows "Yeh page nahi mila" in the site's style with a link home, in light and dark
 
 ### H7 · QR code to the PWA
-- Status: todo (Gurpreet, D47)
+- Status: review (Gurpreet): QR for <this address>/check?mode=raju drawn in the browser; Raju mode itself waits for E7
 - Type: Stretch
 - Depends on: H1; E7 for Raju mode
 - Files: web/src/site/QrLink.tsx

@@ -177,7 +177,7 @@ All changes go through a pull request that Gurpreet merges (D27).
 - Done when: Every verdict maps to exactly one next step
 
 ### C4 · Speak the lender result (mentor feedback, D37)
-- Status: todo (Siddeshwar)
+- Status: review (Siddeshwar): speak.lender_sentence, hi exact, bn/mr drafts for the native-speaker OK; main.py wiring by Gurpreet
 - Type: Must
 - Depends on: C1 (shape only)
 - Files: api/core/speak.py, api/tests/test_speak.py (Siddeshwar); api/main.py adds the sentence after the numbers (Gurpreet)

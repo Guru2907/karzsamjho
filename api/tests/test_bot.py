@@ -505,3 +505,40 @@ def test_log_messages_are_hindi_never_error_codes():
     for msg in (bot.MSG_LOG_ASK, bot.MSG_LOGGED_NONE, bot.MSG_PDF_LATER, bot.MSG_NO_CASE, bot.MSG_LOG_EMPTY):
         assert "error" not in msg.lower() and "404" not in msg
     assert set(bot.RULE_HI) == {"H1", "H2", "H3", "H4", "H5", "H6"}
+
+
+# ---------------------------------------------------------------- D9: network blips
+from types import SimpleNamespace  # noqa: E402
+
+from telegram.error import BadRequest, NetworkError, TimedOut  # noqa: E402
+
+
+def run_error_handler(err):
+    asyncio.run(bot.on_error(None, SimpleNamespace(error=err)))
+
+
+@pytest.mark.parametrize("err", [NetworkError("httpx.ConnectError: All connection attempts failed"),
+                                 TimedOut()])
+def test_network_blip_is_one_short_line(err, caplog):
+    caplog.set_level("INFO", logger="bot")
+    run_error_handler(err)
+    lines = [r for r in caplog.records if r.name == "bot"]
+    assert len(lines) == 1
+    assert lines[0].getMessage() == f"network blip, retrying ({type(err).__name__})"
+    assert lines[0].exc_info is None                       # no traceback
+
+
+def test_other_error_is_one_line_with_its_type(caplog):
+    caplog.set_level("INFO", logger="bot")
+    run_error_handler(BadRequest("Message is too long"))
+    lines = [r for r in caplog.records if r.name == "bot"]
+    assert len(lines) == 1 and lines[0].exc_info is None
+    assert lines[0].getMessage() == "bot error: BadRequest: Message is too long"
+
+
+def test_error_line_never_shows_the_bot_token(caplog, monkeypatch):
+    import dataclasses
+    monkeypatch.setattr(bot, "settings", dataclasses.replace(bot.settings, telegram_bot_token="123:SECRET"))
+    caplog.set_level("INFO", logger="bot")
+    run_error_handler(RuntimeError("GET https://api.telegram.org/bot123:SECRET/getUpdates failed"))
+    assert "SECRET" not in caplog.text and "<token>" in caplog.text

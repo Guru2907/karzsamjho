@@ -266,7 +266,7 @@ All changes go through a pull request that Gurpreet merges (D27).
 - Done when: a Bengali and a Marathi voice note with /bhasha set give the right numbers on the card
 
 ### D9 · Bot tidy: one short line on a network blip
-- Status: todo (Siddeshwar) - stretch, D45 order 3
+- Status: review (Siddeshwar, D45): error handler registered; network blip / timeout -> one line, other errors -> one line with the type, token never logged; proven through the real telegram error dispatch 1:37 AM
 - Type: Stretch
 - Depends on: D1
 - Files: bot/main.py

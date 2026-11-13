@@ -21,6 +21,14 @@ Every agent session and every person adds an entry here at the end of each task,
 
 ## Log
 
+### 13 Nov 2026, 11:57 PM · D5 bot harassment log · agent for Siddeshwar
+- Did: bot/main.py: a forwarded text message, or a message after /log (or /log <words>), becomes an event: POST /api/cases once per chat (id kept in chat_data; the case names the lender of his last check), POST /api/cases/{id}/events with at = the ORIGINAL message time in IST, channel telegram, contacted borrower; then a Hindi line with the rules broken, then GET evidence.pdf sent with reply_document. /pdf sends it again. A case lost on a server restart is made again once. Hindi messages only.
+- Files: bot/main.py, api/tests/test_bot.py (12 new tests), docs/PROGRESS.md, docs/TASKS.md
+- Proof: `pytest -q` 360 passed (the fake API serves the real F3 PDF). Real run against the API on main (sample cases): case_0007 remembered, "Darj ho gaya ... H1 raat ya subah jaldi sampark", then the Hindi "PDF abhi nahi ban paya, /pdf bhejo" because the PDF endpoint is not real yet.
+- Status in docs/TASKS.md: D5 = review
+- Next: once F2 + the evidence.pdf endpoint land, a real Telegram run (forward a threat, get the PDF). Then stretch D9, D10, D8.
+- Broken / risks: a forwarded TEXT is always treated as harassment (a forwarded loan SMS too); paste a loan SMS instead of forwarding it. docs/DEMO.md (Gurpreet) may need the new /log, /pdf flow.
+
 ### 13 Nov 2026, 11:53 PM · F3 evidence PDF · agent for Siddeshwar
 - Did: evidence.build_pdf(case) -> English PDF: case details + "Day N of 30", rules-broken table with the RBI basis (H6 marked as our threshold), timeline (masked words), every hash and prev_hash, where to complain (case route, or all routes + police when H2/H5), complaint draft on one page. mask(): any 12-digit number -> "XXXX XXXX 1234". Text in Devanagari/Bengali script gets a note instead of broken letters (D20). Also event_hash / verify_chain = SHA-256(prev_hash + event fields) for F2 / F4 if Gurpreet wants one shared definition.
 - Files: api/core/evidence.py, api/tests/test_evidence.py (new, 23 tests), docs/PROGRESS.md, docs/TASKS.md

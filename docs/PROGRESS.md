@@ -21,6 +21,14 @@ Every agent session and every person adds an entry here at the end of each task,
 
 ## Log
 
+### 14 Nov 2026, 12:25 AM · B9c fix: a false scam warning dropped the fee · agent for Gurpreet
+- Did: found in the C1 run: the AI marked a normal "Loan Rs 5000 approved. Fee Rs 500" as pay-first, so the voice warned and in-hand showed 5000 instead of 4500. Now parse() never drops a fee; for text the AI's pay_first counts only if the sentence with that amount has a pay word (D42); the fee leaves the maths only once pay-first is accepted. Photos unchanged (AI only, known limit).
+- Files: api/core/extract.py, api/tests/test_advance_fee.py, docs/TASKS.md, DECISIONS.md (D42)
+- Proof: `pytest -q` 286 passed (6 new, including the exact AI reply from the run). Real API: the same message 3 times -> in-hand 4500, extra 1100, no warning every time; "Pay Rs 1,499 processing fee to release funds" -> warning + DO_NOT_PAY_FIRST.
+- Status in docs/TASKS.md: B9 review (fix noted)
+- Next: A5, then B11.
+- Broken / risks: photos with a deducted fee can still get a false pay-first from the AI (no text to check). Merge after #31 (built on it).
+
 ### 14 Nov 2026, 12:05 AM · B9b scam rule in more scripts · agent for Gurpreet
 - Did: the advance-fee code rule (backup for the AI) now knows Devanagari Hindi, Bengali and Marathi pay / charge / before words, matched as plain text because their vowel signs break ; sentences also split on । and ॥. Left out on purpose: Bengali দিন ("give" and "day") and कर ("tax", but inside कर्ज). English words keep matching with endings (released, disbursal).
 - Files: api/core/extract.py, api/tests/test_advance_fee.py, docs/ARCHITECTURE.md, TASKS.md

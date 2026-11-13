@@ -133,7 +133,7 @@ All changes go through a pull request that Gurpreet merges (D27).
 - Note: added in the 4:50 PM re-plan (D25).
 
 ### B9 · Warn when an offer asks for money before the loan (advance-fee fraud)
-- Status: review (Gurpreet)
+- Status: review (Gurpreet); bug fix B9c (12:25 AM): the AI's pay-first claim needs a pay word in the same sentence, and a fee is only dropped after that
 - Type: Must (added 7:30 PM by the lead after the data teammate's scam texts, D36)
 - Depends on: B1, B2
 - Files: api/core/extract.py, api/main.py, api/tests/test_advance_fee.py

@@ -151,8 +151,6 @@ class Fields(BaseModel):
         data["tenure_days"] = to_days(data.get("tenure_days"))
         for key in ("principal", "in_hand", "repay_total", "emi_amount", "emi_count", "pay_first"):
             data[key] = to_number(data.get(key))
-        if data["pay_first"] is not None and data["fees"] == data["pay_first"]:
-            data["fees"] = None      # paid separately before the loan, not deducted from it
         loan = data.get("is_loan_ad")
         if isinstance(loan, str):
             data["is_loan_ad"] = {"true": True, "yes": True, "false": False, "no": False}.get(loan.strip().lower())
@@ -173,6 +171,14 @@ def parse(raw: str) -> dict:
     return Fields.model_validate(data).model_dump()
 
 
+def _settle_pay_first(fields: dict) -> dict:
+    """Once pay_first is accepted, a fee of the same amount is paid separately before the loan,
+    not deducted from it, so it leaves the maths (B9). Never done on an unconfirmed claim (B9c)."""
+    if fields.get("pay_first") is not None and fields.get("fees") == fields["pay_first"]:
+        fields["fees"] = None
+    return fields
+
+
 def _check_loan(fields: dict, unreadable_msg: str) -> None:
     if fields.get("pay_first"):
         return                      # asks for money first: the warning IS the answer (B9)
@@ -189,7 +195,7 @@ def extract_from_image(image_bytes: bytes) -> dict:
         raw, engine, _ = fallback.read_image(image_bytes, PROMPT, check=parse)
     except fallback.EngineError:
         raise Unreadable(MSG_BAD_PHOTO)
-    fields = parse(raw)
+    fields = _settle_pay_first(parse(raw))      # photos: only the AI reads them (known limit, B9c)
     _check_loan(fields, MSG_BAD_PHOTO)
     return {"fields": fields, "engines": {"read": engine, "second_read": None}}
 
@@ -266,6 +272,16 @@ _BEFORE = _words(
     ("पहले", "अभी", "तुरंत", "रिलीज", "पाने के लिए", "मिलने से पहले", "एडवांस",            # Hindi
      "আগে", "এখনই", "এখন", "তাড়াতাড়ি", "রিলিজ", "পেতে", "পাওয়ার জন্য",              # Bengali
      "आधी", "आत्ता", "आता", "त्वरित", "लगेच", "मिळवण्यासाठी", "मिळण्यासाठी"))           # Marathi
+
+
+def _asks_to_pay(text: str, amount: float) -> bool:
+    """B9c: does the sentence that contains this amount tell the reader to pay / send money?
+    "Loan Rs 5000 approved. Fee Rs 500." has no pay word, so the AI's "pay 500 first" is not trusted."""
+    for sentence in re.split(r"[.!?\n।॥]+", text.translate(DEVANAGARI_DIGITS)):
+        amounts = {_amount(m) for m in _AMOUNT.finditer(sentence)}
+        if amount in amounts and _PAY_VERB.search(sentence):
+            return True
+    return False
 
 
 def pay_first_in_text(text: str) -> Optional[float]:
@@ -353,10 +369,13 @@ def extract_from_text(text: str) -> dict:
         fields = _drop_unwritten(parse(raw), text)
     except fallback.EngineError:
         fields, engine = regex_fields(text), "regex"
-    # B9: money asked before the loan. The code rule backs up the AI (and covers the regex path).
-    fields["pay_first"] = fields.get("pay_first") or pay_first_in_text(text)
-    if fields["pay_first"] is not None and fields["fees"] == fields["pay_first"]:
-        fields["fees"] = None        # paid separately before the loan, not deducted from it
+    # B9: money asked before the loan. The AI's claim counts only if the message really asks to pay
+    # that amount (B9c); the code rule backs it up (and covers the regex path).
+    claimed = fields.get("pay_first")
+    if claimed is not None and not _asks_to_pay(text, claimed):
+        claimed = None                   # e.g. "Loan Rs 5000 approved. Fee Rs 500": a deducted fee
+    fields["pay_first"] = claimed or pay_first_in_text(text)
+    _settle_pay_first(fields)
     if engine == "regex" and fields["is_loan_ad"] is None and not fields["pay_first"]:
         raise NotALoan()
     _check_loan(fields, MSG_BAD_TEXT)

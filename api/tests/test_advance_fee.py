@@ -54,9 +54,11 @@ def test_pay_first_rule(text, amount):
     assert extract.pay_first_in_text(text) == amount
 
 
-def test_ai_pay_first_clears_the_same_amount_from_fees():
+def test_parse_alone_never_drops_the_fee():
+    # B9c: the AI's word is not enough; the fee is only removed once pay_first is confirmed
     fields = extract.parse('{"is_loan_ad": true, "fees": "Rs 1,499", "pay_first": "Rs 1,499"}')
-    assert fields["pay_first"] == 1499 and fields["fees"] is None
+    assert fields["pay_first"] == 1499 and fields["fees"] == 1499
+    assert extract._settle_pay_first(fields)["fees"] is None
 
 
 def model_down(monkeypatch):
@@ -186,3 +188,55 @@ def test_voice_note_in_devanagari_warns_even_if_the_ai_misses_it(monkeypatch):
     monkeypatch.setattr(fallback, "read_text", read_text)
     text = "आपका लोन अप्रूव हो गया है, पैसा रिलीज करने के लिए पहले पंद्रह सौ यानी 1500 रुपये प्रोसेसिंग फीस भेजो"
     assert extract.extract_from_text(text)["fields"]["pay_first"] == 1500
+
+
+# ---------------------------------------------------------------- B9c: the AI alone cannot drop a fee
+NORMAL = "QuickRupee: Loan Rs 5000 approved. Fee Rs 500. Repay Rs 5600 in 7 days. Apply: https://quickrupee.in"
+
+
+def ai_says(monkeypatch, reply):
+    def read_text(prompt, check=None):
+        return json.dumps(reply), "gpt-oss-20b", 0.5
+    monkeypatch.setattr(fallback, "read_text", read_text)
+
+
+def test_false_pay_first_from_the_ai_is_ignored_and_the_fee_kept(monkeypatch):
+    # exactly what the real AI returned in the 12:20 AM run
+    ai_says(monkeypatch, {"is_loan_ad": True, "principal": 5000, "fees": 500, "repay_total": 5600,
+                          "tenure_days": 7, "app_name": "QuickRupee", "pay_first": 500})
+    f = extract.extract_from_text(NORMAL)["fields"]
+    assert f["pay_first"] is None and f["fees"] == 500           # 5000 - 500 = 4500 in hand
+
+
+def test_end_to_end_normal_offer_keeps_4500(client, monkeypatch, tmp_path):
+    import dataclasses
+    from api import main
+    from api.core import config
+    monkeypatch.setattr(config, "settings", dataclasses.replace(
+        config.settings, audio_dir=str(tmp_path / "a"), cache_dir=str(tmp_path / "c"), voice_enabled=False))
+    monkeypatch.setattr(main, "CHECKS", {})
+    ai_says(monkeypatch, {"is_loan_ad": True, "principal": 5000, "fees": 500, "repay_total": 5600,
+                          "tenure_days": 7, "pay_first": 500})
+    body = client.post("/api/checks", json={"text": NORMAL}).json()
+    assert body["numbers"]["in_hand"]["value"] == 4500 and body["numbers"]["extra"]["value"] == 1100
+    assert body["next_step"]["code"] != "DO_NOT_PAY_FIRST"
+    assert not body["speech_text_hi"].startswith("Savdhaan")
+
+
+@pytest.mark.parametrize("text, amount", [
+    ("Your loan is ready. Send Rs 500 to get your loan.", 500),                 # no charge word: AI + pay word
+    ("Urgent! Pay ₹1,499 processing fee to release funds.", 1499),
+    ("लोन पाने के लिए 999 रुपये भेजो।", 999),
+])
+def test_real_pay_first_from_the_ai_still_counts(monkeypatch, text, amount):
+    ai_says(monkeypatch, {"is_loan_ad": True, "pay_first": amount})
+    assert extract.extract_from_text(text)["fields"]["pay_first"] == amount
+
+
+def test_photo_still_trusts_the_ai_known_limit(monkeypatch):
+    def read_image(image_bytes, prompt, engines=("qwen", "gemini"), check=None):
+        raw = json.dumps({"is_loan_ad": True, "principal": 5000, "fees": 500, "pay_first": 500})
+        return raw, "qwen", 1.0
+    monkeypatch.setattr(fallback, "read_image", read_image)
+    f = extract.extract_from_image(b"jpeg")["fields"]
+    assert f["pay_first"] == 500 and f["fees"] is None

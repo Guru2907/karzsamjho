@@ -204,3 +204,35 @@ def test_real_cancelled_list_warns_alok_auto_credit(real_list, monkeypatch):
         config.settings, watch_list_path=str(config.ROOT / "api" / "data" / "watch_list.csv")))
     assert lender.match_lender("Alok Auto Credit Pvt. Ltd.")["warning"]["date"] == "2026-09-30"
     assert lender.match_lender("Alok Auto Credits")["warning"] is None
+
+
+def test_api_response_carries_nbfc_and_warning(client, lists, monkeypatch, tmp_path):
+    """D51 through HTTP: the response model must not drop the optional fields (the bot and the web card
+    read the API's JSON, not the Python dict; a missing schema field silently removed the warning)."""
+    monkeypatch.setattr(config, "settings", dataclasses.replace(
+        config.settings, audio_dir=str(tmp_path / "a"), cache_dir=str(tmp_path / "c"), voice_enabled=False))
+    monkeypatch.setattr(main, "CHECKS", {})
+
+    def read_text(prompt, check=None):
+        return json.dumps({"is_loan_ad": True, "principal": 15000, "fees": 300, "emi_amount": 2800,
+                           "emi_count": 6, "repay_total": 16800, "tenure_days": 180,
+                           "lender_name": "Dhokha Fincap Pvt. Ltd."}), "gpt-oss-20b", 0.5
+    monkeypatch.setattr(fallback, "read_text", read_text)
+    body = client.post("/api/checks", json={"text": "Dhokha Fincap Pvt. Ltd.: loan Rs 15,000 ..."}).json()
+    assert body["lender"]["warning"]["name"] == "Dhokha Fincap Pvt. Ltd."
+    assert body["lender"]["warning"]["date"] == "2026-09-30"
+    assert body["next_step"]["code"] == "ON_WARNING_LIST"
+
+
+def test_api_response_carries_nbfc(client, lists, monkeypatch, tmp_path):
+    monkeypatch.setattr(config, "settings", dataclasses.replace(
+        config.settings, audio_dir=str(tmp_path / "a"), cache_dir=str(tmp_path / "c"), voice_enabled=False))
+    monkeypatch.setattr(main, "CHECKS", {})
+
+    def read_text(prompt, check=None):
+        return json.dumps({"is_loan_ad": True, "principal": 5000, "fees": 500, "repay_total": 5600,
+                           "tenure_days": 7, "app_name": "QuickRupee"}), "gpt-oss-20b", 0.5
+    monkeypatch.setattr(fallback, "read_text", read_text)
+    body = client.post("/api/checks", json={"text": "QuickRupee: Loan Rs 5000. Fee Rs 500. Repay Rs 5600 in 7 days."}).json()
+    assert body["lender"]["match"] == "FOUND"
+    assert body["lender"]["nbfc"] == {"name": "Alpha Finance Private Limited", "list_date": "2026-09-30"}

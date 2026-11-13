@@ -49,6 +49,8 @@ class Settings:
 
     # Storage
     db_path: str = field(default_factory=lambda: _s("DB_PATH", "./karzsamjho.db"))
+    # Local copy of RBI's directory of digital lending apps (C1, G4); never fetched live.
+    rbi_dla_path: str = field(default_factory=lambda: _s("RBI_DLA_PATH", str(ROOT / "api" / "data" / "rbi_dla.csv")))
     cache_dir: str = field(default_factory=lambda: _s("CACHE_DIR", "./cache"))
     audio_dir: str = field(default_factory=lambda: _s("AUDIO_DIR", "./audio"))
     voice_enabled: bool = field(default_factory=lambda: _s("VOICE_ENABLED", "true").lower() == "true")

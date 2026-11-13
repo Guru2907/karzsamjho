@@ -21,6 +21,13 @@ Every agent session and every person adds an entry here at the end of each task,
 
 ## Log
 
+### 14 Nov 2026, 12:20 AM · C1 RBI lender check · agent for Gurpreet
+- Did: lender.py matches the app/lender name read from the ad (RapidFuzz WRatio; generic words like loan/app/pvt/ltd stripped, better score kept; also against the regulated entity) and any website / Play Store link in the SMS against the local copy of RBI's directory (api/data/rbi_dla.csv, path in config RBI_DLA_PATH; re-read when the file changes). FOUND >= 90 / SIMILAR >= 70 / NOT_FOUND; a listed name with a link to another domain = SIMILAR (possible clone); empty directory or nothing read = null ("not checked", never "not found"). main.py fills CheckResult.lender and adds Siddeshwar's spoken line (C4) when his function is present.
+- Files: api/core/lender.py, api/core/config.py, api/main.py, api/tests/test_lender.py (new), docs/ARCHITECTURE.md, TASKS.md
+- Proof: `pytest -q` 282 passed (16 new, made-up directory only). With C4 (#28) merged in a throwaway copy: 341 passed. Real AI + made-up directory: listed app + link -> FOUND, voice "RBI ki list mein hai, ... se juda hai"; same name, other link -> SIMILAR; "CashNow" vs "CashNow24" -> SIMILAR; unlisted -> NOT_FOUND "RBI ki list mein nahi mila".
+- Status in docs/TASKS.md: C1 = review
+- Next: fix the advance-fee false positive found in this run (see risks); then A5, B11.
+- Broken / risks: api/data/rbi_dla.csv is still only the header (Anam's G4), so on main every check stays "not checked". FOUND in this run's first SMS also showed a B9 bug: the AI marked "Loan Rs 5000 approved. Fee Rs 500" as pay-first, the fee was dropped and in-hand showed 5000 instead of 4500 (K risk). Fix proposed as the next task.
 ### 14 Nov 2026, 12:35 AM · evidence PDF route connected (F3 wiring) · agent for Gurpreet
 - Did: found in the 11-PR merge check: Siddeshwar's build_pdf (F3) and his bot's PDF download (D5) were done, but /api/cases/{id}/evidence.pdf in main.py still answered 404. It now builds the PDF fresh from the database (with the day counter) and returns application/pdf. The fingerprint formula in evidence.py and main.py was checked to be identical.
 - Files: api/main.py, api/tests/test_cases.py

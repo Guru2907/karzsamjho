@@ -98,7 +98,7 @@ All changes go through a pull request that Gurpreet merges (D27).
 - Done when: A contradictory ad is flagged; a missing in-hand amount is derived and marked "derived"
 
 ### B5 · `verdict.py` with thresholds in a config file
-- Status: todo
+- Status: review
 - Type: Must
 - Depends on: B3
 - Files: api/core/verdict.py, api/core/config.py

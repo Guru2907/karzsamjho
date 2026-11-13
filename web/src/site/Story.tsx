@@ -102,18 +102,18 @@ function PinnedStory() {
   const [stage, setStage] = useState(0)
   const [inHand, setInHand] = useState(5000)
   const [extra, setExtra] = useState(0)
-  const scanTop = useTransform(scrollYProgress, [0.22, 0.48], ['0%', '100%'])
+  const scanTop = useTransform(scrollYProgress, [0.15, 0.4], ['0%', '100%'])
   const barWidth = useTransform(scrollYProgress, [0, 1], ['0%', '100%'])
 
   useMotionValueEvent(scrollYProgress, 'change', (p) => {
-    setStage(p < 0.22 ? 0 : p < 0.5 ? 1 : p < 0.76 ? 2 : 3)
-    setInHand(lerp(p, 0.52, 0.64, 5000, 3800))
-    setExtra(lerp(p, 0.64, 0.74, 0, 1200))
+    setStage(p < 0.15 ? 0 : p < 0.42 ? 1 : p < 0.7 ? 2 : 3)
+    setInHand(lerp(p, 0.44, 0.56, 5000, 3800))
+    setExtra(lerp(p, 0.56, 0.68, 0, 1200))
   })
 
   return (
-    <section ref={ref} className="relative h-[440vh]" aria-label="How one check works">
-      <div className="sticky top-16 flex h-[calc(100svh-4rem)] items-center overflow-hidden">
+    <section ref={ref} className="relative h-[260vh]" aria-label="How one check works">
+      <div className="sticky top-0 flex h-svh items-center overflow-hidden">
         <div className={`${SHELL} grid grid-cols-12 items-center gap-8`}>
           <ol className="col-span-4 space-y-7">
             {STEPS.map((s, i) => (

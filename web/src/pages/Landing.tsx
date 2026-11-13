@@ -11,6 +11,12 @@ import { Magnetic, Reveal, WordReveal } from '@/site/motion'
 // Hero (type as the picture) -> pinned scroll story -> scam wall -> big numbers -> what it
 // catches -> live numbers -> call to action with the QR.
 
+const FACTS = [
+  { value: '~4 sec', label: 'from photo to answer, measured' },
+  { value: '3 voices', label: 'Hindi, Bengali, Marathi' },
+  { value: '0 guesses', label: 'unclear numbers are said to be unclear' },
+]
+
 function Hero() {
   const ref = useRef<HTMLElement>(null)
   const reduce = useReducedMotion()
@@ -20,7 +26,7 @@ function Hero() {
   const y = useTransform(scrollYProgress, [0, 1], [0, -120])
 
   return (
-    <section ref={ref} className="relative flex min-h-[calc(100svh-4rem)] flex-col overflow-hidden px-[3vw] pt-[3vw] pb-8">
+    <section ref={ref} className="relative flex min-h-svh flex-col overflow-hidden px-[3vw] pt-28 pb-6">
       <motion.div className="flex flex-1 origin-top-left flex-col" style={reduce ? undefined : { scale, opacity, y }}>
         <Reveal>
           <p className="mb-[2vw] flex items-center gap-3 text-xs font-medium tracking-[0.2em] text-muted-foreground uppercase">
@@ -34,7 +40,7 @@ function Hero() {
           label="Loan lene se pehle, suno."
           className="text-[9.6vw] leading-[0.9] font-semibold tracking-[-0.055em] whitespace-nowrap"
         />
-        <div className="flex flex-1 flex-col justify-between gap-10 lg:flex-row lg:items-end">
+        <div className="flex flex-col justify-between gap-10 lg:flex-row lg:items-end">
           <WordReveal
             as="p"
             text="suno."
@@ -59,10 +65,18 @@ function Hero() {
           </Reveal>
         </div>
       </motion.div>
-      <p className="mt-6 flex items-center gap-2 text-xs tracking-[0.2em] text-muted-foreground uppercase">
-        <ArrowDown className="size-3.5 animate-bounce" aria-hidden />
-        Scroll to watch one check
-      </p>
+      <div className="mt-8 grid items-end gap-6 border-t border-border pt-5 lg:grid-cols-4">
+        {FACTS.map((f) => (
+          <div key={f.value}>
+            <p className="text-2xl font-semibold tracking-tight">{f.value}</p>
+            <p className="mt-1 text-sm text-muted-foreground">{f.label}</p>
+          </div>
+        ))}
+        <p className="flex items-center gap-2 text-xs tracking-[0.2em] text-muted-foreground uppercase lg:justify-end">
+          <ArrowDown className="size-3.5 animate-bounce" aria-hidden />
+          Scroll to watch one check
+        </p>
+      </div>
     </section>
   )
 }

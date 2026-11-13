@@ -466,7 +466,7 @@ All changes go through a pull request that Gurpreet merges (D27).
 ## H. Public website (D47): /, /how, /partners, 404. Separate layout, never linked from the PWA; `motion` allowed here
 
 ### H1 · Split hero with the real card in a phone frame; top bar with theme toggle
-- Status: todo (Gurpreet, D47): split hero on the public website; own layout, palette tokens, phone frame with the card, sample Hindi audio
+- Status: doing (Gurpreet): W1 done 2:00 AM: palette tokens, website layout apart from the PWA, split hero with phone card, count-up and sample Hindi audio; waiting for Gurpreet's OK on the look
 - Type: Stretch
 - Depends on: E2
 - Files: web/src/pages/Landing.tsx

@@ -6,7 +6,7 @@ import { useRajuMode } from '@/lib/raju'
 
 // The PWA's own bar. It never links to the public website at "/" (D47).
 const links = [
-  { to: '/check', label: 'Check an offer' },
+  { to: '/check', label: 'Check' },
   { to: '/cases', label: 'Cases' },
 ]
 
@@ -17,47 +17,52 @@ export function TopBar() {
   const [rajuMode, setRajuMode] = useRajuMode()
 
   return (
-    <header className="border-b bg-background">
-      <div className="mx-auto flex h-14 w-full max-w-5xl items-center gap-4 px-4">
-        <NavLink to="/check" className="font-semibold tracking-tight">
-          <span>Karz</span>
-          <span className="text-primary">Samjho</span>
-        </NavLink>
-        <nav className="flex flex-1 items-center gap-4 text-sm">
-          {links.map((l) => (
-            <NavLink
-              key={l.to}
-              to={l.to}
-              className={({ isActive }) =>
-                isActive ? 'font-medium text-foreground' : 'text-muted-foreground hover:text-foreground'
-              }
-            >
-              {l.label}
-            </NavLink>
-          ))}
-        </nav>
-        <Button
-          variant="outline"
-          size="sm"
-          className="h-10 px-3 flex items-center gap-2 text-xs font-medium"
-          aria-pressed={rajuMode}
-          onClick={() => setRajuMode((prev) => !prev)}
-        >
-          {rajuMode ? (
-            <ToggleRight className="size-5 text-primary" />
-          ) : (
-            <ToggleLeft className="size-5 text-muted-foreground" />
-          )}
-          <span>Easy mode</span>
-        </Button>
-        <Button
-          variant="ghost"
-          size="icon"
-          aria-label={dark ? 'Switch to light theme' : 'Switch to dark theme'}
-          onClick={() => setTheme(dark ? 'light' : 'dark')}
-        >
-          {dark ? <Sun className="size-4" /> : <Moon className="size-4" />}
-        </Button>
+    <header className="border-b border-border bg-background">
+      <div className="mx-auto flex h-14 w-full max-w-5xl items-center justify-between gap-2 px-3 sm:px-4">
+        <div className="flex items-center gap-3 sm:gap-6">
+          <NavLink to="/check" className="font-semibold tracking-tight text-base">
+            <span>Karz</span>
+            <span className="text-primary">Samjho</span>
+          </NavLink>
+          <nav className="flex items-center gap-2.5 sm:gap-4 text-xs sm:text-sm">
+            {links.map((l) => (
+              <NavLink
+                key={l.to}
+                to={l.to}
+                className={({ isActive }) =>
+                  isActive ? 'font-medium text-foreground' : 'text-muted-foreground hover:text-foreground'
+                }
+              >
+                {l.label}
+              </NavLink>
+            ))}
+          </nav>
+        </div>
+        <div className="flex items-center gap-1.5 sm:gap-2">
+          <Button
+            variant="outline"
+            size="sm"
+            className="h-9 sm:h-10 px-2 sm:px-3 flex items-center gap-1.5 text-xs font-medium"
+            aria-pressed={rajuMode}
+            onClick={() => setRajuMode((prev) => !prev)}
+          >
+            {rajuMode ? (
+              <ToggleRight className="size-4 sm:size-5 text-primary" />
+            ) : (
+              <ToggleLeft className="size-4 sm:size-5 text-muted-foreground" />
+            )}
+            <span>Easy mode</span>
+          </Button>
+          <Button
+            variant="ghost"
+            size="icon"
+            className="size-9 sm:size-10"
+            aria-label={dark ? 'Switch to light theme' : 'Switch to dark theme'}
+            onClick={() => setTheme(dark ? 'light' : 'dark')}
+          >
+            {dark ? <Sun className="size-4" /> : <Moon className="size-4" />}
+          </Button>
+        </div>
       </div>
     </header>
   )

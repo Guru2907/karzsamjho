@@ -131,4 +131,4 @@ Everything is **real** on main (14 Nov, 12:55 AM): checks (photo / SMS / Hindi v
 More fixes: `docs/RUNBOOK.md`.
 
 ## Gates (IST)
-13 Nov **2:00 PM** photo in Telegram gets a reply · **7:30 PM** 3 printed ads → voice + card, twice · 14 Nov **12:30 AM** all 4 features pass · **3:30 AM** feature freeze · **9:00 AM** submission
+13 Nov **2:00 PM** photo in Telegram gets a reply · **7:30 PM** 3 printed ads → voice + card, twice · 14 Nov **12:30 AM** all 4 features pass · **5:00 AM** feature freeze (was 3:30 AM, D46) · **9:00 AM** submission

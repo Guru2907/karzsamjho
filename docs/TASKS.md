@@ -2,7 +2,7 @@
 
 How to use: pick one task by ID ("Do task B3"). Status is one of: todo, doing (name), review, done. Change the Status line when you start, when it is ready for checking, and when someone else has checked it. Read CLAUDE.md first. Touch only the files listed. A task is finished only when its "Done when" is true on the main branch and someone who did not build it has checked it. Progress entries: one new file per task in docs/progress/ (D43).
 
-Type: M = must build. S = stretch, only after the 7:30 PM gate on 13 Nov has passed. Nothing new after the 3:30 AM freeze on 14 Nov.
+Type: M = must build. S = stretch, only after the 7:30 PM gate on 13 Nov has passed. Nothing new after the 5:00 AM freeze on 14 Nov (moved from 3:30 AM, D46).
 
 ## Right now: handover at 1:20 AM (D45): Siddeshwar owns all backend + bot (C2, F6, D9, D10, B12, D8, C3, B13, D11); Gurpreet the landing page (H1-H3); Tejaswini the web app (E); Anam the data (G). See docs/PLAN.md "Handover".
 
@@ -463,28 +463,56 @@ All changes go through a pull request that Gurpreet merges (D27).
 - Done when: File exists with 5 offers; expected in_hand, repay_total, tenure_days and extra were worked out by hand before any run
 - Note: added in the 4:50 PM re-plan (D25). The 3 demo ads (G3) also get `api/data/offers/demo_expected.json`.
 
-## H. Landing page
+## H. Public website (D47): /, /how, /partners, 404. Separate layout, never linked from the PWA; `motion` allowed here
 
 ### H1 · Split hero with the real card in a phone frame; top bar with theme toggle
-- Status: todo (Gurpreet, D45)
+- Status: todo (Gurpreet, D47): split hero on the public website; own layout, palette tokens, phone frame with the card, sample Hindi audio
 - Type: Stretch
 - Depends on: E2
 - Files: web/src/pages/Landing.tsx
 - Done when: Looks right in light and dark, on phone and laptop
 
 ### H2 · Live numbers from `/api/stats`
-- Status: todo (Gurpreet, D45)
+- Status: todo (Gurpreet, D47): live numbers with count-up; loading, empty and error states
 - Type: Stretch
 - Depends on: A5, H1
 - Files: web/src/pages/Landing.tsx
 - Done when: Numbers change after a new check
 
 ### H3 · Story, how it works, who it helps, limits, footer
-- Status: todo (Gurpreet, D45)
+- Status: todo (Gurpreet, D47): the Rs 1,200 scroll receipt, what it catches, call to action, footer
 - Type: Stretch
 - Depends on: H1
 - Files: web/src/pages/Landing.tsx
 - Done when: Present; if time is short, these are the first to drop
+
+### H4 · `/partners`: the page for NGOs and bank mitras
+- Status: todo (Gurpreet, D47)
+- Type: Stretch
+- Depends on: H1
+- Files: web/src/pages/Partners.tsx, web/src/site/
+- Done when: who it helps, what a partner does, the bank-mitra commission idea labelled as a proposed pilot (not built), a mail-link call to action; no forms, no login
+
+### H5 · `/how`: how it works, proof and limits
+- Status: todo (Gurpreet, D47)
+- Type: Stretch
+- Depends on: H1
+- Files: web/src/pages/How.tsx, web/src/site/
+- Done when: "the AI reads, Python calculates, a second AI re-checks" in 3 steps; test count and measured seconds from docs/TESTING.md; limits (synthetic ads, no real users yet, "not found" is never "illegal")
+
+### H6 · Custom 404 page
+- Status: todo (Gurpreet, D47)
+- Type: Stretch
+- Depends on: H1
+- Files: web/src/pages/NotFound.tsx
+- Done when: an unknown address shows "Yeh page nahi mila" in the site's style with a link home, in light and dark
+
+### H7 · QR code to the PWA
+- Status: todo (Gurpreet, D47)
+- Type: Stretch
+- Depends on: H1; E7 for Raju mode
+- Files: web/src/site/QrLink.tsx
+- Done when: the website shows a QR for <this address>/check?mode=raju (Raju) and /check (bank mitra), drawn in the browser, and a phone on the same Wi-Fi opens the page
 
 ## I. Pitch and demo
 

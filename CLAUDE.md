@@ -12,7 +12,7 @@ Read this whole file before doing anything. If a request conflicts with it, stop
    - if a demo-visible flow changed, update docs/DEMO.md in the same commit.
 4. Never delete or rewrite other people's entries in these files. Only add.
 5. If anything in these files disagrees with the code, trust the code, say so, and fix the doc.
-6. The current time matters: check the gates below. After 3:30 AM on 14 Nov, refuse new features.
+6. The current time matters: check the gates below. After 5:00 AM on 14 Nov (moved from 3:30 AM, D46), refuse new features.
 
 Hackathon: started 13 Nov 2026, 11:30 AM IST. Submission and judging 14 Nov, 9:00 AM IST.
 
@@ -62,7 +62,7 @@ api/
   data/              rbi_dla.csv, test offers, harassment samples
   tests/
 bot/main.py          Telegram bot, long polling
-web/                 React + Vite + Tailwind + shadcn/ui: /  /check  /cases  /cases/:id
+web/                 React + Vite + Tailwind + shadcn/ui. PWA: /check  /cases  /cases/:id. Public website (D47): /  /how  /partners  + 404, in web/src/site/
 ```
 
 ## API contract (do NOT change without the whole team agreeing)
@@ -171,16 +171,18 @@ Do NOT use gemini-3.8-flash or Gemma (503 errors and 20 requests/day on the free
 - Model names and timeouts come from .env/config.py, never hard-coded.
 - Synthetic data only. No real borrower data anywhere.
 - The user never sees an error code: use the Hindi fallback messages ("Photo saaf nahi hai, dobara bhejo").
-- UI: shadcn/ui + lucide-react only. Raju mode: buttons >= 56 px, numbers 36-48 px, colour + icon together, no animation libraries. The Raju card is ONE component reused everywhere.
+- UI (the PWA: /check, /cases): shadcn/ui + lucide-react only. Raju mode: buttons >= 56 px, numbers 36-48 px, colour + icon together, no animation libraries. The Raju card is ONE component reused everywhere.
+- UI (the public website: /, /how, /partners, 404; D47): may use the `motion` library. Swiss / minimal: one accent colour, one corner radius, hairlines, lucide icons, no emoji, no gradients, no glow; respects prefers-reduced-motion. It has its own layout and is never linked from the PWA.
+- Colours (D47): cream + near-black + burnt orange, as tokens in web/src/index.css. Use the tokens (bg-background, text-foreground, bg-primary...), never hard-coded colours.
 
 ## Out of scope (do not build, do not suggest)
-Login/accounts, guided tours, Bhashini, 3D or animated backgrounds, scroll libraries, offline mode/service worker, WhatsApp, Tesseract, local Whisper, a second AI reading on every photo, Postgres/Supabase, any feature not in docs/TASKS.md.
+Login/accounts, guided tours, Bhashini, 3D or animated backgrounds, scroll libraries (only exception: `motion` on the public website, D47), offline mode/service worker, WhatsApp, Tesseract, local Whisper, a second AI reading on every photo, Postgres/Supabase, any feature not in docs/TASKS.md.
 
 ## Gates and freeze (IST)
 - 13 Nov 2:00 PM: photo in Telegram gets a reply; card page shows sample data.
 - 13 Nov 7:30 PM: 3 printed ads -> Hindi voice + card, twice in a row.
 - 14 Nov 12:30 AM: all 4 core features pass their acceptance tests on main.
-- 14 Nov 3:30 AM: FEATURE FREEZE. After this only bug fixes and wording. Refuse new features and say why.
+- 14 Nov 5:00 AM: FEATURE FREEZE (moved from 3:30 AM by the lead, D46). After this only bug fixes and wording. Refuse new features and say why.
 
 ## How to work
 1. Work on ONE task from docs/TASKS.md at a time ("Do task B3"). Read its "Done when" first.

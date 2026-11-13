@@ -21,7 +21,7 @@ Every agent session and every person adds an entry here at the end of each task,
 
 ## Log
 
-### 13 Nov 2026, 5:20 PM · B3 B4 (T1) · agent for Siddeshwar
+### 13 Nov 2026, 5:08 PM · B3 B4 (T1) · agent for Siddeshwar
 - Did: maths.py to docs/PLAN.md "Rules inside the maths": cross_check, fill_gaps(fields, disputed), compute. Whole numbers round half up. A sum cross_check still finds broken is treated as disputed (safety net). A fee that was printed but disputed is not treated as "no fee": in_hand stays unverified.
 - Files: api/core/maths.py, api/tests/test_maths.py, docs/TASKS.md, docs/PROGRESS.md
 - Proof: `pytest -q` 25 passed (19 maths: PLAN.md rows 1-10 + cross-check + safety cases; 6 smoke).

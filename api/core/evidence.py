@@ -32,7 +32,7 @@ from api.core.harass import RULES, RULES_BASIS
 
 IST = timezone(timedelta(hours=5, minutes=30))
 GENESIS = "0" * 64
-HASH_FIELDS = ("id", "at", "channel", "contacted", "text", "rules")
+HASH_FIELDS = ("at", "channel", "contacted", "text", "rules")   # exactly as main.py event_hash (F2, #29)
 CASE_DAYS = 30
 
 ROUTES = {   # CLAUDE.md "Complaint routes"

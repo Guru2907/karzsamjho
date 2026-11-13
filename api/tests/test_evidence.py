@@ -145,3 +145,14 @@ def test_hash_is_sha256_of_prev_plus_fields():
     assert len(ev["hash"]) == 64 and ev["prev_hash"] == "0" * 64
     assert evidence.event_hash("0" * 64, ev) == ev["hash"]
     assert evidence.event_hash("1" * 64, ev) != ev["hash"]
+
+
+def test_hash_matches_the_f2_definition_in_main_py():
+    # main.py event_hash (F2, PR #29): SHA-256(prev_hash + compact sorted JSON of at/channel/contacted/text/rules)
+    import hashlib
+    import json
+    ev = CASE["events"][0]
+    fields = {k: ev.get(k) for k in ("at", "channel", "contacted", "text", "rules")}
+    body = json.dumps(fields, sort_keys=True, ensure_ascii=False, separators=(",", ":"))
+    assert evidence.event_hash("0" * 64, ev) == hashlib.sha256(("0" * 64 + body).encode("utf-8")).hexdigest()
+    assert evidence.event_hash("0" * 64, {**ev, "id": "evt_9999"}) == ev["hash"]   # the id is not hashed

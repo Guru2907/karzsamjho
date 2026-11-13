@@ -16,9 +16,16 @@ log = logging.getLogger("cache")
 _KEY = re.compile(r"^[0-9a-f]{64}$")
 
 
-def image_key(image_bytes: bytes) -> str:
-    """SHA-256 of the exact image bytes, as hex."""
-    return hashlib.sha256(image_bytes).hexdigest()
+def image_key(image_bytes: bytes, lang: str = "hi") -> str:
+    """SHA-256 of the exact image bytes, as hex.
+
+    For Hindi it is exactly sha256(image), so every result cached before D7 stays valid.
+    For bn / mr the language is part of the key (D35): a Hindi MP3 must never answer a
+    Bengali or Marathi request for the same photo.
+    """
+    if lang == "hi":
+        return hashlib.sha256(image_bytes).hexdigest()
+    return hashlib.sha256(image_bytes + b"|lang=" + lang.encode()).hexdigest()
 
 
 def _path(key: str) -> Path:

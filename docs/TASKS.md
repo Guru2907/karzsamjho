@@ -197,7 +197,7 @@ All changes go through a pull request that Gurpreet merges (D27).
 - Done when: A spoken offer in Hindi returns a reply; number words become digits through gpt-oss-20b (D22); engines.listen = "whisper" (D33). Only after the 7:30 gate
 
 ### D7 · Bengali and Marathi voice (was Kannada; changed 6:50 PM, D32)
-- Status: todo (Siddeshwar, all of it: templates, voices, lang through the API, /bhasha, D35)
+- Status: doing (Siddeshwar, D35): server side in review, waiting for native-speaker approval of the bn / mr sentences; bot /bhasha next
 - Type: Stretch
 - Depends on: D2
 - Files: api/core/speak.py, bot/main.py (Siddeshwar); api/main.py, api/core/config.py, api/core/fallback.py (Gurpreet)

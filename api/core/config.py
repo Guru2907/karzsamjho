@@ -37,6 +37,8 @@ class Settings:
     groq_text_model: str = field(default_factory=lambda: _s("GROQ_TEXT_MODEL", "openai/gpt-oss-20b"))
     groq_stt_model: str = field(default_factory=lambda: _s("GROQ_STT_MODEL", "whisper-large-v3-turbo"))
     tts_voice_hi: str = field(default_factory=lambda: _s("TTS_VOICE_HI", "hi-IN-SwaraNeural"))
+    tts_voice_bn: str = field(default_factory=lambda: _s("TTS_VOICE_BN", "bn-IN-TanishaaNeural"))  # D7, D32
+    tts_voice_mr: str = field(default_factory=lambda: _s("TTS_VOICE_MR", "mr-IN-AarohiNeural"))    # D7, D32
 
     # Timeouts, in seconds
     vision_timeout_s: float = field(default_factory=lambda: _f("VISION_TIMEOUT_S", 6))
@@ -63,6 +65,12 @@ class Settings:
     h1_latest_hour: int = 19             # contact after 19:00 breaks H1
     h6_calls_per_day: int = 5            # our threshold; label it as ours
 
+    def tts_voice(self, lang: str) -> str:
+        """The edge-tts voice for a language: "hi" (default), "bn" or "mr" (D7). Anything else -> Hindi."""
+        return {"bn": self.tts_voice_bn, "mr": self.tts_voice_mr}.get(lang, self.tts_voice_hi)
+
+
+LANGS = ("hi", "bn", "mr")               # languages the voice can speak (D32); the card stays Hinglish
 
 settings = Settings()
 

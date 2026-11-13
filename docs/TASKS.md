@@ -38,7 +38,7 @@ All changes go through a pull request that Gurpreet merges (D27).
 - Done when: Every route in section 5 returns sample data by 12:30 PM
 
 ### A3 · `db.py`: tables for checks, cases, events
-- Status: todo (Gurpreet)
+- Status: review (Gurpreet): SQLite checks/cases/events; checks survive a restart (proven 11:43 PM)
 - Type: Must
 - Depends on: A1
 - Files: api/core/db.py

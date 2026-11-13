@@ -8,6 +8,7 @@ Run:  uvicorn api.main:app --host 0.0.0.0 --port 8000 --reload
 """
 import copy
 import itertools
+from contextlib import asynccontextmanager
 import logging
 import re
 import statistics
@@ -19,7 +20,7 @@ from fastapi.concurrency import run_in_threadpool
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import FileResponse
 
-from api.core import cache, config, extract, maths, speak, verdict
+from api.core import cache, config, db, extract, maths, speak, verdict
 from api.core.config import ensure_dirs
 from api.core.schemas import (Case, CaseIn, CheckResult, Event, EventIn, Stats,
                               VerifyResult)
@@ -29,7 +30,15 @@ for noisy in ("httpx", "httpx2", "google_genai.models"):
     logging.getLogger(noisy).setLevel(logging.WARNING)   # httpx logs URLs
 log = logging.getLogger("api")
 
-app = FastAPI(title="KarzSamjho API", version="0.2.0")
+@asynccontextmanager
+async def _lifespan(_app):
+    """Create the SQLite tables when the server starts (A3; db.py also does it on first use)."""
+    db.init_db()
+    log.info("database ready: %s", config.settings.db_path)
+    yield
+
+
+app = FastAPI(title="KarzSamjho API", version="0.3.0", lifespan=_lifespan)
 app.add_middleware(
     CORSMiddleware,
     allow_origins=["http://localhost:5173", "http://127.0.0.1:5173"],
@@ -38,23 +47,34 @@ app.add_middleware(
 )
 ensure_dirs()
 
-# ---------------------------------------------------------------- checks (real, in memory)
-CHECKS: dict[str, dict] = {}          # check id -> CheckResult dict, newest last
+
+# ---------------------------------------------------------------- checks (real, stored in SQLite, A3)
+# The database (db.py) is the source of truth. CHECKS is only a fast in-memory copy of this
+# run's results; a restart empties it and every read falls back to the database.
+CHECKS: dict[str, dict] = {}          # check id -> CheckResult dict
 SAFE_ID = re.compile(r"^chk_\d{4,}$")
 
 
 def _first_free_id() -> int:
-    """Continue after the highest check id on disk (cached results and MP3s), so a new
-    check after a restart never overwrites the MP3 of a cached one."""
+    """Continue after the highest check id on disk (database, cached results and MP3s), so a
+    new check after a restart never reuses an id or overwrites the MP3 of an old one."""
     numbers = [int(r["id"][4:]) for r in cache.all_results()
                if isinstance(r.get("id"), str) and SAFE_ID.match(r["id"])]
+    numbers.append(db.max_check_number())
     audio = Path(config.settings.audio_dir)
     if audio.is_dir():
         numbers += [int(p.stem[4:]) for p in audio.glob("chk_*.mp3") if SAFE_ID.match(p.stem)]
     return max(numbers, default=0) + 1
 
 
-_ids = itertools.count(_first_free_id())
+_ids = None                           # started on first use, so loading this file never opens the database
+
+
+def _new_check_id() -> str:
+    global _ids
+    if _ids is None:
+        _ids = itertools.count(_first_free_id())
+    return f"chk_{next(_ids):04d}"
 
 
 async def _from_cache(key: str, start: float, lang: str = "hi") -> dict | None:
@@ -74,6 +94,7 @@ async def _from_cache(key: str, start: float, lang: str = "hi") -> dict | None:
         cache.put(key, result)
     result.update(cached=True, seconds=round(time.perf_counter() - start, 1))
     CHECKS[result["id"]] = result
+    db.save_check(result, key, "cache", replace=False)    # keeps the first stored answer
     log.info("check %s: cache hit, no AI call, seconds=%s", result["id"], result["seconds"])
     return result
 
@@ -108,7 +129,7 @@ def _no_card(code: str, text_hi: str) -> HTTPException:
 
 
 async def run_check(image: bytes | None = None, text: str | None = None,
-                    audio: bytes | None = None, lang: str = "hi") -> dict:
+                    audio: bytes | None = None, lang: str = "hi", source: str = "api") -> dict:
     """One check, start to finish. The AI only reads; every number below is plain Python.
     A voice note (audio, D6) is read like a pasted SMS: no cache, no second reading."""
     start = time.perf_counter()
@@ -149,7 +170,7 @@ async def run_check(image: bytes | None = None, text: str | None = None,
     fees = None if "fees" in disputed or "fees" in still_wrong else fields["fees"]
     result_verdict = verdict.decide(numbers, fees)
 
-    check_id = f"chk_{next(_ids):04d}"
+    check_id = _new_check_id()
     sentence = speak.speech_text(numbers, lang)          # bn / mr: that language's sentence (D7)
     pay_first = fields.get("pay_first")
     if pay_first:                                    # B9: the warning comes first, then the numbers
@@ -180,6 +201,7 @@ async def run_check(image: bytes | None = None, text: str | None = None,
     }
     CheckResult.model_validate(result)        # the contract shape, checked before anyone sees it
     CHECKS[check_id] = result
+    db.save_check(result, key, source)        # A3: survives a restart
     if key:
         try:
             cache.put(key, result)            # photos only (A4); a failed write never stops the answer
@@ -197,39 +219,42 @@ async def create_check(request: Request):
     if content_type.startswith(("multipart/form-data", "application/x-www-form-urlencoded")):
         form = await request.form()
         lang = _lang(form.get("lang"))
+        source = str(form.get("source") or "api")[:20]
         upload = form.get("image")
         if upload is not None and hasattr(upload, "read"):
             image = await upload.read()
             if not image:
                 raise _no_card("UNREADABLE", extract.MSG_BAD_PHOTO)
-            return await run_check(image=image, lang=lang)
+            return await run_check(image=image, lang=lang, source=source)
         voice = form.get("audio")                     # a Telegram voice note, OGG (D6, D33)
         if voice is not None and hasattr(voice, "read"):
             audio = await voice.read()
             if not audio:
                 raise _no_card("UNREADABLE", extract.MSG_BAD_VOICE)
-            return await run_check(audio=audio, lang=lang)
+            return await run_check(audio=audio, lang=lang, source=source)
         if form.get("text"):
-            return await run_check(text=str(form["text"]), lang=lang)
+            return await run_check(text=str(form["text"]), lang=lang, source=source)
         raise HTTPException(422, "Send a form field named 'image', 'audio' or 'text'.")
     if content_type.startswith("application/json"):
         body = await request.json()
         if not isinstance(body, dict) or not body.get("text"):
             raise HTTPException(422, "Send JSON like {\"text\": \"...\"}.")
-        return await run_check(text=str(body["text"]), lang=_lang(body.get("lang")))
+        return await run_check(text=str(body["text"]), lang=_lang(body.get("lang")),
+                               source=str(body.get("source") or "api")[:20])
     raise HTTPException(415, "Send multipart form data (image) or JSON (text).")
 
 
 @app.get("/api/checks", response_model=list[CheckResult])
 def list_checks(limit: int = 20):
-    return list(reversed(CHECKS.values()))[:max(limit, 0)]
+    return db.list_checks(limit)
 
 
 @app.get("/api/checks/{check_id}", response_model=CheckResult)
 def get_check(check_id: str):
-    if check_id not in CHECKS:
+    result = CHECKS.get(check_id) or db.get_check(check_id)
+    if result is None:
         raise HTTPException(404, "Check not found.")
-    return CHECKS[check_id]
+    return result
 
 
 @app.get("/api/audio/{check_id}.mp3")
@@ -300,12 +325,12 @@ def verify_case(case_id: str):
 # ---------------------------------------------------------------- stats, health
 @app.get("/api/stats", response_model=Stats)
 def stats():
-    """From the checks in memory (task A5 moves this to the database)."""
-    checks = list(CHECKS.values())
-    extra = sum(c["numbers"]["extra"]["value"] or 0 for c in checks
-                if c["verdict"] in ("COSTLY", "VERY_COSTLY"))
+    """From every stored check (A3), not just since the last restart."""
+    checks = db.check_summaries()
+    extra = sum(c["extra"] or 0 for c in checks if c["verdict"] in ("COSTLY", "VERY_COSTLY"))
+    seconds = [c["seconds"] for c in checks if c["seconds"] is not None]
     return {"checks": len(checks),
-            "median_seconds": statistics.median(c["seconds"] for c in checks) if checks else 0,
+            "median_seconds": statistics.median(seconds) if seconds else 0,
             "extra_rupees_flagged": extra}
 
 
@@ -320,5 +345,5 @@ def health():
         "telegram_key": bool(s.telegram_bot_token),
         "voice": s.voice_enabled,
         "sample_data": False,
-        "checks_in_memory": len(CHECKS),
+        "checks_stored": len(db.check_summaries()),
     }

@@ -398,7 +398,7 @@ All changes go through a pull request that Gurpreet merges (D27).
 - Done when: Regulated lender → grievance officer route with "Day N of 30"; unlisted app → Sachet + cybercrime route
 
 ### F6 · Complaint letter addressee follows the route
-- Status: todo (Siddeshwar, D45)
+- Status: review (Siddeshwar, D45): addressee from the F5 route; tests per route; real PDFs 1:34 AM (ZapCash -> Sachet, PaisaTurant -> grievance officer)
 - Type: Must (small)
 - Depends on: F3, F5
 - Files: api/core/evidence.py, api/tests/test_evidence.py

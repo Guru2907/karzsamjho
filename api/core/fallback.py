@@ -134,27 +134,51 @@ def read_image(image_bytes: bytes, prompt: str, engines: tuple[str, ...] = ("qwe
     raise EngineError(f"no reader answered (tried {', '.join(engines)})")
 
 
-def read_text(prompt: str, check: Check | None = None) -> tuple[str, str, float]:
-    """Text job -> (raw reply, "gpt-oss-20b", seconds). One engine; the caller's backup is regex.
+def _gemini_client(timeout_s: float):
+    return genai.Client(api_key=settings.gemini_api_key, http_options=genai_types.HttpOptions(
+        timeout=int(timeout_s * 1000), retry_options=genai_types.HttpRetryOptions(attempts=1)))
 
-    Raises EngineError on a timeout, any error, a 429, or a reply that `check` rejects.
-    """
-    if not settings.groq_api_key:
-        raise EngineError("no Groq key")
-    start = time.perf_counter()
-    try:
-        raw, usage = _call_gpt_oss(prompt)
-        if check:
-            check(raw)
-    except Exception as exc:
-        log.warning("read_text: engine=gpt-oss-20b failed (%s) seconds=%.2f",
-                    _why(exc), time.perf_counter() - start)
-        raise EngineError("text reader failed") from exc
-    seconds = round(time.perf_counter() - start, 2)
-    log.info("read_text: engine=gpt-oss-20b ok seconds=%.2f prompt_tokens=%s completion_tokens=%s "
-             "remaining_tokens=%s", seconds, usage.get("prompt_tokens"),
-             usage.get("completion_tokens"), usage.get("remaining_tokens"))
-    return raw, "gpt-oss-20b", seconds
+
+def _call_gemini_text(prompt: str) -> tuple[str, dict]:
+    """Text job on Gemini Flash-Lite: the backup when Groq gpt-oss fails (B11)."""
+    client = _gemini_client(settings.read_timeout_s)       # keep a reference: a dropped client closes
+    resp = client.models.generate_content(
+        model=settings.gemini_model, contents=[prompt],
+        config=genai_types.GenerateContentConfig(temperature=0))
+    meta = resp.usage_metadata
+    return (resp.text or "").strip(), {"prompt_tokens": getattr(meta, "prompt_token_count", None),
+                                       "completion_tokens": getattr(meta, "candidates_token_count", None)}
+
+
+_TEXT_ENGINES = {"gpt-oss-20b": ("_call_gpt_oss", "groq_api_key"),
+                 "gemini": ("_call_gemini_text", "gemini_api_key")}
+
+
+def read_text(prompt: str, check: Check | None = None,
+              engines: tuple[str, ...] = ("gpt-oss-20b", "gemini")) -> tuple[str, str, float]:
+    """Text job -> (raw reply, engine name, seconds). gpt-oss-20b first, Gemini Flash-Lite if it fails
+    (B11); each once, temperature 0, a timeout, no retry; a 429 or a reply `check` rejects moves on.
+    Raises EngineError when every engine failed (the caller's last resort is then regex)."""
+    for name in engines:
+        fn_name, key_name = _TEXT_ENGINES[name]
+        if not getattr(settings, key_name):
+            log.warning("read_text: engine=%s skipped (no key)", name)
+            continue
+        start = time.perf_counter()
+        try:
+            raw, usage = globals()[fn_name](prompt)
+            if check:
+                check(raw)
+        except Exception as exc:
+            log.warning("read_text: engine=%s failed (%s), moving on seconds=%.2f",
+                        name, _why(exc), time.perf_counter() - start)
+            continue
+        seconds = round(time.perf_counter() - start, 2)
+        log.info("read_text: engine=%s ok seconds=%.2f prompt_tokens=%s completion_tokens=%s "
+                 "remaining_tokens=%s", name, seconds, usage.get("prompt_tokens"),
+                 usage.get("completion_tokens"), usage.get("remaining_tokens"))
+        return raw, name, seconds
+    raise EngineError(f"no text reader answered (tried {', '.join(engines)})")
 
 
 async def speak(text: str, out_path: str, voice: str | None = None) -> bool:
@@ -188,30 +212,62 @@ async def speak(text: str, out_path: str, voice: str | None = None) -> bool:
     return True
 
 
-def transcribe(audio_bytes: bytes) -> tuple[str, str, float]:
-    """Voice note (Telegram OGG) -> (Hindi transcript, "whisper", seconds). Task D6.
+def _audio_mime(audio_bytes: bytes) -> str:
+    if audio_bytes[:4] == b"OggS":
+        return "audio/ogg"                        # Telegram voice notes
+    if audio_bytes[:4] == b"RIFF" and audio_bytes[8:12] == b"WAVE":
+        return "audio/wav"
+    return "audio/mpeg"
 
-    One Groq Whisper call: language "hi", temperature 0, timeout from config, no retries.
-    Raises EngineError on any failure, a 429, or an empty transcript (there is no second
-    listener). Logs engine, seconds and the transcript LENGTH, never what was said.
+
+def _call_whisper(audio_bytes: bytes) -> str:
+    client = Groq(api_key=settings.groq_api_key, timeout=settings.stt_timeout_s, max_retries=0)
+    resp = client.audio.transcriptions.create(
+        file=("voice.ogg", audio_bytes), model=settings.groq_stt_model,
+        language="hi", temperature=0, response_format="json")
+    return (getattr(resp, "text", "") or "").strip()
+
+
+def _call_gemini_audio(audio_bytes: bytes) -> str:
+    """Gemini Flash-Lite listens to the voice note: the backup when Whisper fails (B11).
+    Tested 13 Nov 8 PM: Hindi speech in 2.4 to 3.1 s, numbers written as digits."""
+    client = _gemini_client(settings.read_timeout_s)       # keep a reference: a dropped client closes
+    resp = client.models.generate_content(
+        model=settings.gemini_model,
+        contents=[genai_types.Part.from_bytes(data=audio_bytes, mime_type=_audio_mime(audio_bytes)),
+                  "Write down exactly what is said in this audio, in the language spoken. "
+                  "Output only the words, nothing else."],
+        config=genai_types.GenerateContentConfig(temperature=0))
+    return (resp.text or "").strip()
+
+
+_LISTENERS = {"whisper": ("_call_whisper", "groq_api_key"),
+              "gemini": ("_call_gemini_audio", "gemini_api_key")}
+
+
+def transcribe(audio_bytes: bytes) -> tuple[str, str, float]:
+    """Voice note (Telegram OGG) -> (transcript, engine, seconds). Task D6; Gemini backup B11.
+
+    Whisper first (language "hi"), then Gemini Flash-Lite; each once, temperature 0, a timeout,
+    no retries; a 429, an error or an empty transcript moves on. Raises EngineError when both fail.
+    Logs engine, seconds and the transcript LENGTH, never what was said.
     """
-    if not settings.groq_api_key:
-        raise EngineError("no Groq key")
     if not audio_bytes:
         raise EngineError("empty audio")
-    start = time.perf_counter()
-    try:
-        client = Groq(api_key=settings.groq_api_key, timeout=settings.stt_timeout_s, max_retries=0)
-        resp = client.audio.transcriptions.create(
-            file=("voice.ogg", audio_bytes), model=settings.groq_stt_model,
-            language="hi", temperature=0, response_format="json")
-        text = (getattr(resp, "text", "") or "").strip()
-        if not text:
-            raise EngineError("whisper returned no text")
-    except Exception as exc:
-        log.warning("transcribe: engine=whisper failed (%s) seconds=%.2f",
-                    _why(exc), time.perf_counter() - start)
-        raise EngineError("listener failed") from exc
-    seconds = round(time.perf_counter() - start, 2)
-    log.info("transcribe: engine=whisper ok seconds=%.2f chars=%d", seconds, len(text))
-    return text, "whisper", seconds
+    for name, (fn_name, key_name) in _LISTENERS.items():
+        if not getattr(settings, key_name):
+            log.warning("transcribe: engine=%s skipped (no key)", name)
+            continue
+        start = time.perf_counter()
+        try:
+            text = globals()[fn_name](audio_bytes)
+            if not text:
+                raise EngineError(f"{name} returned no text")
+        except Exception as exc:
+            log.warning("transcribe: engine=%s failed (%s), moving on seconds=%.2f",
+                        name, _why(exc), time.perf_counter() - start)
+            continue
+        seconds = round(time.perf_counter() - start, 2)
+        log.info("transcribe: engine=%s ok seconds=%.2f chars=%d", name, seconds, len(text))
+        return text, name, seconds
+    raise EngineError("listener failed (tried whisper, gemini)")

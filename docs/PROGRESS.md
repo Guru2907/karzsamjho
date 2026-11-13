@@ -21,6 +21,15 @@ Every agent session and every person adds an entry here at the end of each task,
 
 ## Log
 
+### 14 Nov 2026, 12:45 AM · B11 Gemini backup for SMS and voice · agent for Gurpreet
+- Did: read_text tries gpt-oss-20b then Gemini Flash-Lite (regex stays the caller's last resort); transcribe tries Whisper then Gemini listening to the audio (OGG / WAV / MP3). Same rules: temperature 0, timeout, no retry, a 429 or a rejected reply moves on, engine name recorded. Harassment labelling (F1) gets the backup too because it uses read_text. Tests: conftest makes both Gemini backups offline, so no test reaches the internet even with real keys.
+- Bug found in the first drill and fixed: the Gemini client was not kept in a variable, so Python closed it before the request ("client has been closed"); a regression test fails if that comes back.
+- Files: api/core/fallback.py, api/tests/test_fallback.py, api/tests/conftest.py, docs/ARCHITECTURE.md, TASKS.md
+- Proof: `pytest -q` 281 passed (15 new), also with real keys loaded (1.4 s, no network). Real drill with a wrong Groq key: Hinglish SMS -> read by Gemini -> 9000 / 11500 / 14 / 2500 in 4.1 s; Hindi voice note -> heard and read by Gemini -> 5000 / 6000 / 7 / 1000 in 8.1 s.
+- Status in docs/TASKS.md: B11 = review
+- Next: wave 1 is done. Later list: C2, F4, F5, G6, G7 (kill-switch drill), G5, I5.
+- Broken / risks: Gemini free tier is 15/min, 500/day, shared by photos, SMS and voice when Groq is down.
+
 ### 13 Nov 2026, 9:15 PM · WhatsApp skipped · agent for Gurpreet
 - Did: the lead skipped WhatsApp: D41 reverses D39, D12 dropped, CLAUDE.md and AGENTS.md list WhatsApp as plain out of scope again; removed from Siddeshwar's prompt.
 - Files: CLAUDE.md, AGENTS.md, docs/PLAN.md, TASKS.md, DECISIONS.md (D41), PROGRESS.md

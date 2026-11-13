@@ -361,7 +361,7 @@ All changes go through a pull request that Gurpreet merges (D27).
 - Done when: Each event stores its hash and the previous hash
 
 ### F3 · `evidence.py`: PDF with timeline, rules, hashes, masking, complaint draft
-- Status: todo (Siddeshwar)
+- Status: review (Siddeshwar): build_pdf + mask + hash helpers; endpoint wiring in main.py by Gurpreet
 - Type: Must
 - Depends on: F2
 - Files: api/core/evidence.py

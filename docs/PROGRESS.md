@@ -21,6 +21,13 @@ Every agent session and every person adds an entry here at the end of each task,
 
 ## Log
 
+### 13 Nov 2026, 7:00 PM · seconds stamp on the Telegram card (DEMO LIVE 1) · agent for Gurpreet
+- Did: the card ends with "⏱ 3.9 sec" from the API's `seconds`; left out when missing or not a number. One-off edit of Siddeshwar's bot/main.py before he starts D5 (D34).
+- Files: bot/main.py, api/tests/test_bot.py, docs/DEMO.md (checklist ticked)
+- Proof: `pytest -q` 157 passed (5 new).
+- Status in docs/TASKS.md: no task ID (demo fix)
+- Next: A4 cache.
+- Broken / risks: none.
 ### 13 Nov 2026, 6:55 PM · after-review split + D7 language change · agent for Gurpreet
 - Did: split the remaining backend/bot work between Gurpreet and Siddeshwar by file (PLAN.md "After the review", D34); D7 changed from Kannada to Bengali + Marathi (D32; both edge-tts voices checked to exist); voice-note input contract (D33); signatures for cache, harass, evidence, next_step, transcribe, speak with lang; Siddeshwar's prompt.
 - Files: docs/PLAN.md, docs/TASKS.md (D6, D7, owners), docs/DECISIONS.md (D32 to D34), docs/PROGRESS.md

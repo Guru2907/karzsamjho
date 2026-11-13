@@ -1,28 +1,138 @@
-import { ArrowRight, Calculator, Eye, RefreshCcw } from 'lucide-react'
+import { ArrowRight, Check, X } from 'lucide-react'
 import { Link } from 'react-router-dom'
 import { buttonVariants } from '@/components/ui/button'
 import { Columns, PageHero, Section } from '@/site/Page'
-import { CountUp, Reveal } from '@/site/motion'
+import { ScrollText, StickySteps, TypedLines, type Step } from '@/site/fx'
+import { CountUp, Magnetic, Reveal } from '@/site/motion'
 
 // Public website: how it works, the proof and the limits (task H5, D47).
 // Every number here is from the repo: docs/TESTING.md and the code in api/core/.
 
-const STEPS = [
+const mono = 'font-mono text-sm leading-8'
+
+/** Step 1 picture: the ad's printed numbers become a fixed form. */
+function ReadVisual() {
+  const ring = 'rounded-sm px-1 shadow-[0_0_0_2px_var(--primary)]'
+  return (
+    <div className="grid gap-6">
+      <div className="bg-foreground p-5 text-background">
+        <p className="text-xl leading-none font-black tracking-tight uppercase">Instant loan in 5 min!</p>
+        <p className="mt-4 flex flex-wrap gap-x-5 gap-y-3 text-sm font-medium">
+          <span>
+            Loan <span className={ring}>₹5,000</span>
+          </span>
+          <span>
+            Fee <span className={ring}>₹1,200</span>
+          </span>
+          <span>
+            Repay <span className={ring}>₹5,000</span>
+          </span>
+          <span>
+            In <span className={ring}>7 days</span>
+          </span>
+        </p>
+      </div>
+      <pre className={`${mono} text-muted-foreground`}>
+        {'{ '}
+        <span className="text-foreground">"principal"</span>: 5000, <span className="text-foreground">"fees"</span>: 1200,
+        {'\n  '}
+        <span className="text-foreground">"repay_total"</span>: 5000, <span className="text-foreground">"tenure_days"</span>: 7,
+        {'\n  '}
+        <span className="text-foreground">"in_hand"</span>: <span className="text-primary">null</span>{' '}
+        <span className="opacity-70"># not printed, so not guessed</span>
+        {' }'}
+      </pre>
+    </div>
+  )
+}
+
+/** Step 2 picture: the ledger the code works out. */
+function MathsVisual() {
+  const row = 'flex items-baseline justify-between gap-6 border-b border-border py-3 font-mono text-sm'
+  return (
+    <div>
+      <div className={row}>
+        <span className="text-muted-foreground">5,000 − 1,200</span>
+        <span className="text-4xl font-semibold tracking-tight text-emerald-700 dark:text-emerald-400">₹3,800</span>
+      </div>
+      <div className={row}>
+        <span className="text-muted-foreground">5,000 − 3,800</span>
+        <span className="text-4xl font-semibold tracking-tight text-red-700 dark:text-red-400">₹1,200</span>
+      </div>
+      <div className={`${row} border-b-0`}>
+        <span className="text-muted-foreground">1,200 ÷ 3,800 × 365 ÷ 7</span>
+        <span className="text-4xl font-semibold tracking-tight text-primary">1,647%</span>
+      </div>
+      <p className="mt-4 text-sm text-muted-foreground">in hand · extra · a year. Same offer, same answer, every time.</p>
+    </div>
+  )
+}
+
+/** Step 3 picture: two readers compared field by field (the case from our tests). */
+function RecheckVisual() {
+  const rows: [string, string, string, boolean][] = [
+    ['fee', '1,200', '1,200', true],
+    ['repay', '5,000', '5,000', true],
+    ['in hand', '4,000', 'not printed', false],
+  ]
+  return (
+    <div>
+      <div className="grid grid-cols-4 border-b border-border pb-3 font-mono text-xs tracking-wide text-muted-foreground uppercase">
+        <span />
+        <span>Reader 1</span>
+        <span>Reader 2</span>
+        <span className="text-right">Agree</span>
+      </div>
+      {rows.map(([field, a, b, ok]) => (
+        <div key={field} className="grid grid-cols-4 items-center border-b border-border py-4 font-mono text-sm">
+          <span className="text-muted-foreground">{field}</span>
+          <span>{a}</span>
+          <span>{b}</span>
+          <span className="flex justify-end">
+            {ok ? (
+              <Check className="size-5 text-emerald-700 dark:text-emerald-400" aria-label="agree" />
+            ) : (
+              <X className="size-5 text-red-700 dark:text-red-400" aria-label="disagree" />
+            )}
+          </span>
+        </div>
+      ))}
+      <p className="mt-5 leading-relaxed">
+        The first reader invented an in-hand amount. The second did not see one. So that value is set aside and the
+        code works it out: <span className="font-semibold text-emerald-700 dark:text-emerald-400">₹3,800</span>.
+      </p>
+    </div>
+  )
+}
+
+const STEPS: Step[] = [
   {
-    icon: Eye,
-    title: 'The AI only reads',
-    body: 'A vision model copies the numbers printed on the offer into a fixed form: loan, fee, repayment, days. It is told never to add, subtract or guess. For a pasted SMS, any number it returns that is not written in the message is thrown away.',
+    n: '01',
+    title: 'The AI only reads.',
+    body: 'A vision model copies the numbers printed on the offer into a fixed form. It is told never to add, subtract or guess. For a pasted SMS, any number it returns that is not written in the message is thrown away.',
+    visual: <ReadVisual />,
   },
   {
-    icon: Calculator,
-    title: 'Python calculates',
-    body: 'Plain, tested code checks that the printed numbers agree, works out what the ad left unsaid, and does every rupee of the maths. The same offer always gives the same answer.',
+    n: '02',
+    title: 'Python calculates.',
+    body: 'Plain, tested code checks that the printed numbers agree, works out what the ad left unsaid, and does every rupee of the maths.',
+    visual: <MathsVisual />,
   },
   {
-    icon: RefreshCcw,
-    title: 'A second AI re-checks',
-    body: 'If the sums do not add up, a model from a different company reads the photo again. Whatever the two disagree on is shown as “pata nahi chala”: could not verify. Never a guess.',
+    n: '03',
+    title: 'A second AI re-checks.',
+    body: 'If the sums do not add up, a model from a different company reads the photo again. What the two disagree on is never shown as fact. If code cannot work it out either, Raju hears “pata nahi chala”.',
+    visual: <RecheckVisual />,
   },
+]
+
+const CODE = [
+  <span key="c" className="text-muted-foreground"># api/core/maths.py · the demo offer: loan 5,000 · fee 1,200 · 7 days</span>,
+  <span key="l1">in_hand    = principal - fees              <span className="text-emerald-700 dark:text-emerald-400">→ 3,800</span></span>,
+  <span key="l2">extra      = repay_total - in_hand         <span className="text-red-700 dark:text-red-400">→ 1,200</span></span>,
+  <span key="l3">per_day    = extra / tenure_days           <span className="text-muted-foreground">→ 171</span></span>,
+  <span key="l4">cost_pct   = extra / in_hand               <span className="text-muted-foreground">→ 0.316</span></span>,
+  <span key="l5">apr_simple = cost_pct * 365 / tenure_days  <span className="text-primary">→ 1,647%</span></span>,
 ]
 
 const LADDER = [
@@ -46,80 +156,60 @@ export default function How() {
   return (
     <>
       <PageHero label="How it works" title="The AI reads." accent="Python calculates.">
-        A wrong rupee number is the one mistake this product cannot make. So the AI is only the eyes. Everything that
-        becomes a number on Raju’s card is worked out by code a person can read and test.
+        Scroll: three jobs, kept strictly apart.
       </PageHero>
 
-      <Section n="01" label="Three jobs, kept apart">
-        <Columns>
-          {STEPS.map((s, i) => (
-            <Reveal key={s.title} delay={i * 0.12}>
-              <s.icon className="size-7 text-primary" aria-hidden />
-              <h2 className="mt-8 text-2xl font-semibold tracking-tight">{s.title}</h2>
-              <p className="mt-3 leading-relaxed text-muted-foreground">{s.body}</p>
-            </Reveal>
-          ))}
-        </Columns>
-      </Section>
+      <section className="border-t border-border px-[3vw] py-28">
+        <ScrollText
+          className="max-w-[22ch] text-[clamp(2.2rem,5.6vw,6rem)] leading-[1.02] font-semibold tracking-[-0.04em] lg:max-w-[24ch]"
+          text="A wrong rupee number is the one mistake this product cannot make. So the AI is only the eyes."
+        />
+      </section>
 
-      <Section n="02" label="All of the maths" tinted>
-        <div className="grid items-start gap-12 lg:grid-cols-12">
-          <Reveal className="lg:col-span-5">
+      <section className="border-t border-border bg-card px-[3vw] py-16 lg:py-0">
+        <StickySteps steps={STEPS} />
+      </section>
+
+      <Section n="04" label="All of the maths">
+        <div className="grid items-center gap-12 lg:grid-cols-12">
+          <Reveal className="lg:col-span-4">
             <h2 className="text-[clamp(2rem,4vw,3.5rem)] leading-[1] font-semibold tracking-[-0.03em]">
               Five lines. No model involved.
             </h2>
             <p className="mt-6 leading-relaxed text-muted-foreground">
-              From <span className="font-mono text-sm text-foreground">api/core/maths.py</span>. If an input is missing
-              or does not add up, every number that depends on it becomes “could not verify”, and the verdict becomes
-              “cannot say”.
+              If an input is missing or does not add up, every number that depends on it becomes “could not verify”,
+              and the verdict becomes “cannot say”.
             </p>
           </Reveal>
-          <Reveal className="lg:col-span-7" delay={0.15}>
-            <pre className="overflow-x-auto border border-border bg-background p-6 font-mono text-sm leading-8">
-              <span className="text-muted-foreground"># the demo offer: loan 5,000 · fee 1,200 · repay 5,000 · 7 days{'\n'}</span>
-              in_hand    = principal - fees              <span className="text-emerald-700 dark:text-emerald-400">→ 3,800</span>
-              {'\n'}extra      = repay_total - in_hand         <span className="text-red-700 dark:text-red-400">→ 1,200</span>
-              {'\n'}per_day    = extra / tenure_days           <span className="text-muted-foreground">→ 171</span>
-              {'\n'}cost_pct   = extra / in_hand               <span className="text-muted-foreground">→ 0.316</span>
-              {'\n'}apr_simple = cost_pct * 365 / tenure_days  <span className="text-primary">→ 1,647%</span>
-            </pre>
-          </Reveal>
+          <div className="overflow-x-auto border border-foreground/25 bg-card p-8 lg:col-span-8">
+            <TypedLines lines={CODE} className="font-mono text-[0.95rem] leading-9" />
+          </div>
         </div>
       </Section>
 
-      <Section n="03" label="When a service is down">
-        <Reveal>
-          <div className="overflow-x-auto">
-            <table className="w-full min-w-[44rem] border-t border-border text-left">
-              <thead>
-                <tr className="text-xs tracking-[0.15em] text-muted-foreground uppercase">
-                  {['Job', 'First', 'Backup', 'If both fail'].map((h) => (
-                    <th key={h} className="border-b border-border py-4 pr-6 font-medium">
-                      {h}
-                    </th>
-                  ))}
-                </tr>
-              </thead>
-              <tbody>
-                {LADDER.map((row) => (
-                  <tr key={row[0]} className="border-b border-border align-top">
-                    <td className="py-5 pr-6 text-lg font-semibold tracking-tight">{row[0]}</td>
-                    <td className="py-5 pr-6">{row[1]}</td>
-                    <td className="py-5 pr-6 text-muted-foreground">{row[2]}</td>
-                    <td className="py-5 text-muted-foreground">{row[3]}</td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
-          </div>
-          <p className="mt-6 max-w-2xl text-sm text-muted-foreground">
-            Each service is tried once, with a time limit and no retry. A rate limit moves to the backup at once. Raju
-            never sees an error code, only a short line in Hindi.
-          </p>
-        </Reveal>
+      <Section n="05" label="When a service is down" tinted>
+        <div className="border-t border-foreground/25">
+          {LADDER.map((row, i) => (
+            <Reveal key={row[0]} delay={i * 0.06}>
+              <div className="group grid items-baseline gap-2 border-b border-border py-6 transition-colors hover:bg-background lg:grid-cols-12 lg:gap-6 lg:px-4">
+                <p className="text-2xl font-semibold tracking-tight lg:col-span-3">{row[0]}</p>
+                <p className="lg:col-span-3">{row[1]}</p>
+                <p className="flex items-baseline gap-2 text-muted-foreground lg:col-span-3">
+                  <ArrowRight className="size-4 shrink-0 translate-y-0.5 text-primary transition-transform group-hover:translate-x-1" aria-hidden />
+                  {row[2]}
+                </p>
+                <p className="text-sm text-muted-foreground lg:col-span-3 lg:text-right">{row[3]}</p>
+              </div>
+            </Reveal>
+          ))}
+        </div>
+        <p className="mt-6 max-w-2xl text-sm text-muted-foreground">
+          First choice, then the backup, then what Raju sees if both fail. Each service is tried once, with a time
+          limit and no retry. He never sees an error code.
+        </p>
       </Section>
 
-      <Section n="04" label="Measured, not promised" tinted>
+      <Section n="06" label="Measured, not promised">
         <Columns cols={4}>
           <div>
             <p className="text-[clamp(3rem,5.5vw,5rem)] leading-none font-semibold tracking-[-0.04em]">
@@ -143,7 +233,7 @@ export default function How() {
         <p className="mt-8 text-sm text-muted-foreground">Real runs on 13 and 14 Nov 2026, on synthetic loan offers.</p>
       </Section>
 
-      <Section n="05" label="What it cannot do">
+      <Section n="07" label="What it cannot do" tinted>
         <ul className="grid gap-x-12 border-t border-border lg:grid-cols-2">
           {LIMITS.map((limit, i) => (
             <Reveal key={limit} delay={(i % 2) * 0.1}>
@@ -155,10 +245,12 @@ export default function How() {
           ))}
         </ul>
         <div className="mt-14">
-          <Link to="/check" className={buttonVariants({ size: 'lg', className: 'h-14 px-8 text-base' })}>
-            Check an offer
-            <ArrowRight className="size-4" aria-hidden />
-          </Link>
+          <Magnetic>
+            <Link to="/check" className={buttonVariants({ size: 'lg', className: 'h-16 px-10 text-lg' })}>
+              Check an offer
+              <ArrowRight className="size-5" aria-hidden />
+            </Link>
+          </Magnetic>
         </div>
       </Section>
     </>

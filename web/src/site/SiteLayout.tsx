@@ -1,5 +1,5 @@
 import { ArrowUpRight, Moon, Sun } from 'lucide-react'
-import { motion, useMotionValueEvent, useReducedMotion, useScroll } from 'motion/react'
+import { useMotionValueEvent, useScroll } from 'motion/react'
 import { useEffect, useState } from 'react'
 import { Link, NavLink, Outlet, useLocation } from 'react-router-dom'
 import { buttonVariants } from '@/components/ui/button'
@@ -7,58 +7,65 @@ import { useTheme } from '@/lib/theme'
 import { NAV } from './shell'
 
 // Layout of the public website (D47). It is separate from the PWA layout in App.tsx: its own
-// floating nav and footer, full width, and the PWA never links back here.
+// borderless nav and footer, full width, and the PWA never links back here.
 
-/** A floating pill. It slides away while scrolling down and comes back on any scroll up. */
+/** No box and no border: clear over the top of the page, frosted glass once the page scrolls
+ *  under it, so it never has a closed boundary and never melts into the content. */
 function SiteNav() {
   const { theme, setTheme } = useTheme()
   const dark = theme === 'dark'
-  const reduce = useReducedMotion()
   const { scrollY } = useScroll()
-  const [hidden, setHidden] = useState(false)
+  const [scrolled, setScrolled] = useState(false)
 
-  useMotionValueEvent(scrollY, 'change', (y) => {
-    const before = scrollY.getPrevious() ?? 0
-    setHidden(y > 160 && y > before)
-  })
+  useMotionValueEvent(scrollY, 'change', (y) => setScrolled(y > 24))
 
   return (
-    <motion.header
-      className="fixed inset-x-0 top-4 z-30 flex justify-center px-4"
-      animate={{ y: hidden && !reduce ? -96 : 0 }}
-      transition={{ duration: 0.35, ease: [0.22, 1, 0.36, 1] }}
+    <header
+      className={`fixed inset-x-0 top-0 z-30 transition-[background-color,backdrop-filter] duration-300 ${
+        scrolled ? 'bg-background/70 backdrop-blur-xl backdrop-saturate-150' : 'bg-transparent'
+      }`}
     >
-      <div className="flex h-14 items-center gap-1 rounded-full border border-foreground/20 bg-background py-2 pr-2 pl-6">
-        <Link to="/" className="mr-4 text-base font-semibold tracking-tight">
+      <div className="flex h-[4.5rem] items-center gap-8 px-[3vw]">
+        <Link to="/" className="text-xl font-semibold tracking-tight">
           Karz<span className="text-primary">Samjho</span>
         </Link>
-        <nav className="hidden items-center sm:flex">
+        <nav className="hidden flex-1 items-center gap-8 sm:flex">
           {NAV.map((item) => (
             <NavLink
               key={item.to}
               to={item.to}
               className={({ isActive }) =>
-                `rounded-full px-3 py-2 text-sm transition-colors hover:text-foreground ${isActive ? 'text-foreground' : 'text-muted-foreground'}`
+                `group relative py-2 text-sm font-medium transition-colors hover:text-foreground ${isActive ? 'text-foreground' : 'text-muted-foreground'}`
               }
             >
-              {item.label}
+              {({ isActive }) => (
+                <>
+                  {item.label}
+                  <span
+                    aria-hidden
+                    className={`absolute inset-x-0 bottom-0 h-px origin-left bg-primary transition-transform duration-300 group-hover:scale-x-100 ${isActive ? 'scale-x-100' : 'scale-x-0'}`}
+                  />
+                </>
+              )}
             </NavLink>
           ))}
         </nav>
-        <button
-          type="button"
-          aria-label={dark ? 'Switch to light theme' : 'Switch to dark theme'}
-          onClick={() => setTheme(dark ? 'light' : 'dark')}
-          className="ml-2 flex size-10 items-center justify-center rounded-full text-muted-foreground transition-colors hover:bg-muted hover:text-foreground"
-        >
-          {dark ? <Sun className="size-4" /> : <Moon className="size-4" />}
-        </button>
-        <Link to="/check" className={buttonVariants({ className: 'h-10 rounded-full px-5' })}>
-          Open the app
-          <ArrowUpRight className="size-4" aria-hidden />
-        </Link>
+        <div className="ml-auto flex items-center gap-2">
+          <button
+            type="button"
+            aria-label={dark ? 'Switch to light theme' : 'Switch to dark theme'}
+            onClick={() => setTheme(dark ? 'light' : 'dark')}
+            className="flex size-10 items-center justify-center rounded-full text-muted-foreground transition-colors hover:text-foreground"
+          >
+            {dark ? <Sun className="size-4" /> : <Moon className="size-4" />}
+          </button>
+          <Link to="/check" className={buttonVariants({ className: 'h-10 px-5' })}>
+            Open the app
+            <ArrowUpRight className="size-4" aria-hidden />
+          </Link>
+        </div>
       </div>
-    </motion.header>
+    </header>
   )
 }
 

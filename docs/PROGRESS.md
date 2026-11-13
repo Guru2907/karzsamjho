@@ -21,6 +21,14 @@ Every agent session and every person adds an entry here at the end of each task,
 
 ## Log
 
+### 13 Nov 2026, 6:05 PM · D2 (T3) · agent for Siddeshwar
+- Did: speak.py. speech_text fills the fixed Hindi sentence from CLAUDE.md (whole numbers, no commas), or says "Is offer ke saare number saaf nahi padhe gaye..." when in_hand, repay_total, tenure_days or extra is unverified. make_audio writes <AUDIO_DIR>/<id>.mp3 through fallback.speak and returns /api/audio/<id>.mp3, or None when voice is off, fails or raises.
+- Files: api/core/speak.py, api/tests/test_speak.py, docs/TASKS.md, docs/PROGRESS.md
+- Proof: `pytest -q` 19 passed (13 speak with a fake fallback.speak: PLAN.md row 1 sentence exact, row 8 "not clear", audio ok / failed / error / voice off; 6 smoke).
+- Status in docs/TASKS.md: D2 = review
+- Next: T4 bot (D3, D4).
+- Broken / risks: a real edge-tts run from this laptop's Claude session timed out at 6 s (connection never opened; probably the session sandbox, not yet re-tried outside it). "MP3 in under 5 s" is not proven yet: check it once fallback/speak is merged.
+
 ### 13 Nov 2026, 5:15 PM · teammate prompts + PR workflow · agent for Gurpreet
 - Did: full paste-ready prompts in docs/PLAN.md for Siddeshwar (Claude Code), the PWA teammate (RajuCard, /check, errors, Raju mode, home-screen app) and the data teammate (demo ads, SMS offers, 30 offers, harassment samples, RBI list, vendor notes). Every change now goes through a PR; Gurpreet merges (D27).
 - Files: docs/PLAN.md, docs/TASKS.md (E6 into tonight; G1, G2, I1, I3 to the data teammate), docs/DECISIONS.md (D27), docs/PROGRESS.md

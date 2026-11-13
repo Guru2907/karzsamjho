@@ -21,6 +21,14 @@ Every agent session and every person adds an entry here at the end of each task,
 
 ## Log
 
+### 13 Nov 2026, 5:50 PM · bot fixes after reviewing PR #7 (D3, D4) · agent for Gurpreet
+- Did: on Gurpreet's request, fixed 3 small things in Siddeshwar's bot on a separate branch: the API wait comes from the config timeouts (45 s; the worst photo check needs 36 s, so the bot no longer says "server band hai" while the server is still working); rupees in Indian grouping (₹1,00,000); first bot tests.
+- Files: bot/main.py, api/tests/test_bot.py (new)
+- Proof: `pytest -q` 152 passed on main + #10 + #7 + this (17 new bot tests). Real API + the bot's own ask_api/send_result (Telegram faked): photo -> card + MP3 3.8 s; SMS 1,00,000 -> ₹95,000 / ₹1,20,000 / 90 din / ₹25,000 + MP3 5.7 s; non-loan -> Hindi refusal only.
+- Status in docs/TASKS.md: D3, D4 stay as Siddeshwar set them
+- Next: real Telegram test on the server laptop with the demo bot.
+- Broken / risks: none.
+
 ### 13 Nov 2026, 5:26 PM · D3 D4 (T4) · agent for Siddeshwar
 - Did: bot/main.py. Card now HTML (names escaped): verdict line, 4 symbols with bold rupees, RBI line (hidden when lender.match is null, never "illegal"), next step. After the card, the MP3 from audio_url goes by sendAudio; no audio_url or a failed download -> card alone. Pasted text -> POST /api/checks JSON {text, lang "hi", source "telegram"}. 422 -> detail.text_hi; server off / other errors -> Hindi messages.
 - Files: bot/main.py, docs/TASKS.md, docs/PROGRESS.md

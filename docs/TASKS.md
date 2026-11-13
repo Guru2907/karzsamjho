@@ -12,7 +12,7 @@ Owners, order, target times and signatures are in docs/PLAN.md. In scope tonight
 - PWA teammate: E2, E3, E9, E6, E7
 - Data teammate: G3, G8, then G1, G2, G4; also I1 (mentor questions) and I3 (backup video)
 
-After the review: owners and order are in docs/PLAN.md, "After the review" (D34). Gurpreet: seconds stamp on the card and A4 now, then A3, A5, F2, F4, C1, C2, F5, then D6/D7 backend. Siddeshwar: F1 now, then F3, D5, then D6 bot and D7. PWA teammate: all E tasks. Data teammate: G1 to G4, G8, I1, I3.
+After the review: owners and order are in docs/PLAN.md, "After the review" (D34). Gurpreet: seconds stamp on the card and A4 now, then A3, A5, F2, F4, C1, C2, F5, no D6/D7 (D35). Siddeshwar: D6 and D7 in full after the 7:30 gate, then F1, F3, D5. PWA teammate: all E tasks. Data teammate: G1 to G4, G8, I1, I3.
 
 Waiting until after the review: A3 (database), the cache half of A4, A5, C1 to C3, D5, E4, E5, E8, all of F.
 All changes go through a pull request that Gurpreet merges (D27).
@@ -190,14 +190,14 @@ All changes go through a pull request that Gurpreet merges (D27).
 - Done when: A forwarded message creates a case event and the PDF arrives in the chat
 
 ### D6 · Voice-note input with Whisper
-- Status: todo (Gurpreet: API side; Siddeshwar: bot side)
+- Status: todo (Siddeshwar, all of it: bot and API side, D35)
 - Type: Stretch
 - Depends on: D3, B2
 - Files: bot/main.py (Siddeshwar); api/core/fallback.py, api/core/extract.py, api/main.py, api/core/schemas.py (Gurpreet)
 - Done when: A spoken offer in Hindi returns a reply; number words become digits through gpt-oss-20b (D22); engines.listen = "whisper" (D33). Only after the 7:30 gate
 
 ### D7 · Bengali and Marathi voice (was Kannada; changed 6:50 PM, D32)
-- Status: todo (Siddeshwar: speak.py templates + bot /bhasha; Gurpreet: lang through main.py, voices in config.py)
+- Status: todo (Siddeshwar, all of it: templates, voices, lang through the API, /bhasha, D35)
 - Type: Stretch
 - Depends on: D2
 - Files: api/core/speak.py, bot/main.py (Siddeshwar); api/main.py, api/core/config.py, api/core/fallback.py (Gurpreet)

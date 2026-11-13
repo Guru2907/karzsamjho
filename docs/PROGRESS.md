@@ -21,6 +21,14 @@ Every agent session and every person adds an entry here at the end of each task,
 
 ## Log
 
+### 14 Nov 2026, 12:45 AM · B11 Gemini backup for SMS and voice · agent for Gurpreet
+- Did: read_text tries gpt-oss-20b then Gemini Flash-Lite (regex stays the caller's last resort); transcribe tries Whisper then Gemini listening to the audio (OGG / WAV / MP3). Same rules: temperature 0, timeout, no retry, a 429 or a rejected reply moves on, engine name recorded. Harassment labelling (F1) gets the backup too because it uses read_text. Tests: conftest makes both Gemini backups offline, so no test reaches the internet even with real keys.
+- Bug found in the first drill and fixed: the Gemini client was not kept in a variable, so Python closed it before the request ("client has been closed"); a regression test fails if that comes back.
+- Files: api/core/fallback.py, api/tests/test_fallback.py, api/tests/conftest.py, docs/ARCHITECTURE.md, TASKS.md
+- Proof: `pytest -q` 281 passed (15 new), also with real keys loaded (1.4 s, no network). Real drill with a wrong Groq key: Hinglish SMS -> read by Gemini -> 9000 / 11500 / 14 / 2500 in 4.1 s; Hindi voice note -> heard and read by Gemini -> 5000 / 6000 / 7 / 1000 in 8.1 s.
+- Status in docs/TASKS.md: B11 = review
+- Next: wave 1 is done. Later list: C2, F4, F5, G6, G7 (kill-switch drill), G5, I5.
+- Broken / risks: Gemini free tier is 15/min, 500/day, shared by photos, SMS and voice when Groq is down.
 ### 14 Nov 2026, 12:20 AM · C1 RBI lender check · agent for Gurpreet
 - Did: lender.py matches the app/lender name read from the ad (RapidFuzz WRatio; generic words like loan/app/pvt/ltd stripped, better score kept; also against the regulated entity) and any website / Play Store link in the SMS against the local copy of RBI's directory (api/data/rbi_dla.csv, path in config RBI_DLA_PATH; re-read when the file changes). FOUND >= 90 / SIMILAR >= 70 / NOT_FOUND; a listed name with a link to another domain = SIMILAR (possible clone); empty directory or nothing read = null ("not checked", never "not found"). main.py fills CheckResult.lender and adds Siddeshwar's spoken line (C4) when his function is present.
 - Files: api/core/lender.py, api/core/config.py, api/main.py, api/tests/test_lender.py (new), docs/ARCHITECTURE.md, TASKS.md

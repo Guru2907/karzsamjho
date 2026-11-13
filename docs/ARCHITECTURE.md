@@ -54,10 +54,10 @@ No card -> `422 {"detail": {"code": "NOT_A_LOAN" | "UNREADABLE", "text_hi": "...
 |---|---|---|---|
 | Photo reading: Qwen (Groq) | 6 s | Gemini 3.5 Flash-Lite, 12 s | "Photo saaf nahi hai, dobara bhejo"; helper page offers manual entry |
 | Second reading (the other reader) | 12 s / 6 s | none | disputed fields shown as "couldn't verify" |
-| Text reading: gpt-oss-20b | 5 s | regex for rupee amounts and days | more "couldn't verify" chips |
+| Text reading: gpt-oss-20b | 5 s | Gemini Flash-Lite (12 s), then regex for rupee amounts and days (B11) | more "couldn't verify" chips |
 | Harassment labelling: gpt-oss-20b | 5 s | keyword list + time rule | H1/H6 still fire; text rules "needs review" |
 | Voice out: edge-tts | 6 s | none | card alone |
-| Voice-note in: Whisper (stretch) | 8 s | none | "Photo ya message bhejo" |
+| Voice-note in: Whisper | 8 s | Gemini Flash-Lite listens to the audio (12 s, B11) | "Awaaz saaf nahi aayi, dobara bolo ya photo bhejo" |
 | Telegram | n/a | web /check | pitch continues in browser |
 | Venue Wi-Fi | checked every 30 min | phone hotspot | nothing |
 | Everything | n/a | cached demo ads, then backup video | demo runs from cache |

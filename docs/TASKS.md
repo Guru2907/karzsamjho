@@ -154,7 +154,7 @@ All changes go through a pull request that Gurpreet merges (D27).
 - Done when: "पहले 1500 रुपये प्रोसेसिंग शुल्क भेजो", "আগে 1499 টাকা প্রসেসিং ফি পাঠান" and "आधी 999 रुपये नोंदणी शुल्क पाठवा" each trigger the warning even when the AI misses it; normal offers in those scripts do not
 
 ### B11 · Gemini as backup for SMS and voice when Groq is down
-- Status: todo (Gurpreet)
+- Status: review (Gurpreet): drill with a wrong Groq key passed (12:45 AM): SMS and Hindi voice note answered by Gemini, numbers right
 - Type: Must
 - Depends on: B2, D6
 - Files: api/core/fallback.py, api/tests/test_fallback.py

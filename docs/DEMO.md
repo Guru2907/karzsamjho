@@ -11,9 +11,9 @@ Stage roles (to be assigned): presenter · phone · laptop · technical answers.
 | 0:20-0:45 | Raju + evidence | Raju needs Rs 5,000 tonight. Only 1 in 3 digital-loan users knew what a key fact statement is (FACE, 2024). Add one real quote if we talked to a vendor |
 | 0:45-1:00 | Cost | "Rs 3,800 in hand, Rs 5,000 back in a week. Rs 1,200 extra. He finds out after he signs." |
 | 1:00-1:10 | Solution | "Send a photo. Hear the cost in rupees, in your language." |
-| 1:10-2:00 | LIVE 1: Snap & hear | Phone photographs printed ad 1 in Telegram; speaker plays the Hindi; hold up the card and the seconds stamp |
-| 2:00-2:20 | LIVE 2: Next step | The card AND the voice say "found / not found in RBI's list" (+ the bank behind it and the list date, D37) + one next step; laptop shows helper view with the maths. Never "safe" or "illegal" |
-| 2:20-3:05 | LIVE 3: Harassment log | In Telegram, forward a threat timed 9:40 PM (or /log + paste): the bot answers with H1 + H2 in Hindi and sends the evidence PDF (timeline, masked numbers, hash chain, complaint draft, "Day 1 of 30"). The case page needs Tejaswini's E5 |
+| 1:10-2:00 | LIVE 1: Snap & hear | Phone photographs printed demo image 02 ("Jaldi Gullak": Rs 3,800 in hand, Rs 5,000 back in 7 days, Rs 1,200 extra) in Telegram; speaker plays the Hindi; hold up the card and the seconds stamp |
+| 2:00-2:20 | LIVE 2: Next step | The card AND the voice say "found / not found in RBI's list" (+ the bank behind it and the list date, D37) + one next step; laptop shows helper view with the maths. Never "safe" or "illegal". Use demo image 08 (KreditBee -> found) and image 10 (Alok Auto Credit -> RBI cancelled registration) |
+| 2:20-3:05 | LIVE 3: Harassment log | In Telegram, forward the 11:30 PM sample h4 from api/data/harassment/samples.json (or /log + paste): the bot answers with H1 + H2 in Hindi and sends the evidence PDF (timeline, masked numbers, hash chain, complaint draft, "Day 1 of 30"). The case page needs Tejaswini's E5 |
 | 3:05-3:30 | Before / after | Before: learns the cost after a week, screenshots scattered. After: hears it in T s; evidence in under a minute |
 | 3:30-4:05 | Proof and limits | Measured 30-offer result incl. misses. "Synthetic ads. We can't stop someone borrowing. We tell him the cost first." |
 | 4:05-4:25 | How it's built | One picture: "The AI reads, plain code does the maths, a second model re-reads when numbers disagree." No jargon |
@@ -21,7 +21,7 @@ Stage roles (to be assigned): presenter · phone · laptop · technical answers.
 | 4:40-5:00 | Plan kept + close | Deck roadmap beside real commit times. "Loan lene se pehle, suno." |
 
 ## Luck-proofing
-1. Use the 3 printed ads that are already run and cached. A fresh photo only if time allows.
+1. Use the printed demo-pack images (02 for LIVE 1, 08 and 10 for LIVE 2), each run once before the pitch. A fresh photo only if time allows.
 2. Telegram stalls 5 s -> laptop runs the same ad on /check.
 3. Voice fails -> "the card works without audio", move on.
 4. Network gone -> backup video from the matching point; keep talking.
@@ -29,8 +29,24 @@ Stage roles (to be assigned): presenter · phone · laptop · technical answers.
 6. The public website (/, /how, /partners) is not in the 5 minutes; open it only if asked about NGOs, design or how it works. If shown: scroll Home slowly (the phone story plays on scroll), then /how section 02 for the maths. The bank-mitra commission on /partners is a proposal, say so.
 7. Over 5:00 in rehearsal -> cut words, don't speed up.
 
+## Demo pack (D52): which item for which moment
+All in api/data/offers/ (images in demo/, answers in demo_pack.json and sms_demo.json) and api/data/harassment/samples.json. Expected answers were written before any run; results of the real run are in docs/progress/2026-11-14_0500_G-demo-pack_siddeshwar.md.
+
+| Moment | Item | Expected on the card / voice |
+|---|---|---|
+| LIVE 1 Snap & hear | image 02 "Jaldi Gullak" | ₹3,800 in hand · ₹5,000 back · 7 din · ₹1,200 extra · VERY_COSTLY |
+| Scam warning (B9, B12) | image 03 (WhatsApp forward) or SMS 1 | "Savdhaan! ... Paise mat bhejo", next step DO_NOT_PAY_FIRST |
+| LIVE 2 found | image 08 or SMS 2 "KreditBee" | found in RBI's list, linked to its lender, list date, registered NBFC; USUAL |
+| LIVE 2 similar | image 09 "KreditBea" + link | similar name: check the exact name (CHECK_APP_NAME) |
+| LIVE 2b warning | image 10 or SMS 3 "Alok Auto Credit Pvt. Ltd." | RBI cancelled registration, with the list date; "Is company se loan lene se pehle ruko" |
+| Hindi / Bengali / Marathi | image 04 (Hindi pamphlet), image 05 (Bengali, /bhasha bn), SMS 4 (Marathi, /bhasha mr) | numbers read from each script; voice in that language |
+| Honest "couldn't verify" | image 07 (numbers do not add up) | second reading, in-hand "couldn't verify", CANNOT_SAY |
+| Big loan | image 06 (email, ₹5 lakh, EMI x 24) | ₹5,00,000 in hand · ₹8,64,000 back · COSTLY |
+| Voice note (D6) | read SMS 1 aloud | same answer as the pasted SMS |
+| LIVE 3 harassment | samples h1-h5 (forward in order) | H2+H4, H3, H5 (PDF shows XXXX XXXX 9012), H1+H2, none |
+
 ## Demo assets checklist
-- [ ] 3 printed ads (2 copies each), pre-run and cached on the server
+- [ ] Demo-pack images printed at A5, 2 copies each: 02, 03, 08, 09, 10 (api/data/offers/demo/); each run once before the pitch
 - [ ] Threat message ready to forward on the phone
 - [ ] Browser tabs open in order: /check (helper view), /cases/:id
 - [ ] Backup video: 60 s clip (7:30 PM) and full run (3:00 AM)
@@ -38,11 +54,11 @@ Stage roles (to be assigned): presenter · phone · laptop · technical answers.
 - [ ] Speaker paired, phone at 100%, hotspot ready
 - [x] Seconds stamp for LIVE 1: the Telegram card now ends with "⏱ 3.9 sec" (time from photo received to answer, measured by the API)
 - [x] Cached ads: the card now says "⏱ pehle se jaancha hua" (checked before) instead of "⏱ 0.0 sec" (D10, 1:59 AM). To show the real speed ("⏱ 3.2 sec"), clear the cache folder before the pitch so the first send is a fresh read
-- [ ] Optional LIVE moment (B9): paste "Your loan is approved. Pay ₹1,499 processing fee to release funds." -> the voice starts "Savdhaan! ... Paise mat bhejo"
+- [ ] Optional LIVE moment (B9): paste SMS 1 from api/data/offers/sms_demo.json ("Sikka Swift: ... pehle 799 rupaye processing fee bhejo ...") or photograph image 03 (pay Rs 1,499 first) -> the voice starts "Savdhaan! ... Paise mat bhejo", next step DO_NOT_PAY_FIRST
 - [ ] LIVE 2 lender line: built (C1 + C4); needs Anam's real RBI CSV (G4), otherwise it says nothing ("not checked")
-- [ ] LIVE 2 with RBI's real list (G4, 4:30 AM, D49): paste the 3 SMS in api/data/offers/lender_demo.json: "KreditBee ..." -> found, linked to the lender, list date; "KreditBea ..." -> "similar name, check the exact name"; "Gullak Go Loan ..." -> not found. Matching is whole-name only, so invented names are never "found".
-- [ ] LIVE 2b cancelled registration (C3, D51): paste the 4th SMS ("Alok Auto Credit Pvt. Ltd.: Special loan offer ...") -> card line "⚠️ RBI ne is company ka NBFC registration radd kiya hai: Alok Auto Credit Pvt. Ltd. (list: 2026-09-30)", voice "Dhyaan do: RBI ne ... radd kiya hai, 30 September 2026 ki list ke hisaab se.", next step "Is company se loan lene se pehle ruko". Say it as a fact with its date; never "fraud" or "fake".
-- [ ] Printed ads: ZapCash and EasyRupee are REAL apps in RBI's list, so ai_ad3 and ai_ad2 are renamed to the invented "Jaldi Gullak" and "Galla Go" (both not found). Never show a made-up costly ad under a real app's name. Print only the renamed ads.
+- [ ] LIVE 2 with RBI's real list (G4, D49): paste SMS 2 from api/data/offers/sms_demo.json or photograph image 08 ("KreditBee ...") -> found, linked to the lender, list date, registered NBFC; image 09 ("KreditBea" + link) -> "similar name, check the exact name"; image 02 ("Jaldi Gullak") -> not found. Matching is whole-name only, so invented names are never "found".
+- [ ] LIVE 2b cancelled registration (C3, D51): paste SMS 3 from api/data/offers/sms_demo.json or photograph image 10 ("Alok Auto Credit Pvt. Ltd.: Special loan offer ...") -> card line "⚠️ RBI ne is company ka NBFC registration radd kiya hai: Alok Auto Credit Pvt. Ltd. (list: 2026-09-30)", voice "Dhyaan do: RBI ne ... radd kiya hai, 30 September 2026 ki list ke hisaab se.", next step "Is company se loan lene se pehle ruko". Say it as a fact with its date; never "fraud" or "fake".
+- [x] Demo data names (D52): the old plain demo ads and SMS files are removed. Every costly or scam item in the demo pack uses an invented name checked NOT_FOUND; the only real names (KreditBee, Alok Auto Credit Pvt. Ltd.) carry ordinary terms marked "Synthetic sample". Never show a made-up costly ad under a real app's name.
 - [x] Verify (F4): /api/cases/<id>/verify recomputes the chain; a hand-edited entry makes it ok:false (proven 1:01 AM). Optional live moment: show ok:true, edit one entry, show ok:false
 - [ ] LIVE 2 needs the lender check (C1) and next step (C2); C2 is built (1:31 AM): the card's 👉 line now follows the verdict, e.g. the Raju ad (VERY_COSTLY) says "Yeh loan bahut mehenga hai. Bank, SHG ya cooperative se sasta loan poochho." The RBI line still needs Anam's CSV (G4)
 

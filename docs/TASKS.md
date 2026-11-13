@@ -406,19 +406,19 @@ All changes go through a pull request that Gurpreet merges (D27).
 
 ## G. Testing and data
 
-### G1 · 30 synthetic offers with expected answers (before the event)
-- Status: todo (Anam; 3 ads so far)
+### G1 · 10 detailed synthetic offer images with expected answers (was 30 offers; D52)
+- Status: doing (Siddeshwar, D52; moved from Anam): demo pack PR data/demo-pack
 - Type: Must
 - Depends on: -
-- Files: api/data/offers/
-- Done when: Images and an answers file exist; answers were written before any run
+- Files: api/data/offers/demo/01.png..10.png, api/data/offers/demo_pack.json, scripts/make_demo_pack.py
+- Done when: 10 detailed images with expected answers (D52); answers were written before any run
 
-### G2 · 10 harassment samples with expected rules (before the event)
-- Status: todo (Anam)
+### G2 · 5 harassment samples with expected rules (was 10; D52)
+- Status: doing (Siddeshwar, D52; moved from Anam): demo pack PR data/demo-pack
 - Type: Must
 - Depends on: -
-- Files: api/data/harassment/
-- Done when: File exists
+- Files: api/data/harassment/samples.json
+- Done when: 5 samples (D52) with expected rules written before any run
 
 ### G3 · 3 demo ads printed in colour, two copies each (before the event)
 - Status: review (Anam): ai_ad1-3.png + demo_expected.json merged (#19); printing still to do
@@ -456,12 +456,12 @@ All changes go through a pull request that Gurpreet merges (D27).
 - Done when: All four drills in section 13 pass
 
 ### G8 · 5 SMS-style text offers with expected numbers
-- Status: doing (Anam): 3 SMS merged (#19, scam2/scam3 fixed to D36); 2 more to add
+- Status: doing (Siddeshwar, D52; moved from Anam): demo pack PR data/demo-pack
 - Type: Must
 - Depends on: -
-- Files: api/data/offers/sms_offers.json
-- Done when: File exists with 5 offers; expected in_hand, repay_total, tenure_days and extra were worked out by hand before any run
-- Note: added in the 4:50 PM re-plan (D25). The 3 demo ads (G3) also get `api/data/offers/demo_expected.json`.
+- Files: api/data/offers/sms_demo.json
+- Done when: 5 SMS (D52); expected in_hand, repay_total, tenure_days and extra were worked out by hand before any run
+- Note: added in the 4:50 PM re-plan (D25). D52: the old demo ads and `demo_expected.json` are removed; the images' answers are in `api/data/offers/demo_pack.json` (G1).
 
 ## H. Public website (D47): /, /how, /partners, 404. Separate layout, never linked from the PWA; `motion` allowed here
 

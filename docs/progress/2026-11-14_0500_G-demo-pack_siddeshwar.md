@@ -19,7 +19,7 @@
 - [x] P0 sync and start: branch data/demo-pack from main 05c9b21, pytest 600 passed, D52 added, this file, PR opened
 - [x] P1 names + expected answers first: demo_pack.json (10), sms_demo.json (5), harassment/samples.json (5), name checks shown (below); hand arithmetic re-checked with the CLAUDE.md formulas: 0 errors
 - [x] P2 draw the 10 images: scripts/make_demo_pack.py -> api/data/offers/demo/01.png..10.png (1080 px wide, 760 KB in all), checked by eye; a second run gives byte-identical files
-- [ ] P3 remove the old data, update references (README, DEMO, TASKS, test comment), pytest passes
+- [x] P3 remove the old data, update references (README, DEMO, TASKS, test comment), pytest 600 passed
 - [ ] P4 run everything through the real API: scripts/run_demo_pack.py, results table + K below
 - [ ] P5 finish: PR description, G1/G2/G8 = review, tell Gurpreet "demo pack ready"
 
@@ -61,3 +61,11 @@ WARNING   score=72.7  nbfc=no  warning=yes  Alok Auto Credit Pvt. Ltd.  [10, sms
 - Fonts: Segoe UI (+ Bold) for English and ₹; Nirmala UI (+ Bold, from Nirmala.ttc) for Devanagari and Bengali.
 - The ✅ in item 03 has no glyph in these fonts: it is drawn as a green rounded square with a white tick (how phones show it).
 - Checked by eye: digits exact on all 10; सिर्फ़ / शुल्क / गल्ला (04) and টুকরি / প্রসেসিং / মঞ্জুর (05) shaped correctly; Bengali digits ৫০০০ ৩০০ ৩০ ৫৬০০ exact; "Synthetic sample" on every image; real names (08, 10) on neutral grey layouts, no logo.
+
+## P3: old data removed, references updated
+- git rm: api/data/offers/ai_ad1.png, ai_ad2.png, ai_ad3.png, demo_expected.json, sms_offers.json, lender_demo.json. No code or test loaded them (checked with grep before removing).
+- api/tests/test_advance_fee.py line 3 (comment only): the three scam texts are kept inline there.
+- api/data/README.md: the demo pack, what each image shows, how to redraw and how to run it.
+- docs/DEMO.md: LIVE 1 = image 02; LIVE 2 = image 08 / SMS 2, image 09, image 10 / SMS 3; LIVE 3 = samples h1-h5; new "Demo pack: which item for which moment" table; no mention of the old files or the real app names left.
+- docs/TASKS.md: G1 (10 images), G2 (5 samples), G8 (5 SMS), owner Siddeshwar (D52).
+- For Gurpreet (outside the files I may touch): TASKS G3 "print the demo ads" still names ai_ad1-3 and demo_expected.json; printing should now use the demo-pack images (02, 03, 08, 09, 10). The D10 status line mentions ai_ad3 as a past test record (still true, left as it is).

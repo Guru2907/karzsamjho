@@ -1,0 +1,58 @@
+[
+  {
+    "id": "lender_found",
+    "text": "KreditBee: Congratulations! Your pre-approved loan of ₹25,000 is ready. Disbursal ₹24,000 after ₹1,000 fee. Repay ₹26,000 in 90 days. Apply at https://example.com/x",
+    "expected": {
+      "is_loan_ad": true,
+      "principal": 25000,
+      "fees": 1000,
+      "in_hand": 24000,
+      "repay_total": 26000,
+      "tenure_days": 90,
+      "extra": 2000
+    },
+    "expected_lender": "FOUND"
+  },
+  {
+    "id": "lender_similar",
+    "text": "KreditBea: Exclusive offer! Loan of ₹15,000 approved. ₹14,250 in hand, fee ₹750. Repay ₹16,500 in 60 days. Visit https://example.com/x",
+    "expected": {
+      "is_loan_ad": true,
+      "principal": 15000,
+      "fees": 750,
+      "in_hand": 14250,
+      "repay_total": 16500,
+      "tenure_days": 60,
+      "extra": 2250
+    },
+    "expected_lender": "SIMILAR"
+  },
+  {
+    "id": "lender_not_found",
+    "text": "Gullak Go Loan: Instant cash loan of ₹8,000 with zero collateral. Processing fee ₹800, receive ₹7,200. Repay ₹9,000 in 30 days. Link: https://example.com/x",
+    "expected": {
+      "is_loan_ad": true,
+      "principal": 8000,
+      "fees": 800,
+      "in_hand": 7200,
+      "repay_total": 9000,
+      "tenure_days": 30,
+      "extra": 1800
+    },
+    "expected_lender": "NOT_FOUND"
+  },
+  {
+    "id": "lender_warning",
+    "text": "Alok Auto Credit Pvt. Ltd.: Special loan offer of ₹50,000. Fee ₹2,000 deducted upfront, ₹48,000 in hand. Repay ₹55,000 in 180 days. Call 90000 00000.",
+    "expected": {
+      "is_loan_ad": true,
+      "principal": 50000,
+      "fees": 2000,
+      "in_hand": 48000,
+      "repay_total": 55000,
+      "tenure_days": 180,
+      "extra": 7000
+    },
+    "expected_lender": "WARNING"
+  }
+]

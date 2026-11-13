@@ -428,7 +428,7 @@ All changes go through a pull request that Gurpreet merges (D27).
 - Done when: In the folder
 
 ### G4 · RBI directory saved as CSV with its date (before the event)
-- Status: todo (Anam; with a website column, D37)
+- Status: review (Anam): RBI DLA + NBFC + cancelled lists as CSV via scripts/build_ledger.py
 - Type: Must
 - Depends on: -
 - Files: api/data/rbi_dla.csv

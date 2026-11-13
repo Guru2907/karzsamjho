@@ -61,8 +61,8 @@ class Settings:
     band_very_costly_apr: float = 100.0  # apr_simple > this -> VERY_COSTLY
     short_loan_days: int = 30            # upfront fee on a loan this short -> VERY_COSTLY
     crosscheck_tolerance_rs: float = 1.0
-    lender_found_score: int = 90
-    lender_similar_score: int = 70
+    lender_found_score: int = 92
+    lender_similar_score: int = 80
     h1_earliest_hour: int = 8            # contact before 08:00 breaks H1
     h1_latest_hour: int = 19             # contact after 19:00 breaks H1
     h6_calls_per_day: int = 5            # our threshold; label it as ours

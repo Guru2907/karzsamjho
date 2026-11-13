@@ -36,7 +36,7 @@ Stage roles (to be assigned): presenter · phone · laptop · technical answers.
 - [ ] Backup video: 60 s clip (7:30 PM) and full run (3:00 AM)
 - [ ] Final numbers filled from docs/TESTING.md
 - [ ] Speaker paired, phone at 100%, hotspot ready
-- [ ] Seconds stamp for LIVE 1: the Telegram card does not show seconds (only the API result has `seconds`). Show it on /check, or ask for it on the card before the 3:30 AM freeze
+- [x] Seconds stamp for LIVE 1: the Telegram card now ends with "⏱ 3.9 sec" (time from photo received to answer, measured by the API)
 - [ ] Cached ads answer in 0.0 s, so the card shows "⏱ 0.0 sec". Decide before the pitch: run the demo ads fresh (about 4 s), or have the card say the answer was already checked (Siddeshwar, bot/main.py)
 - [ ] LIVE 2 needs the lender check (C1) and next step (C2); tonight the card has no RBI line and one fixed next step (D26)
 

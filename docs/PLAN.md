@@ -212,6 +212,92 @@ No test calls a real AI service or the internet; the tests replace `fallback` fu
 
 Six photo reads in a row is more than Groq's free limit of about 3 a minute, so some answers will come from Gemini and take about 8 seconds. Leave 20 seconds between photos if you want Qwen every time.
 
+## After the review: Gurpreet + Siddeshwar split (written 6:50 PM, D34)
+
+The PWA teammate keeps all of `web/` (E2 to E9). The data teammate keeps all of `api/data/` (G1 to G4, G8) plus I1 and I3. This section splits the backend and bot work that is left between Gurpreet and Siddeshwar. **Nobody edits a file in the other person's list.**
+
+| Person | Only these files |
+|---|---|
+| Gurpreet | `api/main.py`, `api/core/schemas.py`, `api/core/config.py`, `api/core/fallback.py`, `api/core/cache.py`, `api/core/db.py`, `api/core/lender.py`, `api/core/next_step.py`, `api/core/extract.py`, and their tests |
+| Siddeshwar | `bot/main.py`, `api/core/speak.py`, `api/core/harass.py`, `api/core/evidence.py`, `api/core/maths.py`, `api/core/verdict.py`, and their tests |
+
+### Order (musts first; stretch only after the 7:30 gate has passed)
+
+| # | Gurpreet | Siddeshwar |
+|---|---|---|
+| now | **Seconds stamp** on the Telegram card ("⏱ 3.9 sec", for DEMO LIVE 1; one-off edit of bot/main.py before Siddeshwar starts on it), then **A4** cache: a repeated photo answers instantly, no AI call | **F1** harass.py: rules H1 to H6 + keyword backup (`fallback.read_text` for the AI labels) |
+| 1 | **A3** db.py: checks, cases, events survive a restart | (F1 continued) |
+| 2 | **A5** health (engines up/down) + stats from the database | **F3** evidence.py: English PDF, hashes, masking, complaint draft |
+| 3 | **F2** events endpoint + hash chain, **F4** verify | **D5** bot: forwarded message -> case event -> PDF back in the chat |
+| 4 | **C1** lender.py (needs G4 CSV), **C2** next step, **F5** complaint route + day counter | |
+| after gate | **D6 backend**: `audio` field, Whisper, number words -> digits | **D6 bot**: voice notes -> API |
+| after gate | **D7 backend**: `lang` passed through, voices in config | **D7**: Bengali + Marathi templates in speak.py, language choice in the bot |
+
+12:30 AM gate needs every "1 to 4" row. D6 and D7 are stretch: start them only when your musts are merged, and stop at 3:30 AM.
+
+### Agreed signatures (after the review)
+
+```python
+# api/core/cache.py (Gurpreet)
+def image_key(image_bytes: bytes) -> str                 # SHA-256 hex
+def get(key: str) -> dict | None                        # stored CheckResult (+ its MP3 still on disk)
+def put(key: str, result: dict) -> None
+
+# api/core/harass.py (Siddeshwar), task F1
+def label(event: dict, calls_that_day: int) -> list[str]
+    # event = {"at": ISO time with +05:30, "channel", "contacted", "text"}
+    # calls_that_day = calls to this case on that date INCLUDING this one (Gurpreet counts it from db)
+    # -> sorted rule ids, e.g. ["H1", "H2"]; [] for the polite 11 AM reminder
+    # H1 and H6 by code only; H2 to H5 by fallback.read_text with a keyword-list backup
+
+# api/core/evidence.py (Siddeshwar), task F3
+def mask(text: str) -> str                               # any 12-digit number -> "XXXX XXXX 1234"
+def build_pdf(case: dict) -> bytes                      # case = GET /api/cases/{id} shape (events with rules,
+                                                         # hash, prev_hash; route; day); English only
+
+# api/core/next_step.py (Gurpreet), tasks C2, F5
+def next_step(verdict: str, lender_match: str | None) -> dict        # {"code", "text_hi"}
+def complaint_route(lender_match: str | None, has_threats: bool) -> str
+
+# api/core/fallback.py (Gurpreet), task D6
+def transcribe(audio_bytes: bytes) -> tuple[str, str, float]         # (text, "whisper", seconds)
+async def speak(text: str, out_path: str, voice: str | None = None) -> bool   # voice None = Hindi
+
+# api/core/speak.py (Siddeshwar), task D7: lang is "hi" (default), "bn" or "mr"
+def speech_text(numbers: dict, lang: str = "hi") -> str
+async def make_audio(check_id: str, text: str, lang: str = "hi") -> str | None
+    # picks the voice with config.settings.tts_voice(lang)
+```
+
+### API additions (D33)
+- `POST /api/checks` also takes a form field `audio` (a Telegram voice note, OGG). The API transcribes it with Whisper, gpt-oss-20b turns number words into digits (D22), then it is read like a pasted SMS.
+- `engines` gets one optional field, `listen` ("whisper" or null). Additive: nothing that reads the old shape breaks.
+- `lang` (already in the contract) now picks the voice: `hi` (default), `bn`, `mr`. The card and Telegram text stay in Hinglish; only the voice changes (D7: "one voice and one template" per language).
+
+### Bengali and Marathi sentences (D32): a native speaker checks these before D7 is merged
+
+Same meaning as the Hindi template. Native script, so the voices read them properly. Numbers in digits.
+- **bn** (voice bn-IN-TanishaaNeural): "আপনি হাতে {in_hand} টাকা পাবেন। {days} দিনে {repay} টাকা ফেরত দিতে হবে। মানে {extra} টাকা বেশি।"
+- **bn**, numbers not clear: "এই অফারের সব সংখ্যা পরিষ্কার পড়া যায়নি। লোন নেওয়ার আগে ব্যাংক মিত্রকে জিজ্ঞেস করুন।"
+- **mr** (voice mr-IN-AarohiNeural): "तुम्हाला हातात {in_hand} रुपये मिळतील. {days} दिवसांत {repay} रुपये परत करावे लागतील. म्हणजे {extra} रुपये जास्त."
+- **mr**, numbers not clear: "या ऑफरचे सगळे आकडे नीट वाचता आले नाहीत. कर्ज घेण्याआधी बँक मित्राला विचारा."
+
+### Prompt for Siddeshwar (after-review work)
+
+```
+I am Siddeshwar. Read AGENTS.md, CLAUDE.md, then docs/PLAN.md section "After the review", then the top of docs/PROGRESS.md and docs/DECISIONS.md D28 to D34. Follow "How to report while working" in CLAUDE.md.
+
+You may edit ONLY: bot/main.py, api/core/speak.py, api/core/harass.py, api/core/evidence.py, api/core/maths.py, api/core/verdict.py, their tests in api/tests/, plus your own entry in docs/PROGRESS.md and your task statuses in docs/TASKS.md. Gurpreet owns every other file (main.py, schemas.py, config.py, fallback.py, cache.py, db.py, lender.py, next_step.py, extract.py). If you need a change there, stop and tell me.
+
+One task at a time, in this order. Before each, say "We are doing <task>". After each: pytest -q (show output), pull main, branch, commit "<area>: <what changed>", push, gh pr create, gh pr checks. Never push to main, never merge (Gurpreet merges). No Claude co-author line.
+(The seconds stamp on the card is done by Gurpreet; pull main before you touch bot/main.py.)
+1. F1 harass.py: label(event, calls_that_day) exactly as in docs/PLAN.md. H1 before 08:00 or after 19:00 (hours from config). H6 when calls_that_day >= config h6_calls_per_day (label it "our threshold"). H2 to H5 with fallback.read_text (temperature 0 JSON, check= a parser) and a keyword-list backup in Hinglish and English when the AI fails. Tests with hand-written samples; the polite 11 AM reminder gets [].
+2. F3 evidence.py: mask() and build_pdf(case) with ReportLab, ENGLISH only (no Devanagari). Timeline, rules with their basis (RBI circular on recovery agents, 12 Aug 2022), each event's hash and prev_hash, masked 12-digit numbers, complaint draft, route, "Day N of 30". Test: a 12-digit number is masked; the PDF starts with %PDF.
+3. D5 bot: a forwarded message (or a plain message after /log) becomes an event: POST /api/cases once per chat (remember the case id), POST /api/cases/{id}/events with at = the original message time, channel "telegram", contacted "borrower", text; then GET /api/cases/{id}/evidence.pdf and send it with reply_document. Hindi messages only.
+4. After the 7:30 gate and only when 1 to 3 are merged: D6 bot side (voice note -> POST /api/checks with form field "audio") and D7 (speak.py templates for bn and mr from docs/PLAN.md, speech_text(numbers, lang), make_audio(check_id, text, lang); in the bot a /bhasha command with three buttons Hindi / Bangla / Marathi, remembered per chat and sent as lang). A native speaker checks the bn and mr sentences before the PR.
+Stop all features at 3:30 AM.
+```
+
 ## Ready-to-paste prompts
 
 Each person pulls main, then pastes their prompt into their own agent (Claude Code or Antigravity) opened in the repo folder.

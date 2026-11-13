@@ -112,6 +112,9 @@ def card_text(result: dict) -> str:
         f"\U0001f4c5 <b>{days_txt}</b>",
         f"⚠️ <b>{extra_txt}</b>",
     ]
+    seconds = result.get("seconds")
+    if isinstance(seconds, (int, float)) and not isinstance(seconds, bool) and seconds >= 0:
+        lines.append(f"⏱ <b>{seconds:.1f} sec</b>")      # how fast Raju got the answer (DEMO LIVE 1)
     lender = lender_line(result.get("lender"))
     next_step = (result.get("next_step") or {}).get("text_hi")
     if lender or next_step:

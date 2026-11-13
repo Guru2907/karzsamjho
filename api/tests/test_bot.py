@@ -143,3 +143,15 @@ def test_send_result_no_audio_url(monkeypatch):
     update = FakeUpdate()
     asyncio.run(bot.send_result(update, {**RESULT, "audio_url": None}))
     assert [m[0] for m in update.message.sent] == ["text"]
+
+
+def test_card_shows_seconds_stamp():
+    card = bot.card_text({**RESULT, "seconds": 3.94})
+    assert "⏱ <b>3.9 sec</b>" in card
+    lines = card.splitlines()
+    assert lines.index("⏱ <b>3.9 sec</b>") == lines.index("⚠️ <b>₹1,200 zyada</b>") + 1
+
+
+@pytest.mark.parametrize("seconds", [None, "fast", True, -1])
+def test_card_without_a_usable_seconds_has_no_stamp(seconds):
+    assert "⏱" not in bot.card_text({**RESULT, "seconds": seconds})

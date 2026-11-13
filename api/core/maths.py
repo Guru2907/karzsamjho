@@ -1,12 +1,14 @@
 """Rupee maths in plain Python (tasks B3, B4). No AI is called from this file.
 
-Flow: extract.py reads the fields -> cross_check() finds contradictions ->
-fill_gaps() builds the three input numbers -> compute() adds the three results.
+Rules: docs/PLAN.md, "Rules inside the maths". Flow in api/main.py:
+cross_check(fields) -> (second reading) -> compute(fill_gaps(fields, disputed)).
 
 Every number is a dict {"value": number or None, "status": "read" | "derived" |
 "computed" | "unverified"}. A number we cannot stand behind is "unverified" with
 value None; it is never guessed and never raises a division error.
 """
+import math
+
 from api.core.config import settings
 
 UNVERIFIED = {"value": None, "status": "unverified"}
@@ -16,9 +18,14 @@ def _num(value) -> float | None:
     """A usable number, or None for anything missing or not a number."""
     if isinstance(value, bool) or not isinstance(value, (int, float)):
         return None
-    if value != value or value in (float("inf"), float("-inf")):  # NaN or infinity
+    if math.isnan(value) or math.isinf(value):
         return None
     return float(value)
+
+
+def _whole(value: float) -> int:
+    """Round to a whole rupee, halves go up (171.5 -> 172), unlike Python's round()."""
+    return math.floor(value + 0.5)
 
 
 def _tidy(value: float) -> int | float:
@@ -36,10 +43,9 @@ def _known(numbers: dict, key: str) -> float | None:
 
 
 def cross_check(fields: dict) -> list[str]:
-    """Names of fields that contradict each other; [] means consistent.
+    """Names of the fields in every sum that fails by more than Rs 1; [] when all is fine.
 
-    A check runs only when all of its numbers were read. Tolerance is Rs 1
-    (settings.crosscheck_tolerance_rs).
+    A sum is only checked when all three of its numbers are present.
     """
     tolerance = settings.crosscheck_tolerance_rs
     bad: list[str] = []
@@ -57,19 +63,19 @@ def cross_check(fields: dict) -> list[str]:
     return bad
 
 
-def fill_gaps(fields: dict) -> dict:
-    """Build in_hand, repay_total and tenure_days from the fields that were read.
+def fill_gaps(fields: dict, disputed: list[str] = ()) -> dict:
+    """Build in_hand, repay_total and tenure_days. A field in `disputed` counts as missing.
 
-    - a number written on the ad keeps status "read";
-    - a missing in_hand is principal - fees, status "derived";
-    - a missing repay_total is emi_amount * emi_count, status "derived";
-    - no fee and no in-hand amount on the ad -> in_hand is "unverified" (we do
-      not assume the fee is zero);
-    - anything cross_check() flags is "unverified", so a contradictory ad can
-      never show a verified number.
+    in_hand:     principal - fees ("derived") > written in_hand ("read")
+                 > principal alone when the ad wrote no fee ("derived") > unverified
+    repay_total: written ("read") > emi_amount x emi_count ("derived") > unverified
+    tenure_days: written and above 0 ("read") > unverified
+
+    Safety net: a sum that cross_check() still finds broken is treated as disputed
+    too, so a self-contradicting ad never shows a verified number.
     """
-    bad = set(cross_check(fields))
-    f = {k: _num(fields.get(k)) for k in (
+    gone = set(disputed) | set(cross_check(fields))
+    f = {k: (None if k in gone else _num(fields.get(k))) for k in (
         "principal", "fees", "in_hand", "repay_total", "emi_amount", "emi_count", "tenure_days")}
 
     def number(value: float | None, status: str) -> dict:
@@ -77,18 +83,17 @@ def fill_gaps(fields: dict) -> dict:
             return dict(UNVERIFIED)
         return {"value": _tidy(value), "status": status}
 
-    if "in_hand" in bad:
-        in_hand = dict(UNVERIFIED)
+    if f["principal"] is not None and f["fees"] is not None:
+        in_hand = number(f["principal"] - f["fees"], "derived")
     elif f["in_hand"] is not None:
         in_hand = number(f["in_hand"], "read")
-    elif f["principal"] is not None and f["fees"] is not None:
-        in_hand = number(f["principal"] - f["fees"], "derived")
+    elif f["principal"] is not None and "fees" not in gone:
+        # No fee written on the ad. A fee that was written but disputed is not "no fee".
+        in_hand = number(f["principal"], "derived")
     else:
         in_hand = dict(UNVERIFIED)
 
-    if "repay_total" in bad:
-        repay_total = dict(UNVERIFIED)
-    elif f["repay_total"] is not None:
+    if f["repay_total"] is not None:
         repay_total = number(f["repay_total"], "read")
     elif f["emi_amount"] is not None and f["emi_count"] is not None:
         repay_total = number(f["emi_amount"] * f["emi_count"], "derived")
@@ -103,11 +108,11 @@ def fill_gaps(fields: dict) -> dict:
 
 
 def compute(numbers: dict) -> dict:
-    """Add extra, per_day and apr_simple to the output of fill_gaps().
+    """Add extra, per_day and apr_simple: the "numbers" block of CheckResult.
 
-    The result is CheckResult["numbers"]. apr_simple is a percentage (1647 means
-    1,647% a year). If an input is unverified, every output that depends on it
-    is unverified. Repaying less than the in-hand amount is treated as a misread.
+    apr_simple is a percentage (1647 means 1,647% a year). All three are whole
+    numbers. An unverified input, or extra below 0, makes the outputs that need
+    it unverified.
     """
     out = {key: dict(numbers.get(key) or UNVERIFIED)
            for key in ("in_hand", "repay_total", "tenure_days")}
@@ -122,7 +127,7 @@ def compute(numbers: dict) -> dict:
     def computed(value: float | None) -> dict:
         if value is None:
             return dict(UNVERIFIED)
-        return {"value": round(value), "status": "computed"}
+        return {"value": _whole(value), "status": "computed"}
 
     has_days = extra is not None and days is not None and days > 0
     out["extra"] = computed(extra)

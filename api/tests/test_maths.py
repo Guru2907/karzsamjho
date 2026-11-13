@@ -1,7 +1,13 @@
-"""Tests for the rupee maths (tasks B3, B4). Expected values were written by hand."""
+"""Tests for the rupee maths (tasks B3, B4).
+
+Expected values are the hand-worked table in docs/PLAN.md ("Tests with hand-worked
+values"), copied exactly. No test calls the internet.
+"""
+import pytest
+
 from api.core.maths import compute, cross_check, fill_gaps
 
-UNVERIFIED = {"value": None, "status": "unverified"}
+U = "unverified"
 
 
 def ad(**fields) -> dict:
@@ -12,100 +18,101 @@ def ad(**fields) -> dict:
     return base
 
 
-# --- fill gaps ---
-
-def test_fee_upfront_derives_in_hand():
-    numbers = fill_gaps(ad(principal=5000, fees=1200, repay_total=5000, tenure_days=7))
-    assert numbers["in_hand"] == {"value": 3800, "status": "derived"}
-    assert numbers["repay_total"] == {"value": 5000, "status": "read"}
-    assert numbers["tenure_days"] == {"value": 7, "status": "read"}
-
-
-def test_stated_in_hand_that_agrees_stays_read():
-    numbers = fill_gaps(ad(principal=5000, fees=1200, in_hand=3800, repay_total=5000, tenure_days=7))
-    assert numbers["in_hand"] == {"value": 3800, "status": "read"}
-
-
-def test_emi_fills_missing_repay_total():
-    numbers = fill_gaps(ad(principal=5000, fees=0, emi_amount=1500, emi_count=4, tenure_days=28))
-    assert numbers["repay_total"] == {"value": 6000, "status": "derived"}
-    assert numbers["in_hand"] == {"value": 5000, "status": "derived"}
-
-
-def test_no_fee_and_no_in_hand_is_unverified_not_guessed():
-    numbers = fill_gaps(ad(principal=10000, repay_total=10500, tenure_days=30))
-    assert numbers["in_hand"] == UNVERIFIED
-    assert compute(numbers)["extra"] == UNVERIFIED
-
-
-# --- cross-check ---
-
-def test_in_hand_mismatch_is_flagged():
-    fields = ad(principal=5000, fees=1200, in_hand=4500, repay_total=5000, tenure_days=7)
-    assert cross_check(fields) == ["principal", "fees", "in_hand"]
+# Rows 1-10 of docs/PLAN.md:
+# (row, fields, disputed, in_hand, repay_total, extra, per_day, apr_simple)
+# in_hand / repay_total are (value, status); U means unverified.
+ROWS = [
+    (1, ad(principal=5000, fees=1200, repay_total=5000, tenure_days=7), [],
+     (3800, "derived"), (5000, "read"), 1200, 171, 1647),
+    (2, ad(principal=10000, repay_total=10250, tenure_days=30), [],
+     (10000, "derived"), (10250, "read"), 250, 8, 30),
+    (3, ad(principal=10000, repay_total=10600, tenure_days=30), [],
+     (10000, "derived"), (10600, "read"), 600, 20, 73),
+    (4, ad(principal=20000, repay_total=24000, emi_amount=2000, emi_count=12, tenure_days=360), [],
+     (20000, "derived"), (24000, "read"), 4000, 11, 20),
+    (5, ad(principal=20000, emi_amount=2000, emi_count=12, tenure_days=360), [],
+     (20000, "derived"), (24000, "derived"), 4000, 11, 20),
+    (6, ad(principal=10000, fees=100, repay_total=10000, tenure_days=30), [],
+     (9900, "derived"), (10000, "read"), 100, 3, 12),
+    (7, ad(principal=5000, in_hand=4500, repay_total=5600, tenure_days=7), [],
+     (4500, "read"), (5600, "read"), 1100, 157, 1275),
+    (8, ad(principal=5000, fees=1200, repay_total=5000), [],
+     (3800, "derived"), (5000, "read"), 1200, U, U),
+    (9, ad(principal=5000, fees=1200, repay_total=5000, tenure_days=0), [],
+     (3800, "derived"), (5000, "read"), 1200, U, U),
+    (10, ad(principal=5000, fees=1200, repay_total=5000, tenure_days=7), ["repay_total"],
+     (3800, "derived"), U, U, U, U),
+]
 
 
-def test_emi_mismatch_is_flagged():
-    fields = ad(emi_amount=1500, emi_count=4, repay_total=7000)
-    assert cross_check(fields) == ["emi_amount", "emi_count", "repay_total"]
+def expect(value) -> dict:
+    """Turn a table cell into the number dict the API sends."""
+    if value == U:
+        return {"value": None, "status": U}
+    if isinstance(value, tuple):
+        return {"value": value[0], "status": value[1]}
+    return {"value": value, "status": "computed"}
 
 
-def test_within_one_rupee_is_consistent():
-    assert cross_check(ad(principal=5000, fees=1200, in_hand=3801)) == []
-    assert cross_check(ad(principal=5000, fees=1200, in_hand=3802)) != []
-    assert cross_check(ad(principal=5000, repay_total=5000)) == []  # nothing to compare
-
-
-def test_contradictory_ad_never_shows_a_verified_number():
-    fields = ad(principal=5000, fees=1200, in_hand=4500, repay_total=5000, tenure_days=7)
-    result = compute(fill_gaps(fields))
-    assert result["in_hand"] == UNVERIFIED
-    for key in ("extra", "per_day", "apr_simple"):
-        assert result[key] == UNVERIFIED
-
-
-# --- maths ---
-
-def test_seven_day_loan_numbers():
-    result = compute(fill_gaps(ad(principal=5000, fees=1200, repay_total=5000, tenure_days=7)))
-    assert result["extra"] == {"value": 1200, "status": "computed"}
-    assert result["per_day"] == {"value": 171, "status": "computed"}      # 1200 / 7 = 171.4
-    assert result["apr_simple"] == {"value": 1647, "status": "computed"}  # 1200/3800 * 365/7 = 1646.6%
+@pytest.mark.parametrize("row, fields, disputed, in_hand, repay, extra, per_day, apr",
+                         ROWS, ids=[f"row{r[0]}" for r in ROWS])
+def test_plan_table(row, fields, disputed, in_hand, repay, extra, per_day, apr):
+    result = compute(fill_gaps(fields, disputed))
+    assert result["in_hand"] == expect(in_hand)
+    assert result["repay_total"] == expect(repay)
+    assert result["extra"] == expect(extra)
+    assert result["per_day"] == expect(per_day)
+    assert result["apr_simple"] == expect(apr)
     assert set(result) == {"in_hand", "repay_total", "tenure_days", "extra", "per_day", "apr_simple"}
 
 
-def test_normal_thirty_day_loan():
-    result = compute(fill_gaps(ad(principal=10000, fees=500, repay_total=10300, tenure_days=30)))
-    assert result["in_hand"]["value"] == 9500
-    assert result["extra"]["value"] == 800
-    assert result["per_day"]["value"] == 27       # 800 / 30 = 26.7
-    assert result["apr_simple"]["value"] == 102   # 800/9500 * 365/30 = 102.5%
+def test_days_status():
+    assert fill_gaps(ROWS[0][1])["tenure_days"] == {"value": 7, "status": "read"}
+    assert fill_gaps(ROWS[7][1])["tenure_days"] == expect(U)   # row 8: missing
+    assert fill_gaps(ROWS[8][1])["tenure_days"] == expect(U)   # row 9: zero
 
 
-def test_missing_repay_total_makes_outputs_unverified():
-    result = compute(fill_gaps(ad(principal=5000, fees=1200, tenure_days=7)))
-    assert result["in_hand"]["value"] == 3800
-    for key in ("repay_total", "extra", "per_day", "apr_simple"):
-        assert result[key] == UNVERIFIED
+# --- cross-check (docs/PLAN.md "More tests") ---
+
+def test_cross_check_in_hand_mismatch():
+    assert cross_check(ad(principal=5000, fees=1200, in_hand=4000)) == ["principal", "fees", "in_hand"]
 
 
-def test_zero_days_is_unverified_not_a_crash():
-    result = compute(fill_gaps(ad(principal=5000, fees=1200, repay_total=5000, tenure_days=0)))
-    assert result["tenure_days"] == UNVERIFIED
-    assert result["extra"] == {"value": 1200, "status": "computed"}
-    assert result["per_day"] == UNVERIFIED
-    assert result["apr_simple"] == UNVERIFIED
+def test_cross_check_within_one_rupee():
+    assert cross_check(ad(principal=5000, fees=1200, in_hand=3801)) == []
 
 
-def test_missing_days_is_unverified_not_a_crash():
-    result = compute(fill_gaps(ad(principal=5000, fees=1200, repay_total=5000)))
-    assert result["extra"]["value"] == 1200
-    assert result["per_day"] == UNVERIFIED
-    assert result["apr_simple"] == UNVERIFIED
-    assert compute({})["extra"] == UNVERIFIED  # empty input does not crash either
+def test_cross_check_emi_mismatch():
+    assert cross_check(ad(emi_amount=2000, emi_count=12, repay_total=25000)) == \
+        ["emi_amount", "emi_count", "repay_total"]
 
 
-def test_repaying_less_than_in_hand_is_a_misread():
+def test_cross_check_needs_all_three_numbers():
+    assert cross_check(ad(principal=5000, repay_total=5000)) == []
+
+
+# --- never a verified wrong number ---
+
+def test_self_contradicting_ad_is_unverified():
+    # Both readers see 5000 / 1200 / in_hand 4000: in_hand must not be shown as verified.
+    result = compute(fill_gaps(ad(principal=5000, fees=1200, in_hand=4000,
+                                  repay_total=5000, tenure_days=7)))
+    assert result["in_hand"] == expect(U)
+    assert result["extra"] == expect(U)
+
+
+def test_disputed_fee_is_not_treated_as_no_fee():
+    result = fill_gaps(ad(principal=5000, fees=1200, repay_total=5000, tenure_days=7), ["fees"])
+    assert result["in_hand"] == expect(U)
+
+
+def test_repaying_less_than_in_hand_is_unverified():
     result = compute(fill_gaps(ad(in_hand=5000, repay_total=4000, tenure_days=7)))
     for key in ("extra", "per_day", "apr_simple"):
-        assert result[key] == UNVERIFIED
+        assert result[key] == expect(U)
+
+
+def test_empty_input_does_not_crash():
+    result = compute(fill_gaps(ad()))
+    assert all(result[k] == expect(U) for k in result)
+    assert compute({})["extra"] == expect(U)

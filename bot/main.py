@@ -23,6 +23,7 @@ from datetime import datetime, timedelta, timezone
 import httpx
 from telegram import InlineKeyboardButton, InlineKeyboardMarkup, Update
 from telegram.constants import ChatAction, ParseMode
+from telegram.error import BadRequest, NetworkError
 from telegram.ext import (Application, CallbackQueryHandler, CommandHandler,
                           ContextTypes, MessageHandler, filters)
 
@@ -425,6 +426,20 @@ async def on_other(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
     await update.message.reply_text(MSG_SEND_PHOTO)
 
 
+async def on_error(update: object, context: ContextTypes.DEFAULT_TYPE) -> None:
+    """D9: every error is ONE short log line, never a traceback. Polling keeps going on its own.
+    A dropped connection or a timeout (TimedOut is a NetworkError) is normal on stage Wi-Fi.
+    BadRequest is also a NetworkError in this library, but it is OUR mistake, not the network."""
+    err = context.error
+    if isinstance(err, NetworkError) and not isinstance(err, BadRequest):
+        log.warning("network blip, retrying (%s)", type(err).__name__)
+        return
+    detail = str(err)
+    if settings.telegram_bot_token:
+        detail = detail.replace(settings.telegram_bot_token, "<token>")  # never log the key
+    log.error("bot error: %s: %s", type(err).__name__, detail[:200])
+
+
 def main() -> None:
     if not settings.telegram_bot_token:
         raise SystemExit("TELEGRAM_BOT_TOKEN is empty. Put your TEST bot token in .env "
@@ -440,6 +455,7 @@ def main() -> None:
     app.add_handler(MessageHandler(filters.VOICE, on_voice))
     app.add_handler(MessageHandler(filters.TEXT & ~filters.COMMAND, on_text))
     app.add_handler(MessageHandler(~filters.COMMAND, on_other))
+    app.add_error_handler(on_error)          # D9: one line per error, never a traceback
     log.info("Bot is polling. API: %s. Stop with Ctrl+C.", settings.api_url)
     app.run_polling(allowed_updates=Update.ALL_TYPES)
 

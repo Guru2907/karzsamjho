@@ -426,6 +426,7 @@ All changes go through a pull request that Gurpreet merges (D27).
 - Depends on: G1
 - Files: (paper)
 - Done when: In the folder
+- Note (D52, Siddeshwar, 5:25 AM): ai_ad1-3.png and demo_expected.json were removed with the old demo data. Print the demo-pack images instead: api/data/offers/demo/02.png (LIVE 1), 03.png (scam warning), 08.png, 09.png, 10.png (LIVE 2) at A5, two copies each; answers in api/data/offers/demo_pack.json.
 
 ### G4 · RBI directory saved as CSV with its date (before the event)
 - Status: review (Anam): RBI DLA + NBFC + cancelled lists as CSV via scripts/build_ledger.py

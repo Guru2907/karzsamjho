@@ -407,14 +407,14 @@ All changes go through a pull request that Gurpreet merges (D27).
 ## G. Testing and data
 
 ### G1 · 10 detailed synthetic offer images with expected answers (was 30 offers; D52)
-- Status: doing (Siddeshwar, D52; moved from Anam): demo pack PR data/demo-pack
+- Status: review (Siddeshwar, D52): 10 images + demo_pack.json, answers written before any run; real run K = 0, 9 of 10 exact (01 blocked by finding F-2), see docs/progress/2026-11-14_0500_G-demo-pack_siddeshwar.md
 - Type: Must
 - Depends on: -
 - Files: api/data/offers/demo/01.png..10.png, api/data/offers/demo_pack.json, scripts/make_demo_pack.py
 - Done when: 10 detailed images with expected answers (D52); answers were written before any run
 
 ### G2 · 5 harassment samples with expected rules (was 10; D52)
-- Status: doing (Siddeshwar, D52; moved from Anam): demo pack PR data/demo-pack
+- Status: review (Siddeshwar, D52): 5 samples; real run 5 of 5 rules exact, PDF masks the Aadhaar, /verify ok
 - Type: Must
 - Depends on: -
 - Files: api/data/harassment/samples.json
@@ -456,7 +456,7 @@ All changes go through a pull request that Gurpreet merges (D27).
 - Done when: All four drills in section 13 pass
 
 ### G8 · 5 SMS-style text offers with expected numbers
-- Status: doing (Siddeshwar, D52; moved from Anam): demo pack PR data/demo-pack
+- Status: review (Siddeshwar, D52): 5 SMS; real run K = 0, every number exact
 - Type: Must
 - Depends on: -
 - Files: api/data/offers/sms_demo.json

@@ -1,11 +1,11 @@
 # G1 + G8 + G2 · demo pack: 10 images + 5 SMS + 5 harassment samples (D52)
 - When: 14 Nov 2026, 4:45 AM IST (started) · Who: Siddeshwar (Claude Code)
-- Did: (filled in as each phase finishes, see the Handover checklist below)
+- Did: one demo pack (D52) replacing the old plain demo data: 10 detailed synthetic offer images drawn by scripts/make_demo_pack.py with hand-worked answers (demo_pack.json), 5 SMS (sms_demo.json), 5 harassment samples (harassment/samples.json); invented names checked NOT_FOUND, real names only on ordinary terms; old ai_ad1-3, demo_expected.json, sms_offers.json, lender_demo.json removed; README, DEMO, TASKS updated; scripts/run_demo_pack.py runs it all through the real API
 - Files: api/data/offers/demo/01.png..10.png, api/data/offers/demo_pack.json, api/data/offers/sms_demo.json, api/data/harassment/samples.json, api/data/README.md, scripts/make_demo_pack.py, scripts/run_demo_pack.py, api/tests/test_advance_fee.py (comment on line 3 only), docs/DEMO.md, docs/TASKS.md (G1, G2, G8), docs/DECISIONS.md (D52), this file. Removed: api/data/offers/ai_ad1.png, ai_ad2.png, ai_ad3.png, demo_expected.json, sms_offers.json, lender_demo.json
-- Proof: (P4 results table below)
-- Status in docs/TASKS.md: G1, G2, G8 = review (after P5)
-- Next: see Handover
-- Broken / risks: (filled in at P4 / P5)
+- Proof: `pytest -q` 600 passed. Real API run (P4 table below): K = 0; 13 of 15 offers exact on every number; 5 of 5 harassment rule sets exact; PDF masks the Aadhaar; /verify ok
+- Status in docs/TASKS.md: G1, G2, G8 = review
+- Next: Gurpreet fixes F-1 (schemas.py Lender: nbfc + warning, 2 lines) and F-2 (extract.py:153 fee with '%'), then rerun `python scripts/run_demo_pack.py`; print images 02, 03, 08, 09, 10 at A5 (G3)
+- Broken / risks: F-1 hides the RBI cancelled-registration line and the NBFC line on the Telegram card (LIVE 2b) until fixed; F-2 makes item 01 'couldn't verify' when Gemini reads it. Groq answered 429 twice in the run (shared per-minute tokens); Gemini took over
 
 ## Rules for this task (from the brief, D52)
 - After the 5:00 AM freeze: DATA + TESTING only. No change to api/core/, api/main.py, bot/ or web/.
@@ -21,7 +21,7 @@
 - [x] P2 draw the 10 images: scripts/make_demo_pack.py -> api/data/offers/demo/01.png..10.png (1080 px wide, 760 KB in all), checked by eye; a second run gives byte-identical files
 - [x] P3 remove the old data, update references (README, DEMO, TASKS, test comment), pytest 600 passed
 - [x] P4 run everything through the real API: scripts/run_demo_pack.py, results table + K below: K = 0; 2 code findings for Gurpreet (F-1, F-2)
-- [ ] P5 finish: PR description, G1/G2/G8 = review, tell Gurpreet "demo pack ready"
+- [x] P5 finish: PR description, G1/G2/G8 = review, told Gurpreet "demo pack ready" on PR #56
 
 ## P1: name checks (rule 2), run with api.core.lender.match_lender on main 05c9b21, before any image or run
 "Patang Finance" was rejected: NOT_FOUND as an app, but it fuzzy-matched a REAL registered NBFC ("Patran Finance Private Limited"), so item 06 uses "Kulhad Capital Ltd." instead.

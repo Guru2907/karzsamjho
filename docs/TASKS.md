@@ -128,6 +128,20 @@ All changes go through a pull request that Gurpreet merges (D27).
 - Done when: With the text model switched off, "Loan Rs 5000. Fee Rs 500. Repay Rs 5600 in 7 days." still returns principal 5000, fees 500, repay 5600, days 7, and `engines.read` is "regex"
 - Note: added in the 4:50 PM re-plan (D25).
 
+### B9 · Warn when an offer asks for money before the loan (advance-fee fraud)
+- Status: review (Gurpreet)
+- Type: Must (added 7:30 PM by the lead after the data teammate's scam texts, D36)
+- Depends on: B1, B2
+- Files: api/core/extract.py, api/main.py, api/tests/test_advance_fee.py
+- Done when: "Pay ₹1,499 processing fee to release funds" -> next step DO_NOT_PAY_FIRST and the voice starts with the fixed "Savdhaan!" warning; a normal offer and a fee deducted from the loan get no warning
+
+### B10 · Read "5 lakh", "2 crore", "50 hazaar", "5k" as rupees
+- Status: review (Gurpreet)
+- Type: Must (added 7:30 PM, D36)
+- Depends on: B1, B2
+- Files: api/core/extract.py, api/tests/test_advance_fee.py
+- Done when: "₹5 lakh" -> 500000 from the AI path and the regex path, and is not dropped as an invented number
+
 ## C. Lender check and next step
 
 ### C1 · Load `rbi_dla.csv`; `lender.py` with RapidFuzz

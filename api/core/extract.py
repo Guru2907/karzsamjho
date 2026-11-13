@@ -14,7 +14,7 @@ from pydantic import BaseModel, ConfigDict, field_validator, model_validator
 from api.core import fallback
 
 FIELD_KEYS = ("is_loan_ad", "principal", "in_hand", "fees", "repay_total", "emi_amount",
-              "emi_count", "tenure_days", "lender_name", "app_name")
+              "emi_count", "tenure_days", "lender_name", "app_name", "pay_first")
 NUMBER_KEYS = ("principal", "in_hand", "fees", "repay_total", "emi_amount", "emi_count",
                "tenure_days")
 AMOUNT_KEYS = ("principal", "in_hand", "repay_total", "emi_amount")   # at least one must be read
@@ -35,12 +35,33 @@ Return ONLY one JSON object, no other text, with exactly these keys:
  "emi_count": number of EMIs / instalments,
  "tenure_days": loan length exactly as written, with its unit, e.g. "7 days", "2 weeks", "3 months",
  "lender_name": the bank or NBFC named as lender (not the app name),
- "app_name": the app or brand name}
-Rules: copy numbers exactly as written; never calculate, add, subtract or guess a number;
+ "app_name": the app or brand name,
+ "pay_first": money the borrower is told to PAY or TRANSFER before getting the loan
+   (e.g. "pay Rs 1,499 processing fee to release funds", "pay insurance charges of Rs 1,200 now");
+   NOT a fee that is deducted from the loan amount; null if there is none}
+Rules: copy numbers exactly as written, including words like "lakh" or "crore";
+never calculate, add, subtract or guess a number;
 use null for anything not clearly written; is_loan_ad is false for anything that is not a loan offer."""
 
 DEVANAGARI_DIGITS = str.maketrans("०१२३४५६७८९", "0123456789")
 _NUMBER = re.compile(r"\d[\d,]*(?:\.\d+)?")
+# A number with an optional Indian unit after it: "5 lakh", "1.5 lac", "2 crore", "50 hazaar", "5k" (B10).
+_UNITS = (("crore", 1e7), ("cr", 1e7), ("करोड़", 1e7), ("करोड", 1e7),
+          ("lakh", 1e5), ("lac", 1e5), ("लाख", 1e5),
+          ("hazaar", 1e3), ("hazar", 1e3), ("hajar", 1e3), ("thousand", 1e3), ("हज़ार", 1e3),
+          ("हजार", 1e3), ("k", 1e3))
+_AMOUNT = re.compile(r"(\d[\d,]*(?:\.\d+)?)\s*(crores?|cr\b|करोड़|करोड|lakhs?|lacs?|लाख|hazaar|hazar|"
+                     r"hajar|thousand|हज़ार|हजार|k\b)?", re.IGNORECASE)
+
+
+def _amount(match: re.Match) -> float:
+    """One _AMOUNT match -> rupees: "5 lakh" -> 500000, "5,00,000" -> 500000."""
+    number = float(match.group(1).replace(",", ""))
+    unit = (match.group(2) or "").lower()
+    for name, factor in _UNITS:
+        if unit.startswith(name):
+            return number * factor
+    return number
 _UNIT_DAYS = (("week", 7), ("hafte", 7), ("hafta", 7), ("saptah", 7), ("month", 30),
               ("mahin", 30), ("year", 365), ("saal", 365), ("varsh", 365))
 
@@ -69,21 +90,27 @@ def strip_fences(raw: str) -> str:
 
 
 def to_number(value: Any) -> Optional[float]:
-    """'Rs 5,000' -> 5000.0, '₹1200/-' -> 1200.0, 7 -> 7.0, 'null' / '' / 0 / -5 -> None."""
+    """'Rs 5,000' -> 5000.0, '₹1200/-' -> 1200.0, '₹5 lakh' -> 500000.0, '2 crore' -> 2e7,
+    7 -> 7.0, 'null' / '' / 0 / -5 -> None. (Unit words are worked out in code, B10.)"""
     if value is None or isinstance(value, bool):
         return None
     if isinstance(value, (int, float)):
         return float(value) if value > 0 else None
-    match = _NUMBER.search(str(value).translate(DEVANAGARI_DIGITS))
+    match = _AMOUNT.search(str(value).translate(DEVANAGARI_DIGITS))
     if not match:
         return None
-    number = float(match.group().replace(",", ""))
+    number = _amount(match)
     return number if number > 0 else None
 
 
 def to_days(value: Any) -> Optional[float]:
     """'7 days' -> 7, '2 weeks' -> 14, '3 months' -> 90, '1 saal' -> 365. Plain numbers are days."""
-    number = to_number(value)
+    if isinstance(value, str):     # days never carry lakh/crore; read the plain number
+        match = _NUMBER.search(value.translate(DEVANAGARI_DIGITS))
+        number = float(match.group().replace(",", "")) if match else None
+        number = number if number and number > 0 else None
+    else:
+        number = to_number(value)
     if number is None or isinstance(value, (int, float)):
         return number
     text = str(value).lower()
@@ -106,6 +133,7 @@ class Fields(BaseModel):
     tenure_days: Optional[float] = None
     lender_name: Optional[str] = None
     app_name: Optional[str] = None
+    pay_first: Optional[float] = None          # money asked BEFORE the loan (B9): a fraud warning
 
     @model_validator(mode="before")
     @classmethod
@@ -121,8 +149,10 @@ class Fields(BaseModel):
         else:
             data["fees"] = to_number(fee)
         data["tenure_days"] = to_days(data.get("tenure_days"))
-        for key in ("principal", "in_hand", "repay_total", "emi_amount", "emi_count"):
+        for key in ("principal", "in_hand", "repay_total", "emi_amount", "emi_count", "pay_first"):
             data[key] = to_number(data.get(key))
+        if data["pay_first"] is not None and data["fees"] == data["pay_first"]:
+            data["fees"] = None      # paid separately before the loan, not deducted from it
         loan = data.get("is_loan_ad")
         if isinstance(loan, str):
             data["is_loan_ad"] = {"true": True, "yes": True, "false": False, "no": False}.get(loan.strip().lower())
@@ -144,6 +174,8 @@ def parse(raw: str) -> dict:
 
 
 def _check_loan(fields: dict, unreadable_msg: str) -> None:
+    if fields.get("pay_first"):
+        return                      # asks for money first: the warning IS the answer (B9)
     if fields["is_loan_ad"] is False:
         raise NotALoan()
     if all(fields[k] is None for k in AMOUNT_KEYS):
@@ -198,7 +230,34 @@ def second_reading(image_bytes: bytes, first: dict, problems: list[str]) -> tupl
 
 # ---------------------------------------------------------------- text
 def _numbers_in(text: str) -> set[float]:
-    return {float(n.replace(",", "")) for n in _NUMBER.findall(text.translate(DEVANAGARI_DIGITS))}
+    """Every number written in the message, as written and with its unit ("5 lakh" -> 5 and 500000)."""
+    out = set()
+    for m in _AMOUNT.finditer(text.translate(DEVANAGARI_DIGITS)):
+        out.add(float(m.group(1).replace(",", "")))
+        out.add(_amount(m))
+    return out
+
+
+_PAY_VERB = re.compile(r"\b(pay|paid|deposit|transfer|send|bhejo|bhejiye|bhejen|jama|bharo|bhariye|"
+                       r"chukao)\b", re.I)
+_CHARGE = re.compile(r"(fee|fees|charge|charges|insurance|registration|processing|gst|tax|token|"
+                     r"security|verification|stamp|file|kharcha|shulk)", re.I)
+_BEFORE = re.compile(r"(release|before|unlock|activate|to get|disburs|approval|approve|advance|\bnow\b|"
+                     r"immediately|turant|pehle|abhi)", re.I)
+
+
+def pay_first_in_text(text: str) -> Optional[float]:
+    """Code backup for B9: a sentence that tells you to PAY a fee or charge to get the loan.
+
+    Needs all three in one sentence: a pay word, a charge word and a before/now word, plus an
+    amount. "Pay Rs 5600 in 7 days" (repaying) has no charge word, so it does not count.
+    """
+    for sentence in re.split(r"[.!?\n]+", text.translate(DEVANAGARI_DIGITS)):
+        if _PAY_VERB.search(sentence) and _CHARGE.search(sentence) and _BEFORE.search(sentence):
+            m = _AMOUNT.search(sentence)
+            if m:
+                return _amount(m)
+    return None
 
 
 def _drop_unwritten(fields: dict, text: str) -> dict:
@@ -208,8 +267,8 @@ def _drop_unwritten(fields: dict, text: str) -> dict:
     them we check the number as written (the percentage, the 2 in "2 weeks") instead.
     """
     written = _numbers_in(text)
-    for key in ("principal", "in_hand", "repay_total", "emi_amount", "emi_count"):
-        if fields[key] is not None and fields[key] not in written:
+    for key in ("principal", "in_hand", "repay_total", "emi_amount", "emi_count", "pay_first"):
+        if fields.get(key) is not None and fields[key] not in written:
             fields[key] = None
     if fields["fees"] is not None and fields["fees"] not in written and "%" not in text:
         fields["fees"] = None
@@ -219,7 +278,7 @@ def _drop_unwritten(fields: dict, text: str) -> dict:
 
 
 _RS = r"(?:rs\.?|inr|₹|rupees?|rupaye)?\s*"
-_AMT = r"(\d[\d,]*(?:\.\d+)?)"
+_AMT = r"(\d[\d,]*(?:\.\d+)?(?:\s*(?:crores?|cr\b|lakhs?|lacs?|hazaar|hazar|thousand|k\b))?)"
 _GAP = r"[^\d.!?\n]{0,25}?"          # a label and its number must be in the same sentence
 _REGEX = {
     "principal": [rf"(?:loan(?: amount)?|amount|approved|udhaar|karz){_GAP}{_RS}{_AMT}",
@@ -272,7 +331,11 @@ def extract_from_text(text: str) -> dict:
         fields = _drop_unwritten(parse(raw), text)
     except fallback.EngineError:
         fields, engine = regex_fields(text), "regex"
-    if engine == "regex" and fields["is_loan_ad"] is None:
+    # B9: money asked before the loan. The code rule backs up the AI (and covers the regex path).
+    fields["pay_first"] = fields.get("pay_first") or pay_first_in_text(text)
+    if fields["pay_first"] is not None and fields["fees"] == fields["pay_first"]:
+        fields["fees"] = None        # paid separately before the loan, not deducted from it
+    if engine == "regex" and fields["is_loan_ad"] is None and not fields["pay_first"]:
         raise NotALoan()
     _check_loan(fields, MSG_BAD_TEXT)
     return {"fields": fields, "engines": {"read": engine, "second_read": None}}

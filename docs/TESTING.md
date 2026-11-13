@@ -52,6 +52,7 @@ Pace: one offer every 25 s (Groq ~3 photos/min). Never during a mentor round or 
 | 13 Nov 5:45 PM | Real second reading: ad "loan 5000, fee 1200, you get 4000" | Qwen 2.08 s -> mismatch -> Gemini 3.51 s agrees -> CANNOT_SAY, in-hand unverified, 7.5 s |
 | 13 Nov 5:55 PM | Real API: photo and Hinglish SMS ("10,000 ... fee 10% ... 2 hafte ... 11,500") | photo 3.9 s and SMS 4.7 s, card + MP3, numbers checked by hand; non-loan -> 422 Hindi |
 | 13 Nov 5:50 PM | Real API through the bot's own code (Telegram faked) | photo 3.8 s; SMS 1,00,000 -> 95,000 / 1,20,000 / 25,000 in 5.7 s; both card + MP3 |
+| 13 Nov 7:30 PM | Real API + gpt-oss on the data teammate's 3 scam SMS + 1 normal offer | scam2 and scam3 -> "Savdhaan!" warning + DO_NOT_PAY_FIRST; scam1 (no money asked) no warning; "₹5 lakh" -> 500000; normal offer unchanged (4500 / 5600 / 7 / 1100) |
 | | Real Telegram, printed ads (7:30 PM gate) | not run yet |
 | | 30-offer run | N right · M partly unverified · K wrong-as-verified · median T s |
 | | Harassment samples | __ / 10 |

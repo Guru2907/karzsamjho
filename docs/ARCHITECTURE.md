@@ -32,7 +32,7 @@ Helper's browser (PWA)  ──► web/ (Vite)  ─┼──► FastAPI api/main.
 | Evidence PDF | yes: built fresh from the database by evidence.build_pdf (F3), served at /api/cases/{id}/evidence.pdf; English, 12-digit numbers masked, hash chain, complaint draft | evidence.py, main.py |
 | Bot harassment log | yes: forward a message (or /log) -> case event -> Hindi rules -> PDF in the chat (D5) | bot/main.py |
 | Verify | not yet: always answers ok (F4) | main.py |
-| Complaint route + day counter | day counter yes (F2); the PDF lists every route that may apply until F5 picks one | evidence.py; F5 |
+| Complaint route + day counter | yes: one route per case from the RBI match (linked check, else the lender name): regulated -> grievance officer, then Ombudsman after 30 days (+ "day N of 30"); not found -> Sachet + cybercrime / 1930; similar or not checked -> both; the PDF adds police for threats (F5) | next_step.complaint_route, main.py |
 | Health | yes: each engine up/down (free pings, cached 60 s), database state, can_read_photos / can_speak (A5) | fallback.ping, main.py |
 
 No card -> `422 {"detail": {"code": "NOT_A_LOAN" | "UNREADABLE", "text_hi": "..."}}`; the bot and web page show `text_hi` as it is (D26).

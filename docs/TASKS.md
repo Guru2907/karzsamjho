@@ -375,7 +375,7 @@ All changes go through a pull request that Gurpreet merges (D27).
 - Done when: Editing one stored entry by hand makes verify fail
 
 ### F5 · Route chooser and day counter
-- Status: todo (Gurpreet)
+- Status: review (Gurpreet): one route per case from the RBI match (linked check, else the lender name) + \"day N of 30\"; printed in the PDF (proven 1:04 AM)
 - Type: Must
 - Depends on: C1, F2
 - Files: api/core/next_step.py

@@ -46,7 +46,7 @@ All changes go through a pull request that Gurpreet merges (D27).
 - Done when: With the Groq key removed, a check still answers through Gemini Flash-Lite; a repeated photo answers instantly
 
 ### A5 · `/api/health`, `/api/stats`
-- Status: todo
+- Status: todo (partly: /api/stats counts the in-memory checks; /api/health shows keys set, not engines reachable)
 - Type: Must
 - Depends on: A3
 - Files: api/main.py
@@ -84,21 +84,21 @@ All changes go through a pull request that Gurpreet merges (D27).
 - Done when: A pasted SMS offer returns fields
 
 ### B3 · `maths.py` + unit tests
-- Status: review
+- Status: done (built by Siddeshwar; checked by agent for Gurpreet 6:00 PM: hand-worked table, real runs)
 - Type: Must
 - Depends on: A1
 - Files: api/core/maths.py, api/tests/test_maths.py
 - Done when: 12 tests pass: normal, fee upfront, EMI, missing field, mismatch, zero days
 
 ### B4 · Cross-check and fill gaps
-- Status: review
+- Status: done (built by Siddeshwar; checked by agent for Gurpreet 6:00 PM: contradicting ad -> CANNOT_SAY, missing in-hand derived, real run)
 - Type: Must
 - Depends on: B3
 - Files: api/core/maths.py, api/tests/test_maths.py
 - Done when: A contradictory ad is flagged; a missing in-hand amount is derived and marked "derived"
 
 ### B5 · `verdict.py` with thresholds in a config file
-- Status: review
+- Status: done (built by Siddeshwar; checked by agent for Gurpreet 6:00 PM: threshold test, real verdicts)
 - Type: Must
 - Depends on: B3
 - Files: api/core/verdict.py, api/core/config.py
@@ -136,7 +136,7 @@ All changes go through a pull request that Gurpreet merges (D27).
 - Done when: A listed app returns FOUND with its lender; a made-up app returns NOT_FOUND; a near-miss spelling returns SIMILAR
 
 ### C2 · `next_step.py`
-- Status: todo
+- Status: todo (tonight a fixed next step in main.py, D26)
 - Type: Must
 - Depends on: B5, C1
 - Files: api/core/next_step.py
@@ -160,21 +160,21 @@ All changes go through a pull request that Gurpreet merges (D27).
 - Note: bot/main.py skeleton exists (photo → API → text card); D1 = make it robust + wire audio after D2.
 
 ### D2 · `speak.py`: template sentence + edge-tts audio
-- Status: review
+- Status: done (built by Siddeshwar; checked by agent for Gurpreet 6:00 PM: real MP3 in 1.5 to 3 s, numbers match the card)
 - Type: Must
 - Depends on: B3
 - Files: api/core/speak.py
 - Done when: An MP3 is produced in under 5 seconds; numbers match the card
 
 ### D3 · Bot sends formatted text + MP3
-- Status: review
+- Status: review (Siddeshwar; fixes in #11: 45 s wait, Indian commas, tests). Card + MP3 proven through the real API with Telegram faked; real Telegram with the 3 printed ads still to do
 - Type: Must
 - Depends on: D1, D2
 - Files: bot/main.py
 - Done when: Both arrive for all 3 printed ads; with voice switched off, the text still arrives
 
 ### D4 · Bot accepts pasted text offers
-- Status: review
+- Status: review (Siddeshwar). Pasted SMS proven through the real API with Telegram faked; real Telegram still to do
 - Type: Must
 - Depends on: B2, D1
 - Files: bot/main.py
@@ -336,7 +336,7 @@ All changes go through a pull request that Gurpreet merges (D27).
 - Done when: File exists with app and lender columns
 
 ### G5 · Independent "done when" checks
-- Status: todo
+- Status: doing: B3, B4, B5, D2 checked 6:00 PM by agent for Gurpreet; Gurpreet's tasks (A6, A7, B1, B2, B6, B7, B8) need someone else
 - Type: Must
 - Depends on: the task being checked
 - Files: (no code)

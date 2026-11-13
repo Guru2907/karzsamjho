@@ -2,6 +2,13 @@
 
 This replaces the earlier split. Decision D25 in docs/DECISIONS.md. If this file and the code disagree, trust the code and fix this file.
 
+## Status at 6:30 PM
+
+- **Backend + bot: done and merged** (PRs #1 to #11). Photo or SMS in Telegram -> card + Hindi MP3, with the second reading. 152 tests pass on main.
+- Lead L1 to L5 and Siddeshwar T1 to T4 finished by 5:50 PM. Siddeshwar's bot got three small fixes after review (#11).
+- **Not arrived yet:** the PWA teammate's web PRs (`/check` still shows the placeholder) and the data teammate's printed ads and SMS offers (`api/data/offers/` is empty).
+- **Still to do before 7:30:** real Telegram on the server laptop with the demo bot; the 3 printed ads twice; the rehearsal checklist below.
+
 ## Goal for the review (7:30 PM, may run to 9 PM)
 
 1. **Photo.** A photo of a loan ad, sent in Telegram or uploaded on the web `/check` page, comes back as a card with big rupee numbers plus a Hindi voice message (MP3).

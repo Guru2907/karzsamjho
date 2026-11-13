@@ -35,6 +35,10 @@ Health check: open http://localhost:8000/api/health
 | Web can't reach API | Check the Vite proxy and that the API runs with --host 0.0.0.0 |
 | `ModuleNotFoundError` | venv not active, or `pip install -r api/requirements.txt` |
 | Everything slow | Check network; switch to hotspot; demo uses cached ads |
+| Bot says "Server abhi band hai" | The API is not running, or API_URL in .env points elsewhere. The bot waits up to 45 s (from the config timeouts) before saying this |
+| Old checks or their MP3 gone | Expected: checks live in memory until the database (A3); a restart clears them |
+| A photo says "Photo saaf nahi hai" | Both readers failed or nothing readable; check the API log for `read_image: engine=... failed (...)` lines (type and status only) |
+| How many Groq photo reads are left? | API log lines `read_image: engine=qwen ok ... remaining_tokens=... remaining_requests=...` |
 
 ## Network switch-over
 1. Turn off Wi-Fi, join hotspot. 2. Restart nothing; the bot reconnects. 3. Phones must use the laptop's NEW address. 4. Check /api/health.

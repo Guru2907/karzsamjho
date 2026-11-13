@@ -9,7 +9,7 @@ Built by Team Y2K Devs at COLOSSUS 3.0 (13-14 Nov 2026), FinTech track.
 **New here? Read [docs/START_HERE.md](docs/START_HERE.md) first.**
 
 ## What it does
-- **Snap & hear:** photo in Telegram -> Hindi voice + a simple card
+- **Snap & hear:** photo (or pasted SMS) in Telegram -> Hindi voice + a simple card
 - **Rupee receipt:** in hand, to repay, days, extra; maths in code, never by AI
 - **Official next step:** is the app in RBI's directory of digital lending apps? Then one next action
 - **Harassment log:** threats and calls -> RBI recovery-rule matches -> evidence PDF + complaint draft

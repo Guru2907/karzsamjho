@@ -79,11 +79,11 @@ Start the API first. You only need the parts your task touches (web-only work = 
 ## D. Check it works
 
 - http://localhost:8000/api/health shows `"api":"up"` and your keys as `true`
-- http://localhost:5173/check shows the sample card (3800 / 5000 / 7 / 1200)
-- Send any photo to your bot in Telegram: the ₹ card comes back
-- Tests: `.venv\Scripts\python -m pytest -q`
+- Send a loan ad photo or paste a loan SMS to your bot in Telegram: the ₹ card comes back, then a Hindi MP3
+- Send something that is not a loan: a polite Hindi "Yeh loan ka offer nahi lagta" and no card
+- Tests: `.venv\Scripts\python -m pytest -q` (152 passed on main at 6:30 PM, 13 Nov)
 
-Everything shows **sample data** for now. The tasks in `docs/TASKS.md` replace it with the real thing.
+Checks are **real** since 6:00 PM, 13 Nov (photo/text -> AI reads -> Python maths -> verdict -> Hindi voice). Still sample data: cases, events, evidence PDF, verify. The `/check` page still shows the old placeholder until the PWA work (E2, E3, E9) is merged. Results are kept in memory, so they disappear when the API restarts (database: task A3).
 
 ---
 
@@ -104,7 +104,9 @@ Everything shows **sample data** for now. The tasks in `docs/TASKS.md` replace i
    git commit -m "maths: add rupee maths + tests"
    git push -u origin b3-maths
    ```
-7. Someone else checks it, then merges. Then `/clear` the agent before the next task.
+7. Tell Gurpreet; he checks and merges (D27). Nobody else merges and nobody pushes to `main`. Then `/clear` the agent before the next task.
+   - Gurpreet merges with **"Create a merge commit"** (never squash) and ticks **"Merge without waiting for requirements to be met"** (D28).
+   - If your task builds on a branch that is not merged yet, start your branch from that branch and say "merge after #N" in the PR.
 
 **Merge conflict in PROGRESS.md?** Normal (two people added entries at the top). Keep both entries, delete the `<<<<<<<`, `=======`, `>>>>>>>` lines, commit.
 

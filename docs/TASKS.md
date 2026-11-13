@@ -39,7 +39,7 @@ All changes go through a pull request that Gurpreet merges (D27).
 - Done when: A check and a case survive a server restart
 
 ### A4 · `fallback.py` + `cache.py`
-- Status: doing (Gurpreet): speak() done 5:20 PM; read_image, read_text next; cache after the review
+- Status: doing (Gurpreet): speak(), read_image(), read_text() done 5:40 PM; cache after the review
 - Type: Must
 - Depends on: A2
 - Files: api/core/fallback.py, api/core/cache.py
@@ -53,7 +53,7 @@ All changes go through a pull request that Gurpreet merges (D27).
 - Done when: Health lists each engine as up or down; stats numbers match the database
 
 ### A6 · Seconds stamp and engine names on every result
-- Status: todo
+- Status: review (fallback side: every read returns engine + seconds; A7 puts them on the CheckResult)
 - Type: Must
 - Depends on: A4
 - Files: api/main.py, api/core/fallback.py

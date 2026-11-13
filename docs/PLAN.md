@@ -80,9 +80,11 @@ A number on the card is `{"value": 3800, "status": "derived"}`. Status is `read`
 ```python
 # api/core/fallback.py (lead). The only file that calls outside services.
 class EngineError(Exception): ...          # every engine that was tried has failed
-def read_image(image_bytes: bytes, engines: tuple[str, ...] = ("qwen", "gemini")) -> tuple[str, str, float]
+def read_image(image_bytes: bytes, prompt: str, engines: tuple[str, ...] = ("qwen", "gemini"),
+               check: Callable[[str], Any] | None = None) -> tuple[str, str, float]
                                            # -> (raw reply, engine name, seconds)
-def read_text(prompt: str) -> tuple[str, str, float]     # gpt-oss-20b
+                                           # check(raw) raising = that engine failed, try the next
+def read_text(prompt: str, check=None) -> tuple[str, str, float]   # gpt-oss-20b only
 async def speak(text: str, out_path: str) -> bool         # True if the MP3 file was written
 
 # api/core/extract.py (lead)

@@ -6,7 +6,7 @@ Every agent session and every person adds an entry here at the end of each task,
 - Now: re-planned at 4:50 PM (D25); no product code yet. Everyone follows docs/PLAN.md: photo or text -> card + Hindi voice, with second reading, merged and tested by 7:00 PM, rehearsal 7:00 to 7:30 PM. Harassment, lender, database and cache wait until after the review.
 - Gates: 2:00 PM [x] · 7:30 PM [ ] · 12:30 AM [ ] · 3:30 AM freeze [ ]
 - Known broken: (none yet)
-- Groq photo reads used today on the server account: 0 of about 80
+- Groq photo reads used today on the server account: 0 of about 80 (Gurpreet's own account: 1)
 
 ## Entry template (copy, fill, paste at the top of the log below)
 ```
@@ -20,6 +20,14 @@ Every agent session and every person adds an entry here at the end of each task,
 ```
 
 ## Log
+
+### 13 Nov 2026, 5:40 PM · L2 read_image(), read_text() (A4, A6) · agent for Gurpreet
+- Did: Qwen -> Gemini photo reading, gpt-oss-20b text reading. Each engine once, temperature 0, timeout from config, Groq max_retries=0, Gemini 1 attempt; a 429, error or a reply that `check` rejects moves on at once; EngineError when all fail. Logs engine, seconds, tokens, Groq tokens/requests left; errors logged by type + status only.
+- Files: api/core/fallback.py, api/tests/test_fallback.py, docs/PLAN.md (read_image now takes `prompt` and `check`)
+- Proof: `pytest -q` 19 passed (8 new). Real run on a synthetic ad: Qwen 1.17 s (1,866 prompt tokens), Gemini 4.54 s, gpt-oss-20b 0.80 s; all three read 5000 / 1200 / 5000 / 7 correctly.
+- Status in docs/TASKS.md: A4 = doing (cache after the review); A6 = review (engine + seconds returned by every read)
+- Next: L3 extract.py (prompt, number clean-up, Pydantic, not-a-loan, regex backup).
+- Broken / risks: readers return numbers as text ("Rs 5000", "7 days"); extract.py must convert them. Qwen put the app name in lender_name too.
 
 ### 13 Nov 2026, 5:20 PM · L1 speak() (part of A4) · agent for Gurpreet
 - Did: `fallback.speak(text, out_path) -> bool`: edge-tts hi-IN-SwaraNeural, timeout from config, writes a .part file then renames, never raises (False = send the card alone). Added `EngineError` and the agreed `read_image` / `read_text` signatures (still stubs).

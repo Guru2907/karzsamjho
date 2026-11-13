@@ -21,6 +21,14 @@ Every agent session and every person adds an entry here at the end of each task,
 
 ## Log
 
+### 13 Nov 2026, 7:05 PM · D6 + D7 handed to Siddeshwar · agent for Gurpreet
+- Did: D6 and D7 now belong to Siddeshwar in full (D35), with the exact functions he may change in Gurpreet's files, what his agent must read and check in the installed libraries, specs, tests, and a paste-ready prompt (docs/PLAN.md).
+- Files: docs/PLAN.md, docs/TASKS.md, docs/DECISIONS.md (D35), docs/PROGRESS.md
+- Proof: docs only.
+- Status in docs/TASKS.md: D6, D7 owner = Siddeshwar
+- Next: Gurpreet A3 (database). Siddeshwar D6/D7 after the 7:30 gate, then F1, F3, D5.
+- Broken / risks: F1, F3, D5 (musts for 12:30 AM) now start later; D6 + D7 first is the lead's call.
+
 ### 13 Nov 2026, 7:00 PM · A4 photo cache · agent for Gurpreet
 - Did: cache.py stores each photo's CheckResult by SHA-256 of the bytes (one JSON file in CACHE_DIR, written via .part + rename). main.py checks it before any AI call; a hit returns cached=true and the same MP3; a missing MP3 is made again with edge-tts only; check ids continue from the highest id on disk, so a new check never overwrites a cached MP3. Text and not-a-loan answers are not cached.
 - Files: api/core/cache.py, api/main.py, api/tests/test_cache.py (new), api/tests/test_pipeline.py, docs/ARCHITECTURE.md, RUNBOOK.md, DEMO.md

@@ -282,7 +282,77 @@ Same meaning as the Hindi template. Native script, so the voices read them prope
 - **mr** (voice mr-IN-AarohiNeural): "तुम्हाला हातात {in_hand} रुपये मिळतील. {days} दिवसांत {repay} रुपये परत करावे लागतील. म्हणजे {extra} रुपये जास्त."
 - **mr**, numbers not clear: "या ऑफरचे सगळे आकडे नीट वाचता आले नाहीत. कर्ज घेण्याआधी बँक मित्राला विचारा."
 
+### D6 + D7: all of it goes to Siddeshwar (D35, 7:05 PM)
+
+Gurpreet builds A3 (database) meanwhile and stays out of the functions listed below. Siddeshwar gets these extra pieces of Gurpreet's files, **only for D6 and D7**:
+
+| File | Siddeshwar may change only |
+|---|---|
+| `api/core/fallback.py` | add `transcribe()`; add the optional `voice` parameter to `speak()` |
+| `api/core/config.py` | add `tts_voice_bn`, `tts_voice_mr` and a `tts_voice(lang)` helper |
+| `.env.example` | add `TTS_VOICE_BN`, `TTS_VOICE_MR` |
+| `api/core/schemas.py` | add `listen: Optional[str] = None` to `Engines` |
+| `api/core/extract.py` | add `extract_from_voice()` and its Hindi message |
+| `api/core/cache.py` | add the `lang` parameter to `image_key()` |
+| `api/main.py` | only `create_check` (the `audio` field, reading `lang`) and passing `lang` / `audio` through `run_check` to the reader, `speech_text`, `make_audio` and the cache key. Gurpreet's A3 work touches only where results are stored |
+
+Order: D6 or D7 first, one PR each. Both are stretch: start only after Gurpreet says the 7:30 gate has passed. After D6 and D7: F1, F3, D5 (musts for 12:30 AM).
+
+### Prompt for Siddeshwar: D6 + D7
+
+```
+I am Siddeshwar. You are doing tasks D6 (voice-note input) and D7 (Bengali + Marathi voice) for KarzSamjho.
+Start only after Gurpreet tells me the 7:30 PM gate has passed (both are stretch tasks). Follow "How to report while working" in CLAUDE.md.
+
+READ FIRST (in this order, before planning):
+1. AGENTS.md, CLAUDE.md
+2. docs/PLAN.md: sections "After the review" (signatures, "API additions (D33)", the Bengali and Marathi sentences) and "D6 + D7: all of it goes to Siddeshwar"
+3. docs/DECISIONS.md: D22 (number words -> digits), D26 (422 + text_hi), D32, D33, D34, D35
+4. docs/TASKS.md: D6 and D7 "Done when"
+5. The code you will change or call, before touching it:
+   - api/core/fallback.py: read_text(), _groq_chat() (the pattern: one call, timeout, max_retries=0, temperature 0, log engine/seconds/tokens, EngineError, never log keys), speak()
+   - api/core/extract.py: extract_from_text(), parse(), Unreadable / NotALoan (they carry text_hi)
+   - api/main.py: create_check(), run_check()
+   - api/core/speak.py, api/core/config.py, api/core/schemas.py (Engines), api/core/cache.py (image_key)
+   - bot/main.py: ask_api(), send_result(), the handlers in main()
+   - tests to copy the fake patterns from: api/tests/test_fallback.py, api/tests/test_pipeline.py (env fixture, fake readers, fake voice), api/tests/test_bot.py (FakeUpdate)
+6. Check the installed libraries in .venv instead of guessing (python -c "import inspect, ..."):
+   - groq 1.7.0: Groq().audio.transcriptions.create(...) parameters (file, model, language, temperature, response_format) and that it accepts OGG
+   - python-telegram-bot 22.8: filters.VOICE, message.voice (duration, get_file), InlineKeyboardButton / InlineKeyboardMarkup, CallbackQueryHandler, context.chat_data
+   - edge_tts.list_voices(): bn-IN-TanishaaNeural and mr-IN-AarohiNeural exist
+
+FILES YOU MAY EDIT: bot/main.py, api/core/speak.py, and ONLY the pieces listed in the docs/PLAN.md table "D6 + D7: all of it goes to Siddeshwar" (fallback.py, config.py, .env.example, schemas.py, extract.py, cache.py, main.py), plus tests in api/tests/, your PROGRESS entry and your task status. Nothing else. Gurpreet is editing db.py and the storage lines of main.py at the same time: do not touch those.
+
+D6: voice note -> card + voice
+- fallback.transcribe(audio_bytes) -> (text, "whisper", seconds): Groq settings.groq_stt_model, language "hi", temperature 0, timeout settings.stt_timeout_s, max_retries=0; raise EngineError on any failure; log engine, seconds and the text length (not the text).
+- extract.extract_from_voice(audio_bytes) -> same shape as extract_from_text plus engines["listen"] = "whisper":
+  transcribe -> fallback.read_text with a prompt "rewrite this with every number written in digits; change nothing else" (D22; if that fails use the raw transcript) -> extract_from_text(digits_text).
+  Whisper fails -> raise Unreadable("Awaaz saaf nahi aayi. Dobara bolo, ya photo bhejo.").
+- schemas.Engines: add listen: Optional[str] = None (additive, D33).
+- main.create_check: multipart field "audio" -> run_check(audio=...); voice notes never get a second reading and are not cached.
+- bot: a handler for filters.VOICE: refuse notes longer than 60 s in Hindi; download; POST /api/checks with files={"audio": ("voice.ogg", bytes, "audio/ogg")} and data lang/source; then send_result as for photos.
+- Done when: a spoken offer in Hindi ("paanch hazaar ka loan, saat din mein chhe hazaar lautana") returns the card + MP3 with the right numbers.
+
+D7: Bengali and Marathi voice
+- config: tts_voice_bn (TTS_VOICE_BN, default bn-IN-TanishaaNeural), tts_voice_mr (TTS_VOICE_MR, default mr-IN-AarohiNeural), and tts_voice(lang) returning the voice for "hi", "bn", "mr" (anything else -> Hindi). Add both to .env.example.
+- fallback.speak(text, out_path, voice=None): None means settings.tts_voice_hi.
+- speak.speech_text(numbers, lang="hi") with the bn and mr templates and "numbers not clear" sentences from docs/PLAN.md (native script, digits, no commas); make_audio(check_id, text, lang="hi") passes config.settings.tts_voice(lang).
+- main: read lang from the form or JSON (only "hi", "bn", "mr"; anything else -> "hi"); pass it to speech_text and make_audio. The field speech_text_hi keeps its name (contract) and holds the spoken sentence.
+- cache.image_key(image_bytes, lang="hi"): for "hi" exactly sha256(image) as now (existing cache stays valid); otherwise sha256(image + b"|lang=" + lang). Otherwise a photo cached in Hindi would answer a Bengali request with the Hindi MP3.
+- bot: /bhasha command with three inline buttons "Hindi", "বাংলা", "मराठी"; store the choice in context.chat_data["lang"]; send it as lang on every request; default "hi". The card text stays in Hinglish.
+- A native speaker approves each bn and mr sentence BEFORE the PR (write who approved in the PR).
+- Done when: the same check with lang bn and mr returns an MP3 in that language and its numbers match the card.
+
+TESTS (no internet, no keys; copy the fakes from the existing tests): transcribe ok / fails -> EngineError; extract_from_voice with fake transcribe + fake read_text (words -> digits) gives the right fields and listen="whisper"; Whisper down -> 422 UNREADABLE with the Hindi text; POST /api/checks with an "audio" field end to end; speech_text bn and mr for row 1 of the PLAN.md table (3800 / 5000 / 7 / 1200) and for an unclear check; make_audio passes the right voice; image_key("hi") equals plain sha256 and bn differs; the bot voice handler posts an "audio" field; /bhasha stores the language.
+Then one real run of each: a recorded Hindi voice note, and the same photo with lang bn and lang mr (listen to both MP3s).
+
+WORKFLOW: one task at a time. Before each say "We are doing D6" (or D7). Then: pytest -q (show output); pull main; branch d6-voice-notes / d7-bn-mr; commit "<area>: <what changed>"; push; gh pr create; gh pr checks. Never push to main, never merge (Gurpreet merges). No Claude co-author line. Add your entry at the top of docs/PROGRESS.md and set D6/D7 to review in docs/TASKS.md in the same PR. Stop all features at 3:30 AM.
+After D6 and D7: F1, F3, D5 from docs/PLAN.md (musts for the 12:30 AM gate).
+```
+
 ### Prompt for Siddeshwar (after-review work)
+
+(Superseded for D6 and D7 by the D6 + D7 prompt above, D35; still valid for F1, F3, D5.)
 
 ```
 I am Siddeshwar. Read AGENTS.md, CLAUDE.md, then docs/PLAN.md section "After the review", then the top of docs/PROGRESS.md and docs/DECISIONS.md D28 to D34. Follow "How to report while working" in CLAUDE.md.

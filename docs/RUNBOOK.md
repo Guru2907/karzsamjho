@@ -24,6 +24,21 @@ Health check: open http://localhost:8000/api/health (add `?fresh=true` to re-che
 - Can't connect: allow Python/Node in Windows Firewall, set the network to Private, or put laptop and phone on one phone hotspot (venue Wi-Fi may block device-to-device).
 - Camera button and audio work on plain http. "Add to home screen" needs HTTPS; not needed for the demo.
 
+## Hosting (Render API + Vercel web, 14 Nov 6:45 AM)
+- API: Render Web Service `karzsamjho-api` -> https://karzsamjho-api.onrender.com (health: /api/health).
+  Build `pip install -r api/requirements.txt`; start `uvicorn api.main:app --host 0.0.0.0 --port $PORT`; Free.
+  Environment: pasted from the local .env ("Add from .env") WITHOUT TELEGRAM_BOT_TOKEN and API_URL; plus PYTHON_VERSION=3.12.7.
+  Keys live only in Render's dashboard, never in the repo.
+- Web: Vercel project, Root Directory `web`, Vite, build `npm run build`, output `dist`, Node 22.
+  `web/vercel.json` forwards /api/* to the Render API (checks, audio, PDFs; no CORS) and sends every other path to index.html.
+- Bot: stays on the laptop; local .env `API_URL=https://karzsamjho-api.onrender.com`, restart the bot. Bot and web then share one API.
+- Free Render sleeps after 15 min idle and its disk resets on every restart / redeploy (SQLite file, cache, MP3s start empty;
+  RBI lists and demo files come back from the repo). UptimeRobot pings /api/health every 5 min to keep it awake.
+  Do not redeploy after setting up demo cases. Open /api/health 5 min before presenting.
+- Install as an app (HTTPS): Android Chrome -> "Install app" or menu > Install app / Add to Home screen; iPhone Safari ->
+  Share > Add to Home Screen; laptop Chrome/Edge -> install icon in the address bar. The website's QR points to <host>/check.
+- Fallback: the laptop setup (Run, above) still works unchanged.
+
 ## When something breaks
 | Symptom | Fix |
 |---|---|

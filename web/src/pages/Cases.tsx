@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react'
 import { ChevronRight, FolderOpen, MessageSquareWarning, WifiOff } from 'lucide-react'
 import { Link } from 'react-router-dom'
+import { NewCaseDialog } from '@/components/cases/NewCaseDialog'
 import { Button } from '@/components/ui/button'
 import { RouteBadge, RuleBadges } from '@/components/cases/meta'
 import { dayLine, uniqueRules } from '@/components/cases/caseInfo'
@@ -52,6 +53,8 @@ export default function Cases() {
         <h1 className="text-2xl font-bold tracking-tight text-foreground">Cases</h1>
       </div>
 
+      <NewCaseDialog />
+
       {loading && (
         <p className="text-sm text-muted-foreground text-center py-12">Loading cases…</p>
       )}
@@ -75,7 +78,7 @@ export default function Cases() {
           </div>
           <p className="text-base font-medium text-foreground">No cases yet</p>
           <p className="text-xs text-muted-foreground max-w-xs">
-            Cases are created when a borrower logs harassment or needs an evidence PDF.
+            Start one above, or forward a threat to the Telegram bot: both appear here.
           </p>
         </div>
       )}

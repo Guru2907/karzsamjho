@@ -17,6 +17,7 @@ import { api, ApiError, type CheckResult } from '@/lib/api'
 import { days, ERROR_MESSAGES, rupees } from '@/lib/format'
 import { sampleResults } from '@/lib/sample'
 import { InstallPrompt } from '@/components/InstallPrompt'
+import { NewCaseDialog } from '@/components/cases/NewCaseDialog'
 
 function buildShareText(result: CheckResult): string {
   const lines: string[] = []
@@ -286,6 +287,13 @@ export default function Check() {
                   <span>New check</span>
                 </Button>
               </div>
+
+              <NewCaseDialog
+                label="Being threatened? Start a case"
+                variant="outline"
+                checkId={result.id}
+                defaultLender={result.lender?.name_read ?? ''}
+              />
 
               <HelperDetails result={result} />
             </>

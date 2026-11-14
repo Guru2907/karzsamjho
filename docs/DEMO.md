@@ -80,3 +80,4 @@ All in api/data/offers/ (images in demo/, answers in demo_pack.json and sms_demo
 11. Built before today? Show docs/PREP.md; repo starts 11:30 AM.
 12. Why would a bank mitra bother? Our assumption, not a finding; a pilot tests it.
 - [ ] Cases on the web (E4, E5, 6:00 AM): /cases -> open the case from the Telegram demo -> route badge + day, timeline with named rules (H1-H5) and the Aadhaar masked, "Log a threat" (the new entry and its rules appear without reload), Evidence PDF, "Verify record" -> "Record not edited since logging".
+- [ ] Cases from the web too (D56, 7:50 AM): /cases -> "New case" (borrower + lender), or on a /check result "Being threatened? Start a case" (linked to that check) -> case page -> Log a threat -> PDF -> Verify. Telegram still opens cases by forwarding a threat; both land in the same /cases.

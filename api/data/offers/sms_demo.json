@@ -1,0 +1,80 @@
+{
+  "about": "Demo pack G8 (D52): 5 synthetic SMS offers to paste live in the Telegram bot. Invented names were checked NOT_FOUND with lender.match_lender before use; the only real names are KreditBee (2, a listed app) and Alok Auto Credit Pvt. Ltd. (3, on RBI's cancelled-registration list), with ordinary terms and the words 'Synthetic sample'. Expected answers were worked out by hand with the formulas in CLAUDE.md BEFORE any run (K = 0). Field meanings: see api/data/offers/demo_pack.json 'expected_fields'.",
+  "items": [
+    {
+      "id": "sms1",
+      "lang": "hi",
+      "text": "Sikka Swift: Badhai ho! Aapka 20,000 ka loan approve ho gaya hai. Loan paane ke liye pehle 799 rupaye processing fee bhejo. 30 din mein 24,000 lautana hai. Synthetic sample.",
+      "expected": {
+        "principal": 20000, "fees": null, "emi_amount": null, "emi_count": null, "pay_first": 799,
+        "in_hand": 20000, "repay_total": 24000, "tenure_days": 30,
+        "extra": 4000, "per_day": 133, "apr_simple": 243,
+        "verdict": "VERY_COSTLY",
+        "lender_flag": "NOT_FOUND", "lender_match": "NOT_FOUND", "lender_warning": false, "nbfc": false,
+        "next_step": "DO_NOT_PAY_FIRST"
+      },
+      "hand_working": "'pehle 799 rupaye processing fee bhejo' = pay word + amount in one sentence -> pay_first 799 (D42), paid separately so not deducted -> in_hand = 20000 (derived); extra = 24000 - 20000 = 4000; per_day = 4000/30 = 133.3 -> 133; apr = 4000/20000 x 365/30 x 100 = 243.3 -> 243 -> VERY_COSTLY. pay_first first -> DO_NOT_PAY_FIRST.",
+      "proves": "Hinglish advance-fee scam: voice starts 'Savdhaan! ... 799 rupaye ... Paise mat bhejo'. Read it ALOUD as a voice note for the voice-note demo (D6): same answer expected."
+    },
+    {
+      "id": "sms2",
+      "lang": "hi",
+      "text": "KreditBee: Your personal loan of Rs 30,000 is approved. Processing fee Rs 600 will be deducted. Tenure 12 months, EMI Rs 2,800 x 12. Synthetic sample.",
+      "expected": {
+        "principal": 30000, "fees": 600, "emi_amount": 2800, "emi_count": 12, "pay_first": null,
+        "in_hand": 29400, "repay_total": 33600, "tenure_days": 360,
+        "extra": 4200, "per_day": 12, "apr_simple": 14,
+        "verdict": "USUAL",
+        "lender_flag": "FOUND", "lender_match": "FOUND", "lender_warning": false, "nbfc": true,
+        "next_step": "KEEP_PAPERS"
+      },
+      "hand_working": "in_hand = 30000 - 600 = 29400; repay = 2800 x 12 = 33600; 12 months = 360 days; extra = 4200; per_day = 4200/360 = 11.7 -> 12; apr = 4200/29400 x 365/360 x 100 = 14.5 -> 14 -> USUAL. FOUND -> verdict decides -> KEEP_PAPERS.",
+      "proves": "LIVE 2 by SMS: 'found in RBI's list, linked to its lender', list date, registered NBFC line."
+    },
+    {
+      "id": "sms3",
+      "lang": "hi",
+      "text": "Alok Auto Credit Pvt. Ltd.: Special loan offer of Rs 25,000 for 12 months. EMI Rs 2,350 x 12. Processing fee Rs 500. Synthetic sample.",
+      "expected": {
+        "principal": 25000, "fees": 500, "emi_amount": 2350, "emi_count": 12, "pay_first": null,
+        "in_hand": 24500, "repay_total": 28200, "tenure_days": 360,
+        "extra": 3700, "per_day": 10, "apr_simple": 15,
+        "verdict": "USUAL",
+        "lender_flag": "WARNING", "lender_match": "NOT_FOUND", "lender_warning": true, "nbfc": false,
+        "next_step": "ON_WARNING_LIST"
+      },
+      "hand_working": "in_hand = 25000 - 500 = 24500; repay = 2350 x 12 = 28200; 360 days; extra = 3700; per_day = 3700/360 = 10.3 -> 10; apr = 3700/24500 x 365/360 x 100 = 15.3 -> 15 -> USUAL. Exact name on RBI's cancelled-registration list -> warning -> ON_WARNING_LIST.",
+      "proves": "LIVE 2b: 'RBI ne is company ka NBFC registration radd kiya hai' with the list date; next step 'Is company se loan lene se pehle ruko'. A fact with its source, never 'fraud'."
+    },
+    {
+      "id": "sms4",
+      "lang": "mr",
+      "text": "घड्याळ क्रेडिट: तुमचे 8000 रुपयांचे कर्ज मंजूर. प्रोसेसिंग फी 400 रुपये कर्जातून कापली जाईल. 15 दिवसांत 9000 रुपये परत करा. Synthetic sample.",
+      "expected": {
+        "principal": 8000, "fees": 400, "emi_amount": null, "emi_count": null, "pay_first": null,
+        "in_hand": 7600, "repay_total": 9000, "tenure_days": 15,
+        "extra": 1400, "per_day": 93, "apr_simple": 448,
+        "verdict": "VERY_COSTLY",
+        "lender_flag": "NOT_FOUND", "lender_match": "NOT_FOUND", "lender_warning": false, "nbfc": false,
+        "next_step": "NOT_IN_RBI_LIST"
+      },
+      "hand_working": "in_hand = 8000 - 400 = 7600; extra = 9000 - 7600 = 1400; per_day = 1400/15 = 93.3 -> 93; apr = 1400/7600 x 365/15 x 100 = 448.2 -> 448 -> VERY_COSTLY (also a fee on a 15-day loan). NOT_FOUND -> NOT_IN_RBI_LIST.",
+      "proves": "Marathi SMS read (also by the code-only backup if the AI is down, B13); with /bhasha = mr the answer is spoken in Marathi."
+    },
+    {
+      "id": "sms5",
+      "lang": "hi",
+      "text": "Chillar Cash: 50 hazaar ka loan, sirf 2,500 fee (loan se kategi). 6 mahine mein 60k wapas karo. Synthetic sample.",
+      "expected": {
+        "principal": 50000, "fees": 2500, "emi_amount": null, "emi_count": null, "pay_first": null,
+        "in_hand": 47500, "repay_total": 60000, "tenure_days": 180,
+        "extra": 12500, "per_day": 69, "apr_simple": 53,
+        "verdict": "COSTLY",
+        "lender_flag": "NOT_FOUND", "lender_match": "NOT_FOUND", "lender_warning": false, "nbfc": false,
+        "next_step": "NOT_IN_RBI_LIST"
+      },
+      "hand_working": "'50 hazaar' = 50000, '60k' = 60000 (B10, code); fee deducted ('loan se kategi') -> in_hand = 50000 - 2500 = 47500; 6 months = 180 days; extra = 12500; per_day = 12500/180 = 69.4 -> 69; apr = 12500/47500 x 365/180 x 100 = 53.4 -> 53 -> COSTLY. NOT_FOUND -> NOT_IN_RBI_LIST.",
+      "proves": "Indian amount words ('50 hazaar', '60k') turned into rupees by code; a deducted fee is NOT a scam warning; COSTLY verdict."
+    }
+  ]
+}

@@ -1,6 +1,6 @@
 """B9 (money asked before the loan) and B10 (lakh / crore / hazaar). No internet.
 
-The three scam texts are Anam's, from api/data/offers/sms_offers.json (PR #19).
+The three scam texts are Anam's (PR #19), kept inline here: the old sms_offers.json was removed (D52).
 """
 import json
 

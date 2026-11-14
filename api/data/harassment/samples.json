@@ -1,0 +1,51 @@
+{
+  "about": "Demo pack G2 (D52): 5 synthetic recovery messages for the harassment log (forward them to the bot, or POST them to /api/cases/{id}/events). All sent to Raju himself (contacted = borrower), so H3 must come from the words. Rules H1-H6 from the RBI circular on recovery agents (12 Aug 2022); H6 (5+ calls a day) is our threshold and is not in this pack. The only Aadhaar-like number is the synthetic 1234 5678 9012; the evidence PDF must show it as XXXX XXXX 9012. Expected rules were written by hand BEFORE any run.",
+  "case": {"borrower_name": "Raju (sample)", "lender_name": "Sikka Swift"},
+  "items": [
+    {
+      "id": "h1",
+      "at": "2026-11-13T14:00:00+05:30",
+      "channel": "telegram",
+      "contacted": "borrower",
+      "text": "Kal tak paisa nahi diya to dekh lena. Teri photo mohalle ke group mein daal denge.",
+      "expected_rules": ["H2", "H4"],
+      "why": "2:00 PM is inside 08:00-19:00 (no H1). 'dekh lena' = threat (H2); photo in the neighbourhood group = public shaming (H4)."
+    },
+    {
+      "id": "h2",
+      "at": "2026-11-13T15:00:00+05:30",
+      "channel": "telegram",
+      "contacted": "borrower",
+      "text": "Tune EMI nahi bhari, isliye tere bhai aur office wale ko call kar diya.",
+      "expected_rules": ["H3"],
+      "why": "Says they called his brother and his office = contacting family and employer (H3, from the words). No threat, daytime."
+    },
+    {
+      "id": "h3",
+      "at": "2026-11-13T16:00:00+05:30",
+      "channel": "telegram",
+      "contacted": "borrower",
+      "text": "Court ka order nikal gaya hai, police aa rahi hai arrest karne. Aadhaar 1234 5678 9012 hamare paas hai.",
+      "expected_rules": ["H5"],
+      "why": "False claim of a court order, police and arrest (H5). The PDF must mask the Aadhaar as XXXX XXXX 9012."
+    },
+    {
+      "id": "h4",
+      "at": "2026-11-13T23:30:00+05:30",
+      "channel": "telegram",
+      "contacted": "borrower",
+      "text": "Kamine, paisa abhi wapas kar, warna tujhe chhodenge nahi.",
+      "expected_rules": ["H1", "H2"],
+      "why": "11:30 PM is after 19:00 (H1, plain code); abuse + threat (H2)."
+    },
+    {
+      "id": "h5",
+      "at": "2026-11-13T11:00:00+05:30",
+      "channel": "telegram",
+      "contacted": "borrower",
+      "text": "Namaste, aapki EMI Rs 1,900 kal due hai. Kripya samay par bhugtan karein.",
+      "expected_rules": [],
+      "why": "A polite reminder at 11:00 AM breaks no rule: the log must not cry wolf."
+    }
+  ]
+}

@@ -1,0 +1,261 @@
+{
+  "about": "Demo pack G1 (D52): 10 synthetic offer images for the Telegram bot. Every name on a costly or scam item is invented and was checked NOT_FOUND with lender.match_lender before use; the only real names are KreditBee (08, a listed app) and Alok Auto Credit Pvt. Ltd. (10, on RBI's cancelled-registration list), both with ordinary terms and the words 'Synthetic sample'. Expected answers were worked out by hand with the formulas in CLAUDE.md ('The Decide rules') BEFORE any run and are never changed to match a run (K = 0). Images are drawn by scripts/make_demo_pack.py from text_on_image (long lines are wrapped on the image, the words are exactly these).",
+  "expected_fields": {
+    "principal / fees / emi_amount / emi_count / pay_first": "what the ad states (fees = money DEDUCTED from the loan; money asked BEFORE the loan is pay_first, not fees)",
+    "in_hand / repay_total / tenure_days / extra / per_day / apr_simple": "the card numbers; null = must show as 'couldn't verify'",
+    "lender_flag": "FOUND / SIMILAR / NOT_FOUND / WARNING (the brief's label); the API returns lender.match + lender.warning, so lender_match and lender_warning give the exact API values",
+    "nbfc": "true if lender.nbfc must be filled (registered NBFC behind the app)",
+    "next_step": "next_step.code (C2): pay_first > warning > NOT_FOUND > SIMILAR > verdict"
+  },
+  "items": [
+    {
+      "id": "01",
+      "file": "demo/01.png",
+      "looks_like": "phone SMS screenshot: sender ID VM-GULKGO, time, one message bubble with a T&C line and a link",
+      "lang": "hi",
+      "text_on_image": [
+        "VM-GULKGO",
+        "Today 10:42 AM",
+        "Dear Customer, your personal loan of Rs 10,000 from Gullak Go Finance Pvt. Ltd. is pre-approved.",
+        "Processing fee: Rs 500 + 18% GST (total Rs 590), deducted from the loan amount.",
+        "EMI: Rs 950 x 12 months.",
+        "T&C apply. KFS: gullakgo.example/kfs",
+        "Synthetic sample"
+      ],
+      "expected": {
+        "principal": 10000, "fees": 590, "emi_amount": 950, "emi_count": 12, "pay_first": null,
+        "in_hand": 9410, "repay_total": 11400, "tenure_days": 360,
+        "extra": 1990, "per_day": 6, "apr_simple": 21,
+        "verdict": "USUAL",
+        "lender_flag": "NOT_FOUND", "lender_match": "NOT_FOUND", "lender_warning": false, "nbfc": false,
+        "next_step": "NOT_IN_RBI_LIST"
+      },
+      "hand_working": "in_hand = 10000 - 590 = 9410 (derived); repay = 950 x 12 = 11400 (derived); 12 months = 360 days; extra = 11400 - 9410 = 1990; per_day = 1990/360 = 5.5 -> 6; apr = 1990/9410 x 365/360 x 100 = 21.4 -> 21 -> USUAL (fee upfront but 360 > 30 days). Name NOT_FOUND beats the verdict -> NOT_IN_RBI_LIST.",
+      "proves": "EMI x count = repay (derived), in-hand derived from principal - fee, months -> days, GST: the ad prints the total Rs 590 so no AI maths is needed (if Rs 500 is used instead, in-hand 9500 is wrong: a K finding), USUAL verdict, invented name NOT_FOUND."
+    },
+    {
+      "id": "02",
+      "file": "demo/02.png",
+      "looks_like": "glossy app ad: big brand name, gradient-free bold blocks, big rupee numbers",
+      "lang": "hi",
+      "text_on_image": [
+        "Jaldi Gullak",
+        "Instant loan in 5 minutes!",
+        "Loan amount: ₹5,000",
+        "Processing fee: ₹1,200 (deducted upfront)",
+        "Repay ₹5,000 in 7 days",
+        "Only Aadhaar + PAN needed",
+        "Synthetic sample"
+      ],
+      "expected": {
+        "principal": 5000, "fees": 1200, "emi_amount": null, "emi_count": null, "pay_first": null,
+        "in_hand": 3800, "repay_total": 5000, "tenure_days": 7,
+        "extra": 1200, "per_day": 171, "apr_simple": 1647,
+        "verdict": "VERY_COSTLY",
+        "lender_flag": "NOT_FOUND", "lender_match": "NOT_FOUND", "lender_warning": false, "nbfc": false,
+        "next_step": "NOT_IN_RBI_LIST"
+      },
+      "hand_working": "in_hand = 5000 - 1200 = 3800; extra = 5000 - 3800 = 1200; per_day = 1200/7 = 171.4 -> 171; apr = 1200/3800 x 365/7 x 100 = 1646.6 -> 1647 -> VERY_COSTLY (also a fee on a 7-day loan). NOT_FOUND -> NOT_IN_RBI_LIST.",
+      "proves": "The Raju story (LIVE 1): Rs 3,800 in hand, Rs 1,200 extra in a week, VERY_COSTLY, Hindi voice; invented name never 'found'."
+    },
+    {
+      "id": "03",
+      "file": "demo/03.png",
+      "looks_like": "WhatsApp forward: 'Forwarded' label, green chat bubble, tick emoji, time",
+      "lang": "hi",
+      "text_on_image": [
+        "Forwarded",
+        "Loan APPROVED ✅",
+        "Sikka Swift Instant Loan",
+        "Rs 50,000 approved for you!",
+        "Pay Rs 1,499 processing fee now to release Rs 50,000.",
+        "Offer valid for 2 hours only.",
+        "9:15 PM",
+        "Synthetic sample"
+      ],
+      "expected": {
+        "principal": 50000, "fees": null, "emi_amount": null, "emi_count": null, "pay_first": 1499,
+        "in_hand": 50000, "repay_total": null, "tenure_days": null,
+        "extra": null, "per_day": null, "apr_simple": null,
+        "verdict": "CANNOT_SAY",
+        "lender_flag": "NOT_FOUND", "lender_match": "NOT_FOUND", "lender_warning": false, "nbfc": false,
+        "next_step": "DO_NOT_PAY_FIRST"
+      },
+      "hand_working": "Rs 1,499 is asked BEFORE the loan -> pay_first 1499 (photo: both AI readers must agree, B12/D48); that fee is paid separately, so it is not deducted (fees null) and in_hand = principal 50000 (derived). No repay amount or days -> extra unverified -> CANNOT_SAY. pay_first is first in the next-step order -> DO_NOT_PAY_FIRST; voice starts 'Savdhaan! ... 1499 rupaye ...'.",
+      "proves": "Advance-fee scam on a photo: 'Paise mat bhejo' warning confirmed by the second reader (B12), DO_NOT_PAY_FIRST, honest 'couldn't verify' for the missing numbers."
+    },
+    {
+      "id": "04",
+      "file": "demo/04.png",
+      "looks_like": "printed pamphlet in Devanagari Hindi: bold headline, boxed offer, tear-off style footer",
+      "lang": "hi",
+      "text_on_image": [
+        "गल्ला गो लोन",
+        "₹50 हज़ार लोन",
+        "सिर्फ़ आधार कार्ड पर",
+        "पहले ₹999 शुल्क भेजें",
+        "3 महीने में ₹60,000 लौटाएं",
+        "Synthetic sample"
+      ],
+      "expected": {
+        "principal": 50000, "fees": null, "emi_amount": null, "emi_count": null, "pay_first": 999,
+        "in_hand": 50000, "repay_total": 60000, "tenure_days": 90,
+        "extra": 10000, "per_day": 111, "apr_simple": 81,
+        "verdict": "COSTLY",
+        "lender_flag": "NOT_FOUND", "lender_match": "NOT_FOUND", "lender_warning": false, "nbfc": false,
+        "next_step": "DO_NOT_PAY_FIRST"
+      },
+      "hand_working": "'50 हज़ार' = 50000 (B10, code); 'पहले ₹999 शुल्क भेजें' = pay 999 first -> pay_first 999, not deducted -> in_hand = 50000 (derived); 3 months = 90 days; extra = 60000 - 50000 = 10000; per_day = 10000/90 = 111.1 -> 111; apr = 10000/50000 x 365/90 x 100 = 81.1 -> 81 -> COSTLY. pay_first first -> DO_NOT_PAY_FIRST.",
+      "proves": "Devanagari text read from a photo, 'हज़ार' unit turned into rupees by code, pay-first in Hindi script, months -> days, COSTLY verdict."
+    },
+    {
+      "id": "05",
+      "file": "demo/05.png",
+      "looks_like": "phone SMS screenshot in Bengali with Bengali digits: sender ID AD-TOKRIT, time, one bubble",
+      "lang": "bn",
+      "text_on_image": [
+        "AD-TOKRIT",
+        "Today 9:05 AM",
+        "টুকরি টাকা: আপনার ৫০০০ টাকার লোন মঞ্জুর।",
+        "প্রসেসিং ফি ৩০০ টাকা লোন থেকে কেটে নেওয়া হবে।",
+        "৩০ দিনে ৫৬০০ টাকা ফেরত দিতে হবে।",
+        "Synthetic sample"
+      ],
+      "expected": {
+        "principal": 5000, "fees": 300, "emi_amount": null, "emi_count": null, "pay_first": null,
+        "in_hand": 4700, "repay_total": 5600, "tenure_days": 30,
+        "extra": 900, "per_day": 30, "apr_simple": 233,
+        "verdict": "VERY_COSTLY",
+        "lender_flag": "NOT_FOUND", "lender_match": "NOT_FOUND", "lender_warning": false, "nbfc": false,
+        "next_step": "NOT_IN_RBI_LIST"
+      },
+      "hand_working": "৫০০০ = 5000, ৩০০ = 300, ৩০ = 30, ৫৬০০ = 5600. in_hand = 5000 - 300 = 4700; extra = 5600 - 4700 = 900; per_day = 900/30 = 30; apr = 900/4700 x 365/30 x 100 = 233.0 -> 233 -> VERY_COSTLY (also a fee on a 30-day loan). NOT_FOUND -> NOT_IN_RBI_LIST.",
+      "proves": "Bengali script and Bengali digits read from a photo; with /bhasha = bn the answer is spoken in Bengali (D7)."
+    },
+    {
+      "id": "06",
+      "file": "demo/06.png",
+      "looks_like": "bank-style email on a laptop screen: From / Subject header, letter body, plain table of terms",
+      "lang": "hi",
+      "text_on_image": [
+        "From: offers@kulhadcapital.example",
+        "Subject: Your pre-approved personal loan",
+        "Kulhad Capital Ltd.",
+        "Dear Customer,",
+        "You are pre-approved for a personal loan of ₹5 lakh.",
+        "Tenure: 24 months",
+        "Monthly EMI: ₹36,000",
+        "Number of EMIs: 24",
+        "Processing fee: Nil",
+        "Synthetic sample"
+      ],
+      "expected": {
+        "principal": 500000, "fees": 0, "emi_amount": 36000, "emi_count": 24, "pay_first": null,
+        "in_hand": 500000, "repay_total": 864000, "tenure_days": 720,
+        "extra": 364000, "per_day": 506, "apr_simple": 37,
+        "verdict": "COSTLY",
+        "lender_flag": "NOT_FOUND", "lender_match": "NOT_FOUND", "lender_warning": false, "nbfc": false,
+        "next_step": "NOT_IN_RBI_LIST"
+      },
+      "hand_working": "'₹5 lakh' = 500000 (B10); fee Nil -> in_hand = 500000 (derived); repay = 36000 x 24 = 864000 (derived); 24 months = 720 days; extra = 364000; per_day = 364000/720 = 505.6 -> 506; apr = 364000/500000 x 365/720 x 100 = 36.9 -> 37 -> COSTLY. NOT_FOUND -> NOT_IN_RBI_LIST.",
+      "note": "The brief said EMI Rs 27,000 -> COSTLY, but by our formula 27,000 x 24 = 6,48,000 gives 15% a year = USUAL. EMI changed to Rs 36,000 (37% a year) BEFORE any run so the item proves COSTLY as intended.",
+      "proves": "Lakh amount turned into rupees by code, EMI x 24 -> repay, a big loan with a COSTLY (not VERY_COSTLY) verdict, Indian commas on the card (₹5,00,000 / ₹8,64,000)."
+    },
+    {
+      "id": "07",
+      "file": "demo/07.png",
+      "looks_like": "flyer-style ad whose numbers contradict each other",
+      "lang": "hi",
+      "text_on_image": [
+        "Galla Go Loans",
+        "Loan: ₹10,000",
+        "Processing fee: ₹1,000",
+        "You get: ₹9,500",
+        "Repay ₹11,000 in 30 days",
+        "Synthetic sample"
+      ],
+      "expected": {
+        "principal": 10000, "fees": 1000, "emi_amount": null, "emi_count": null, "pay_first": null,
+        "in_hand": null, "repay_total": 11000, "tenure_days": 30,
+        "extra": null, "per_day": null, "apr_simple": null,
+        "verdict": "CANNOT_SAY",
+        "second_read": true,
+        "lender_flag": "NOT_FOUND", "lender_match": "NOT_FOUND", "lender_warning": false, "nbfc": false,
+        "next_step": "NOT_IN_RBI_LIST"
+      },
+      "hand_working": "10000 - 1000 = 9000, but the ad says 9500: the sum fails by Rs 500 > Rs 1 -> second reading by the other AI (engines.second_read filled). Both read the same printed numbers, the sum still fails -> in_hand 'couldn't verify', extra and apr unverified -> CANNOT_SAY. repay 11000 and 30 days stay read. NOT_FOUND beats the verdict -> NOT_IN_RBI_LIST.",
+      "proves": "Cross-check + second reading (B6): a self-contradicting ad never shows a verified in-hand (K = 0)."
+    },
+    {
+      "id": "08",
+      "file": "demo/08.png",
+      "looks_like": "plain phone SMS screenshot, neutral grey, no logo or brand colours",
+      "lang": "hi",
+      "text_on_image": [
+        "KreditBee (sample)",
+        "Today 11:20 AM",
+        "KreditBee: Your personal loan of Rs 20,000 is approved.",
+        "Processing fee Rs 400 will be deducted.",
+        "Tenure: 12 months. EMI Rs 1,900 x 12.",
+        "Synthetic sample"
+      ],
+      "expected": {
+        "principal": 20000, "fees": 400, "emi_amount": 1900, "emi_count": 12, "pay_first": null,
+        "in_hand": 19600, "repay_total": 22800, "tenure_days": 360,
+        "extra": 3200, "per_day": 9, "apr_simple": 17,
+        "verdict": "USUAL",
+        "lender_flag": "FOUND", "lender_match": "FOUND", "lender_warning": false, "nbfc": true,
+        "next_step": "KEEP_PAPERS"
+      },
+      "hand_working": "in_hand = 20000 - 400 = 19600; repay = 1900 x 12 = 22800; 12 months = 360 days; extra = 3200; per_day = 3200/360 = 8.9 -> 9; apr = 3200/19600 x 365/360 x 100 = 16.6 -> 17 -> USUAL. KreditBee is in RBI's directory (checked: FOUND, score 100, NBFC behind it) -> verdict decides -> KEEP_PAPERS.",
+      "proves": "LIVE 2: card + voice say the app is in RBI's list, linked to its lender, with the list date; registered NBFC line (C3). Ordinary terms only: a real name is never on a costly item."
+    },
+    {
+      "id": "09",
+      "file": "demo/09.png",
+      "looks_like": "phone SMS screenshot from a lookalike sender with a link",
+      "lang": "hi",
+      "text_on_image": [
+        "JM-KRDBEA",
+        "Today 8:47 PM",
+        "KreditBea: Loan of Rs 8,000 ready for you.",
+        "Processing fee Rs 800 deducted. Repay Rs 9,600 in 30 days.",
+        "Apply now: https://kreditbea-loan.xyz",
+        "Synthetic sample"
+      ],
+      "expected": {
+        "principal": 8000, "fees": 800, "emi_amount": null, "emi_count": null, "pay_first": null,
+        "in_hand": 7200, "repay_total": 9600, "tenure_days": 30,
+        "extra": 2400, "per_day": 80, "apr_simple": 406,
+        "verdict": "VERY_COSTLY",
+        "lender_flag": "SIMILAR", "lender_match": "SIMILAR", "lender_warning": false, "nbfc": false,
+        "next_step": "CHECK_APP_NAME"
+      },
+      "hand_working": "in_hand = 8000 - 800 = 7200; extra = 9600 - 7200 = 2400; per_day = 2400/30 = 80; apr = 2400/7200 x 365/30 x 100 = 405.6 -> 406 -> VERY_COSTLY. 'KreditBea' is close to the listed 'Kreditbee' (checked: SIMILAR, score 88.9) -> CHECK_APP_NAME.",
+      "proves": "A lookalike name is SIMILAR, never FOUND: 'check the exact name and website before you download'."
+    },
+    {
+      "id": "10",
+      "file": "demo/10.png",
+      "looks_like": "phone SMS screenshot in the same neutral grey frame as 08: sender 'Sample SMS', the company named in the message (real company on RBI's cancelled list: no logo, no brand colours)",
+      "lang": "hi",
+      "text_on_image": [
+        "Sample SMS",
+        "Today 2:10 PM",
+        "Alok Auto Credit Pvt. Ltd.: Special loan offer: Rs 15,000 for 6 months.",
+        "EMI Rs 2,800 x 6 months. Processing fee Rs 300.",
+        "Synthetic sample"
+      ],
+      "expected": {
+        "principal": 15000, "fees": 300, "emi_amount": 2800, "emi_count": 6, "pay_first": null,
+        "in_hand": 14700, "repay_total": 16800, "tenure_days": 180,
+        "extra": 2100, "per_day": 12, "apr_simple": 29,
+        "verdict": "USUAL",
+        "lender_flag": "WARNING", "lender_match": "NOT_FOUND", "lender_warning": true, "nbfc": false,
+        "next_step": "ON_WARNING_LIST"
+      },
+      "hand_working": "in_hand = 15000 - 300 = 14700; repay = 2800 x 6 = 16800; 6 months = 180 days; extra = 2100; per_day = 2100/180 = 11.7 -> 12; apr = 2100/14700 x 365/180 x 100 = 29.0 -> 29 -> USUAL. The exact name is on RBI's cancelled-registration list (checked: warning, list 2026-09-30) -> ON_WARNING_LIST ('Is company se loan lene se pehle ruko').",
+      "proves": "LIVE 2b (C3, D51): RBI's cancelled registration said as a sourced fact with its date; ordinary terms, never 'fraud'."
+    }
+  ]
+}

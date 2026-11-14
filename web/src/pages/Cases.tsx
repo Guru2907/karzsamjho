@@ -1,8 +1,9 @@
 import { useEffect, useState } from 'react'
-import { FolderOpen, WifiOff } from 'lucide-react'
+import { ChevronRight, FolderOpen, MessageSquareWarning, WifiOff } from 'lucide-react'
 import { Link } from 'react-router-dom'
 import { Button } from '@/components/ui/button'
-import { Badge } from '@/components/ui/badge'
+import { RouteBadge, RuleBadges } from '@/components/cases/meta'
+import { dayLine, uniqueRules } from '@/components/cases/caseInfo'
 import { api, type Case } from '@/lib/api'
 import { ERROR_MESSAGES } from '@/lib/format'
 
@@ -81,31 +82,38 @@ export default function Cases() {
 
       {!loading && !error && cases && cases.length > 0 && (
         <div className="space-y-3">
-          {cases.map((c) => (
-            <Link
-              key={c.id}
-              to={`/cases/${c.id}`}
-              className="block p-4 rounded-2xl border border-border bg-card hover:bg-muted/50 transition-colors shadow-sm"
-            >
-              <div className="flex items-start justify-between gap-2 mb-2">
-                <div>
-                  <h3 className="font-semibold text-foreground text-base">{c.lender_name}</h3>
-                  <p className="text-xs text-muted-foreground">{c.borrower_name}</p>
-                </div>
-                {c.route && (
-                  <Badge variant="outline" className="text-xs shrink-0">
-                    {c.route}
-                  </Badge>
-                )}
-              </div>
-              <div className="flex items-center justify-between text-xs text-muted-foreground pt-2 border-t border-border">
-                <span>{c.day != null ? `Day ${c.day} of 30` : 'Day 1 of 30'}</span>
-                <span>
-                  {c.events?.length ?? 0} {c.events?.length === 1 ? 'event' : 'events'}
-                </span>
-              </div>
-            </Link>
-          ))}
+          {[...cases]
+            .sort((x, y) => (y.opened_at ?? '').localeCompare(x.opened_at ?? ''))
+            .map((c) => {
+              const rules = uniqueRules(c)
+              const n = c.events?.length ?? 0
+              return (
+                <Link
+                  key={c.id}
+                  to={`/cases/${c.id}`}
+                  className="block min-h-14 rounded-2xl border border-border bg-card p-4 shadow-sm transition-colors hover:bg-muted/50"
+                >
+                  <div className="flex items-start justify-between gap-3">
+                    <div className="min-w-0">
+                      <h3 className="truncate text-lg font-semibold text-foreground">{c.lender_name}</h3>
+                      <p className="text-xs text-muted-foreground">{c.borrower_name}</p>
+                    </div>
+                    <ChevronRight className="mt-1 size-5 shrink-0 text-muted-foreground" aria-hidden />
+                  </div>
+                  <div className="mt-3 flex flex-wrap items-center gap-2">
+                    <RouteBadge route={c.route} />
+                    <span className="text-xs font-medium text-foreground">{dayLine(c)}</span>
+                  </div>
+                  <div className="mt-3 flex items-center justify-between gap-2 border-t border-border pt-3">
+                    <RuleBadges rules={rules} />
+                    <span className="ml-auto inline-flex shrink-0 items-center gap-1 text-xs text-muted-foreground">
+                      <MessageSquareWarning className="size-3.5" aria-hidden />
+                      {n} {n === 1 ? 'message' : 'messages'}
+                    </span>
+                  </div>
+                </Link>
+              )
+            })}
         </div>
       )}
     </div>

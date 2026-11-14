@@ -317,14 +317,14 @@ All changes go through a pull request that Gurpreet merges (D27).
 - Done when: A photo uploaded from a phone returns the card; details table matches the API
 
 ### E4 · `/cases` list
-- Status: todo (Tejaswini)
+- Status: review (built by agent for Gurpreet, 6:00 AM, taking over from Tejaswini): cards with lender, borrower, route badge, "Day N (of 30)", rules seen, message count, newest first; empty and server-off states kept
 - Type: Must
 - Depends on: E1, F2
 - Files: web/src/pages/Cases.tsx
 - Done when: Shows cases with route badge and day counter
 
 ### E5 · `/cases/:id` detail: timeline, rule badges, log dialog, PDF button, complaint draft, verify line
-- Status: todo (Tejaswini)
+- Status: review (built by agent for Gurpreet, 6:00 AM, taking over from Tejaswini): timeline newest first with named rule badges and masked 12-digit numbers, "Log a threat" dialog (appears without reload, toast with rules), Evidence PDF, Verify record, route + day, rules legend; tested with the real API
 - Type: Must
 - Depends on: E4, F3
 - Files: web/src/pages/CaseDetail.tsx

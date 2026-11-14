@@ -2,7 +2,8 @@
 
 Checks are real (A7): photo, text or voice note -> extract -> maths -> verdict -> lender -> voice.
 Stored in SQLite (A3, db.py). Cases and events are real with a hash chain (F2); the evidence PDF
-comes from evidence.py (F3). Still a stub: verify (F4).
+comes from evidence.py (F3); verify recomputes the chain (F4). The lender check adds RBI's list,
+the NBFC list and the cancelled-registration warning (C1, C3).
 
 Run:  uvicorn api.main:app --host 0.0.0.0 --port 8000 --reload
 """

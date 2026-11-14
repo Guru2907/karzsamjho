@@ -116,3 +116,32 @@ def test_empty_input_does_not_crash():
     result = compute(fill_gaps(ad()))
     assert all(result[k] == expect(U) for k in result)
     assert compute({})["extra"] == expect(U)
+
+
+# ---- Sanity rule (14 Nov final review): an impossible repay / loan ratio is a misread, never verified ----
+def test_repay_far_above_the_loan_is_flagged_and_not_shown_as_verified():
+    """Image 04, read by the backup AI: "₹50 हज़ार" came back as 50; repay 60,000 in 90 days."""
+    fields = {"principal": 50, "fees": None, "in_hand": None, "repay_total": 60000, "tenure_days": 90}
+    assert cross_check(fields) == ["principal", "repay_total"]
+    numbers = fill_gaps(fields)
+    assert numbers["in_hand"]["status"] == "unverified" and numbers["in_hand"]["value"] is None
+    assert numbers["repay_total"]["status"] == "unverified"
+    assert compute(numbers)["extra"]["status"] == "unverified"
+
+
+def test_the_correct_reading_of_the_same_ad_is_untouched():
+    fields = {"principal": 50000, "fees": None, "in_hand": None, "repay_total": 60000, "tenure_days": 90}
+    assert cross_check(fields) == []
+    assert fill_gaps(fields)["in_hand"] == {"value": 50000, "status": "derived"}
+
+
+def test_sanity_rule_also_uses_in_hand_and_emis():
+    assert cross_check({"in_hand": 380, "repay_total": 5000}) == ["in_hand", "repay_total"]
+    assert cross_check({"principal": 100, "emi_amount": 950, "emi_count": 12}) == ["principal", "emi_amount", "emi_count"]
+
+
+def test_costly_but_real_offers_stay_verified():
+    # Raju's ad (1,647% a year) and a 2-year EMI loan are far below 10 times the loan.
+    assert cross_check({"principal": 5000, "fees": 1200, "repay_total": 5000}) == []
+    assert cross_check({"principal": 500000, "emi_amount": 36000, "emi_count": 24}) == []
+    assert cross_check({"principal": 5000, "repay_total": 50000}) == []          # exactly 10 times: allowed

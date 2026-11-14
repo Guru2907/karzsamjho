@@ -15,7 +15,7 @@ Stage roles (to be assigned): presenter · phone · laptop · technical answers.
 | 2:00-2:20 | LIVE 2: Next step | The card AND the voice say "found / not found in RBI's list" (+ the bank behind it and the list date, D37) + one next step; laptop shows helper view with the maths. Never "safe" or "illegal". Use demo image 08 (KreditBee -> found) and image 10 (Alok Auto Credit -> RBI cancelled registration) |
 | 2:20-3:05 | LIVE 3: Harassment log | In Telegram, forward the 11:30 PM sample h4 from api/data/harassment/samples.json (or /log + paste): the bot answers with H1 + H2 in Hindi and sends the evidence PDF (timeline, masked numbers, hash chain, complaint draft, "Day 1 of 30"). The case page needs Tejaswini's E5 |
 | 3:05-3:30 | Before / after | Before: learns the cost after a week, screenshots scattered. After: hears it in T s; evidence in under a minute |
-| 3:30-4:05 | Proof and limits | Measured 30-offer result incl. misses. "Synthetic ads. We can't stop someone borrowing. We tell him the cost first." |
+| 3:30-4:05 | Proof and limits | Measured result on the 15-offer demo pack incl. misses (docs/TESTING.md, 14 Nov 7 AM rows). "Synthetic ads. We can't stop someone borrowing. We tell him the cost first." |
 | 4:05-4:25 | How it's built | One picture: "The AI reads, plain code does the maths, a second model re-reads when numbers disagree." No jargon |
 | 4:25-4:40 | Team | "Y2K Devs: four students from Bengaluru, two colleges. We topped Round 1 out of 522, and today we built what we promised." |
 | 4:40-5:00 | Plan kept + close | Deck roadmap beside real commit times. "Loan lene se pehle, suno." |

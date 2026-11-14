@@ -64,8 +64,11 @@ Pace: one offer every 25 s (Groq ~3 photos/min). Never during a mentor round or 
 | 14 Nov 12:45 AM | B11 drill, wrong Groq key | SMS read by Gemini 4.1 s; Hindi voice note heard + read by Gemini 8.1 s; numbers right |
 | 14 Nov 12:50 AM | All 12 night PRs merged together | 440 passed |
 | | Real Telegram, printed ads | demo run 7:41 PM: ad1 / ad2 photos exactly matched Anam's expected answers |
-| | 30-offer run | N right · M partly unverified · K wrong-as-verified · median T s |
-| | Harassment samples | __ / 10 |
-| | Kill-switch drill | __ / 4 |
+| 14 Nov 7:07 AM | Final review: demo pack (10 images + 5 SMS, D52), fresh reads, 15 s pace | 14 of 15 as expected; **K = 2 on image 04**: Groq hit its per-minute limit, Gemini read "₹50 हज़ार" as 50, card showed in hand ₹50 and extra ₹59,950 as verified. Median 2.5 s |
+| 14 Nov 7:15 AM | Sanity rule added (repay more than 10 times the loan = misread); image 04 read by Gemini again (wrong Groq key) | in hand, repay, extra "couldn't verify", verdict CANNOT_SAY, voice "saare number saaf nahi padhe gaye"; images 02 and 06 by Gemini unchanged |
+| 14 Nov 7:22 AM | Demo pack again on the fixed code, 25 s pace (replaces the 30-offer run, D52) | **15 of 15 as expected (2 of them correctly "couldn't verify"), K = 0, median 2.3 s**; 10 photos by Qwen, 3 second readings by Gemini |
+| 14 Nov 7:07 and 7:22 AM | Harassment samples (5, D52) | 5 / 5 exact rules; PDF masks XXXX XXXX 9012; verify ok |
+| 14 Nov 7:10 AM | 9:40 PM threat + tamper test | H1 + H2; PDF 200; verify ok; after a hand edit in the database verify = false |
+| 14 Nov 7:12 AM | Kill-switch drill | 1. wrong Groq key -> Gemini answered photo 2.8 s and SMS 2.1 s: PASS · 2. VOICE_ENABLED=false -> card, no audio: PASS · 3. Wi-Fi -> hotspot: not drilled · 4. bot stopped -> web /check works (hosted and local): PASS |
 
-What we say on stage, exactly as measured: "On 30 test offers we made ourselves: N fully right, M partly unverified, K wrong numbers shown as verified. Median T seconds. Synthetic ads, not field data."
+What we say on stage, exactly as measured: "On 15 test offers we made ourselves, every number shown as verified was right, and two unclear offers were reported as 'couldn't verify'. About 2 to 3 seconds each. Earlier this morning our backup model misread a Hindi pamphlet; we added a rule so that kind of reading is now reported as unclear. Synthetic offers, not field data."

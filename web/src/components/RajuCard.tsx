@@ -46,6 +46,14 @@ const VERDICT_CONFIG: Record<Verdict, VerdictConfig> = {
   },
 }
 
+// Raju mode: the whole verdict band is the verdict colour (with a white icon), so it reads without words.
+const RAJU_BAND: Record<Verdict, string> = {
+  USUAL: 'bg-emerald-700',
+  COSTLY: 'bg-amber-600',
+  VERY_COSTLY: 'bg-red-700',
+  CANNOT_SAY: 'bg-muted',
+}
+
 export function RajuCard({ result, raju = false }: RajuCardProps) {
   const { verdict, numbers, lender, next_step } = result
   const vConfig = VERDICT_CONFIG[verdict] || VERDICT_CONFIG.CANNOT_SAY
@@ -86,8 +94,11 @@ export function RajuCard({ result, raju = false }: RajuCardProps) {
     return (
       <div className="w-full max-w-md mx-auto rounded-2xl border border-border bg-card text-card-foreground shadow-sm overflow-hidden">
         {/* Taller verdict band */}
-        <div className="flex items-center justify-center py-6 px-4 bg-muted border-b border-border">
-          <VerdictIcon className={`size-14 ${vConfig.colorClass}`} />
+        <div
+          className={`flex items-center justify-center py-6 px-4 border-b border-border ${RAJU_BAND[verdict] ?? RAJU_BAND.CANNOT_SAY}`}
+          aria-label={vConfig.label}
+        >
+          <VerdictIcon className={`size-14 ${verdict === 'CANNOT_SAY' ? 'text-muted-foreground' : 'text-white'}`} />
         </div>
 
         {/* Rows 1, 2, 4 at text-5xl */}

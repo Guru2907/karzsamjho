@@ -251,7 +251,7 @@ export function LiveStats() {
 // ---------------------------------------------------------------- call to action + QR (H7)
 export function CallToAction() {
   const reduce = useReducedMotion()
-  const url = `${window.location.origin}/check?mode=raju`
+  const url = `${window.location.origin}/check`
   return (
     <section className="border-t border-border">
       <div className={`${SHELL} grid items-end gap-12 py-28 lg:grid-cols-12`}>

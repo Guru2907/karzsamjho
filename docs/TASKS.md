@@ -339,7 +339,7 @@ All changes go through a pull request that Gurpreet merges (D27).
 - Note: moved into tonight's PWA work (D27). Also allowed: web/index.html (manifest link, theme-color, apple-touch-icon, viewport-fit). Added done when: "Add to home screen" in Chrome on a phone opens /check without the browser bar.
 
 ### E7 · Raju mode (details hidden, big camera and play buttons)
-- Status: review (Tejaswini)
+- Status: dropped (lead, 6:20 AM, D53): removed from the app; Raju's main door is the Telegram bot (forward, paste, speak or photo); the PWA is the helper's tool
 - Type: Stretch (first stretch)
 - Depends on: E3
 - Files: web/src/pages/Check.tsx
@@ -509,7 +509,7 @@ All changes go through a pull request that Gurpreet merges (D27).
 - Done when: an unknown address shows "Yeh page nahi mila" in the site's style with a link home, in light and dark
 
 ### H7 · QR code to the PWA
-- Status: review (Gurpreet): QR for <this address>/check?mode=raju drawn in the browser; Raju mode itself waits for E7
+- Status: review (Gurpreet): QR for <this address>/check drawn in the browser (no ?mode=raju since E7 was dropped, D53)
 - Type: Stretch
 - Depends on: H1; E7 for Raju mode
 - Files: web/src/site/QrLink.tsx

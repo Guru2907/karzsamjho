@@ -1,8 +1,7 @@
-import { Moon, Sun, ToggleLeft, ToggleRight } from 'lucide-react'
+import { Moon, Sun } from 'lucide-react'
 import { useTheme } from '@/lib/theme'
 import { NavLink } from 'react-router-dom'
 import { Button } from '@/components/ui/button'
-import { useRajuMode } from '@/lib/raju'
 
 // The PWA's own bar. It never links to the public website at "/" (D47).
 const links = [
@@ -14,7 +13,6 @@ const links = [
 export function TopBar() {
   const { theme, setTheme } = useTheme()
   const dark = theme === 'dark'
-  const [rajuMode, setRajuMode] = useRajuMode()
 
   return (
     <header className="border-b border-border bg-background">
@@ -39,20 +37,6 @@ export function TopBar() {
           </nav>
         </div>
         <div className="flex items-center gap-1.5 sm:gap-2">
-          <Button
-            variant="outline"
-            size="sm"
-            className="h-9 sm:h-10 px-2 sm:px-3 flex items-center gap-1.5 text-xs font-medium"
-            aria-pressed={rajuMode}
-            onClick={() => setRajuMode((prev) => !prev)}
-          >
-            {rajuMode ? (
-              <ToggleRight className="size-4 sm:size-5 text-primary" />
-            ) : (
-              <ToggleLeft className="size-4 sm:size-5 text-muted-foreground" />
-            )}
-            <span>Easy mode</span>
-          </Button>
           <Button
             variant="ghost"
             size="icon"

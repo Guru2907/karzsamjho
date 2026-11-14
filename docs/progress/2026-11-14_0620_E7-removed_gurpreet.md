@@ -1,0 +1,8 @@
+# E7 removed · Easy mode taken out of the PWA (D53)
+- When: 14 Nov 2026, 6:20 AM IST · Who: agent for Gurpreet (lead's call)
+- Did: removed Easy / Raju mode: the top-bar switch, the Easy branches of /check (giant camera, icon-only waiting, auto-playing round play button, icon-only errors), the raju option on RajuCard / PayFirstBanner / ErrorView, and web/src/lib/raju.ts. The website's QR now opens /check (was /check?mode=raju). Normal /check is unchanged (photo, gallery, SMS, card, audio player, share, helper details, Hindi errors). CLAUDE.md's size rule renamed "Raju-friendly sizes" (still applies). E7 dropped, H7 note, DEMO.md updated, D53.
+- Files: web/src/pages/Check.tsx, web/src/components/{RajuCard.tsx, TopBar.tsx, check/PayFirstBanner.tsx, check/ErrorView.tsx}, web/src/lib/raju.ts (deleted), web/src/site/Sections.tsx (QR), CLAUDE.md, docs/{DEMO.md, TASKS.md, DECISIONS.md}
+- Proof: npm run build OK, lint clean. Browser at 400 px with the real API: /check start (no switch, no comment text), /check?mode=raju opens the normal page, a real SMS -> very costly card + RBI line + next step + audio + share + helper details, a non-loan text -> Hindi "Yeh loan ka offer nahi lagta" + Try again. Caught and fixed on the way: three code comments had become visible page text after unwrapping the Easy-mode branches.
+- Status in docs/TASKS.md: E7 dropped
+- Next: pitch the paths honestly: paper -> camera; SMS / WhatsApp -> forward to the Telegram bot; a call -> voice note.
+- Broken / risks: a phone that installed the app with ?mode=raju keeps a harmless "ks-raju" value in storage; nothing reads it any more.

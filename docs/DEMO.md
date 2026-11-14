@@ -48,8 +48,8 @@ All in api/data/offers/ (images in demo/, answers in demo_pack.json and sms_demo
 ## Demo assets checklist
 - [ ] Demo-pack images printed at A5, 2 copies each: 02, 03, 08, 09, 10 (api/data/offers/demo/); each run once before the pitch
 - [ ] Threat message ready to forward on the phone
-- [x] Browser tabs open in order: /check (helper view, photo/SMS -> card + voice; Easy mode ?mode=raju), /cases/:id
-- [x] /check step: photo or SMS -> Raju card + voice player; Easy mode (?mode=raju) gives Raju the single giant camera button, colour + icons and auto-playing voice; "Share with helper" sends receipt
+- [x] Browser tabs open in order: /check (photo/SMS -> card + voice), /cases/:id
+- [x] /check step: photo or SMS -> Raju card + voice player (Easy mode was removed at 6:20 AM, D53: Raju's main door is the Telegram bot); "Share with helper" sends receipt
 - [ ] Backup video: 60 s clip (7:30 PM) and full run (3:00 AM)
 - [ ] Final numbers filled from docs/TESTING.md
 - [ ] Speaker paired, phone at 100%, hotspot ready
@@ -79,4 +79,4 @@ All in api/data/offers/ (images in demo/, answers in demo_pack.json and sms_demo
 10. Evidence faked? Can't prove a message is genuine; the hash chain proves no edits after logging.
 11. Built before today? Show docs/PREP.md; repo starts 11:30 AM.
 12. Why would a bank mitra bother? Our assumption, not a finding; a pilot tests it.
-- [ ] Cases on the web (E4, E5, 6:00 AM): /cases -> open the case from the Telegram demo -> route badge + day, timeline with named rules (H1-H5) and the Aadhaar masked, "Log a threat" (the new entry and its rules appear without reload), Evidence PDF, "Verify record" -> "Record not edited since logging". Raju mode's verdict band is now full colour.
+- [ ] Cases on the web (E4, E5, 6:00 AM): /cases -> open the case from the Telegram demo -> route badge + day, timeline with named rules (H1-H5) and the Aadhaar masked, "Log a threat" (the new entry and its rules appear without reload), Evidence PDF, "Verify record" -> "Record not edited since logging".

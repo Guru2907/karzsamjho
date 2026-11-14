@@ -171,7 +171,7 @@ Do NOT use gemini-3.8-flash or Gemma (503 errors and 20 requests/day on the free
 - Model names and timeouts come from .env/config.py, never hard-coded.
 - Synthetic data only. No real borrower data anywhere.
 - The user never sees an error code: use the Hindi fallback messages ("Photo saaf nahi hai, dobara bhejo").
-- UI (the PWA: /check, /cases): shadcn/ui + lucide-react only. Raju mode: buttons >= 56 px, numbers 36-48 px, colour + icon together, no animation libraries. The Raju card is ONE component reused everywhere.
+- UI (the PWA: /check, /cases): shadcn/ui + lucide-react only. Raju-friendly sizes: buttons >= 56 px, numbers 36-48 px, colour + icon together, no animation libraries. The Raju card is ONE component reused everywhere.
 - UI (the public website: /, /how, /partners, 404; D47): may use the `motion` library. Swiss / minimal: one accent colour, one corner radius, hairlines, lucide icons, no emoji, no gradients, no glow; respects prefers-reduced-motion. It has its own layout and is never linked from the PWA.
 - Colours (D47): cream + near-black + burnt orange, as tokens in web/src/index.css. Use the tokens (bg-background, text-foreground, bg-primary...), never hard-coded colours.
 

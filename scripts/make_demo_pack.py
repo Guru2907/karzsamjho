@@ -300,9 +300,15 @@ def pamphlet(item):
     draw_text(img, ((W - tw) / 2, 1070), L[4], 70, (30, 30, 30), True)
     for xx in range(40, W - 40, 40):                           # tear-off strip
         d.line([(xx, 1240), (xx + 20, 1240)], fill=(120, 100, 40), width=4)
-    for i in range(5):                                         # 5 tear-off slips, centred
+    tab = L[0]                                                 # the lender's name, as on real tear-offs
+    tab_size = 30
+    while width(tab, tab_size, True) > 136 and tab_size > 18:
+        tab_size -= 1
+    for i in range(5):                                         # 5 tear-off slips, centred, name in each
         cx = 105 + i * 180
         d.rectangle((cx, 1270, cx + 150, 1400), outline=(120, 100, 40), width=3)
+        tw = width(tab, tab_size, True)
+        draw_text(img, (cx + (150 - tw) / 2, 1312), tab, tab_size, (120, 30, 30), True)
     sample_stamp(img, d, L[5], 1470)
     L.check()
     return img
@@ -382,8 +388,11 @@ def notice(item):
     return img
 
 
+# 10 is a real company on RBI's cancelled list: same neutral grey phone frame as 08, sender "Sample SMS"
+# (not the company name: the warning needs the exact name, read from the message itself).
 DESIGNS = {"01": sms, "02": app_ad, "03": whatsapp, "04": pamphlet, "05": sms, "06": email,
-           "07": flyer, "08": lambda it: sms(it, accent=(110, 116, 126)), "09": sms, "10": notice}
+           "07": flyer, "08": lambda it: sms(it, accent=(110, 116, 126)), "09": sms,
+           "10": lambda it: sms(it, accent=(110, 116, 126))}
 
 
 def main() -> None:

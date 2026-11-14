@@ -237,11 +237,12 @@
     {
       "id": "10",
       "file": "demo/10.png",
-      "looks_like": "plain printed notice / SMS-style card with neutral terms, no logo",
+      "looks_like": "phone SMS screenshot in the same neutral grey frame as 08: sender 'Sample SMS', the company named in the message (real company on RBI's cancelled list: no logo, no brand colours)",
       "lang": "hi",
       "text_on_image": [
-        "Alok Auto Credit Pvt. Ltd.",
-        "Special loan offer: Rs 15,000 for 6 months.",
+        "Sample SMS",
+        "Today 2:10 PM",
+        "Alok Auto Credit Pvt. Ltd.: Special loan offer: Rs 15,000 for 6 months.",
         "EMI Rs 2,800 x 6 months. Processing fee Rs 300.",
         "Synthetic sample"
       ],

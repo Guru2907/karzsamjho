@@ -46,6 +46,10 @@ def cross_check(fields: dict) -> list[str]:
     """Names of the fields in every sum that fails by more than Rs 1; [] when all is fine.
 
     A sum is only checked when all three of its numbers are present.
+    Sanity rule: an amount to repay (written, or EMI x count) of more than
+    settings.implausible_repay_ratio times the loan or the in-hand amount is treated as a misread
+    (found 14 Nov: a reader returned 50 for "₹50 हज़ार", and the card showed in hand ₹50 as verified).
+    We cannot tell which side is wrong, so both are flagged.
     """
     tolerance = settings.crosscheck_tolerance_rs
     bad: list[str] = []
@@ -60,7 +64,18 @@ def cross_check(fields: dict) -> list[str]:
             and abs(emi_amount * emi_count - repay_total) > tolerance:
         bad += ["emi_amount", "emi_count", "repay_total"]
 
-    return bad
+    if repay_total is not None:
+        repay, repay_fields = repay_total, ["repay_total"]
+    elif emi_amount is not None and emi_count is not None:
+        repay, repay_fields = emi_amount * emi_count, ["emi_amount", "emi_count"]
+    else:
+        repay, repay_fields = None, []
+    if repay is not None and repay > 0:
+        for key, base in (("principal", principal), ("in_hand", in_hand)):
+            if base is not None and base > 0 and repay > settings.implausible_repay_ratio * base:
+                bad += [key] + repay_fields
+
+    return list(dict.fromkeys(bad))
 
 
 def fill_gaps(fields: dict, disputed: list[str] = ()) -> dict:

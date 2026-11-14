@@ -443,14 +443,14 @@ All changes go through a pull request that Gurpreet merges (D27).
 - Done when: Every must-task above is checked by someone who did not build it
 
 ### G6 · Full 30-offer run, paced
-- Status: todo (Gurpreet)
+- Status: review (agent for Gurpreet, 7:22 AM): run on the 15-offer demo pack instead of 30 (D52): 15 of 15 as expected, K = 0, median 2.3 s, after the sanity-rule fix for image 04 (docs/TESTING.md)
 - Type: Must
 - Depends on: B1–B7, C1, G1
 - Files: api/tests/run_offers.py, results file
 - Done when: Results table filled; K (wrong numbers shown as verified) is known
 
 ### G7 · Kill-switch drill at 1:00 AM
-- Status: todo (Gurpreet)
+- Status: review (agent for Gurpreet, 7:12 AM): wrong Groq key -> Gemini answers; voice off -> card arrives; bot stopped -> web works; Wi-Fi to hotspot NOT drilled
 - Type: Must
 - Depends on: A4, D3
 - Files: (no code)

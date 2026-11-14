@@ -127,6 +127,42 @@ def to_days(value: Any) -> Optional[float]:
     return number
 
 
+_FEE_TOTAL = re.compile(r"(?:total|=)[^\d]{0,15}?(\d[\d,]*(?:\.\d+)?)(?![\d,.]*\s*%)", re.IGNORECASE)
+_FEE_INCLUSIVE = re.compile(r"\bincl", re.IGNORECASE)   # "Rs 500 incl. 18% GST": GST already inside
+_FEE_GST = re.compile(r"(\d+(?:\.\d+)?)\s*%\s*(?:gst|tax)", re.IGNORECASE)
+_FEE_PCT = re.compile(r"(\d+(?:\.\d+)?)\s*%")
+
+
+def fee_rupees(fee: Any, principal: Optional[float]) -> Optional[float]:
+    """The fee the reader copied -> rupees, worked out in code (the AI never calculates).
+
+    "Rs 1,200" -> 1200 · "10%" -> 10% of the loan · "Rs 500 + 18% GST" -> 590 (fee plus GST)
+    "500 + 18% GST (total Rs 590)" -> 590 (a printed total wins) · "2% + 18% GST" -> 2% of the loan + GST
+    "Rs 500 incl. 18% GST" -> 500 (GST already inside).
+    A "%" that belongs to GST / tax is never read as the fee itself (it was: "Rs 500 + 18% GST" -> 500%
+    of the loan, finding F-2 in the demo-pack run).
+    """
+    if not isinstance(fee, str) or "%" not in fee:
+        return to_number(fee)
+    text = fee.translate(DEVANAGARI_DIGITS)
+    total = _FEE_TOTAL.search(text)
+    if total:                                          # the ad printed the total: copy it
+        return to_number(total.group(1))
+    gst = _FEE_GST.search(text)
+    rest = (text[:gst.start()] + " " + text[gst.end():]) if gst else text
+    pct = _FEE_PCT.search(rest)
+    if pct:                                            # the fee itself is a percentage of the loan
+        rate = to_number(pct.group(1))
+        base = round(principal * rate / 100, 2) if rate and principal else None
+    else:
+        base = to_number(rest)                         # the fee is a rupee amount
+    if base is None:
+        return None
+    if gst and not _FEE_INCLUSIVE.search(text):
+        base = base * (1 + float(gst.group(1)) / 100)
+    return round(base, 2)
+
+
 class Fields(BaseModel):
     """What a reader must return. Text numbers are cleaned before validation."""
     model_config = ConfigDict(extra="ignore")
@@ -148,13 +184,7 @@ class Fields(BaseModel):
         if not isinstance(data, dict):
             raise ValueError("reader did not return a JSON object")
         data = dict(data)
-        fee = data.get("fees")
-        principal = to_number(data.get("principal"))
-        if isinstance(fee, str) and "%" in fee:          # "10%" of the loan, worked out in code
-            pct = to_number(fee)
-            data["fees"] = round(principal * pct / 100, 2) if pct and principal else None
-        else:
-            data["fees"] = to_number(fee)
+        data["fees"] = fee_rupees(data.get("fees"), to_number(data.get("principal")))
         data["tenure_days"] = to_days(data.get("tenure_days"))
         for key in ("principal", "in_hand", "repay_total", "emi_amount", "emi_count", "pay_first"):
             data[key] = to_number(data.get(key))
@@ -386,19 +416,31 @@ def regex_fields(text: str) -> dict:
     t = text.lower().translate(DEVANAGARI_DIGITS).translate(BENGALI_DIGITS)
     out = {k: None for k in FIELD_KEYS}
 
-    def first(key):
-        """The match that starts earliest in the message, across this key's patterns."""
-        found = [m for m in (re.search(p, t) for p in _REGEX[key]) if m]
+    def first(key, skip=None):
+        """The match that starts earliest in the message, across this key's patterns,
+        leaving out any match that starts inside `skip` (a (start, end) span)."""
+        found = [m for p in _REGEX[key] for m in re.finditer(p, t)
+                 if not (skip and skip[0] <= m.start() < skip[1])]
         return min(found, key=lambda m: m.start()) if found else None
 
+    fee = first("fees")
+    fee_span = None
+    if fee:                                     # the fee's own sentence: "fee Rs 500 + 18% GST (total Rs 590)."
+        stop = re.search(r"[.!?\n।॥](?!\d)", t[fee.end():])
+        fee_span = (fee.start(), fee.end() + (stop.start() if stop else len(t) - fee.end()))
     for key in ("principal", "in_hand", "repay_total"):
-        m = first(key)
+        # a "total" inside the fee's sentence is the fee's total, never the amount to repay
+        m = first(key, fee_span if key == "repay_total" else None)
         out[key] = to_number(m.group(1)) if m else None
-    m = first("fees")
+    m = fee
     if m:
-        value = to_number(m.group(1))
-        out["fees"] = (round(out["principal"] * value / 100, 2)
-                       if m.group(2) and out["principal"] and value else (None if m.group(2) else value))
+        sentence = t[m.start(1):fee_span[1]]
+        if _FEE_GST.search(sentence) or _FEE_TOTAL.search(sentence):
+            out["fees"] = fee_rupees(sentence, out["principal"])      # GST / total: same rule as the AI path
+        else:
+            value = to_number(m.group(1))
+            out["fees"] = (round(out["principal"] * value / 100, 2)
+                           if m.group(2) and out["principal"] and value else (None if m.group(2) else value))
     m = first("emi")
     if m:
         out["emi_amount"], out["emi_count"] = to_number(m.group(1)), to_number(m.group(2))

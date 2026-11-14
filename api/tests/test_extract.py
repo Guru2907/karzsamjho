@@ -292,3 +292,39 @@ def test_text_model_off_bn_mr_sms_still_read(monkeypatch, sms, card):
     assert result["engines"]["read"] == "regex"
     assert (f["principal"], f["fees"], f["repay_total"], f["tenure_days"]) == card
     assert f["pay_first"] is None                                   # a deducted fee, not a scam
+
+
+# ---------------------------------------------------------------- F-2: a "%" that belongs to GST is not the fee
+@pytest.mark.parametrize("fee, rupees", [
+    ("Rs 500 + 18% GST", 590),                        # was 50000: "500" read as 500% of the loan
+    ("500 + 18% GST (total Rs 590)", 590),            # a printed total wins
+    ("18% GST on Rs 500", 590),
+    ("2% + 18% GST", 236),                            # 2% of 10,000 = 200, plus 18% GST
+    ("Rs 500 incl. 18% GST", 500),                    # GST already inside
+    ("Rs 500 (inclusive of 18% GST)", 500),
+    ("10%", 1000), ("2.5 %", 250), ("5% of loan amount", 500),   # a real percentage fee: unchanged
+    ("Rs 590", 590), ("1200", 1200), (1200, 1200), (None, None),
+])
+def test_fee_with_gst_or_percent(fee, rupees):
+    assert extract.fee_rupees(fee, 10000.0) == rupees
+    raw = '{"is_loan_ad": true, "principal": 10000, "fees": %s}' % (
+        "null" if fee is None else fee if isinstance(fee, int) else '"%s"' % fee)
+    assert extract.parse(raw)["fees"] == rupees
+
+
+def test_percentage_fee_without_a_loan_amount_is_unknown():
+    assert extract.fee_rupees("10%", None) is None
+    assert extract.fee_rupees("2% + 18% GST", None) is None
+
+
+def test_regex_backup_reads_gst_and_keeps_the_fee_total_out_of_repay():
+    sms = ("Dear Customer, your personal loan of Rs 10,000 is pre-approved. Processing fee: Rs 500 + 18% GST "
+           "(total Rs 590), deducted from the loan amount. EMI: Rs 950 x 12 months.")
+    f = extract.regex_fields(sms)
+    assert (f["principal"], f["fees"], f["emi_amount"], f["emi_count"], f["tenure_days"]) == (10000, 590, 950, 12, 360)
+    assert f["repay_total"] is None                   # "total Rs 590" is the fee's total, not the repay amount
+
+
+def test_regex_backup_repay_total_in_its_own_sentence_still_counts():
+    f = extract.regex_fields("Loan Rs 10000. Processing fee Rs 500 + 18% GST. Total repay Rs 11,400 in 12 months.")
+    assert (f["fees"], f["repay_total"], f["tenure_days"]) == (590, 11400, 360)

@@ -23,6 +23,8 @@ export function ThemeProvider({ children }: { children: ReactNode }) {
 
   useEffect(() => {
     document.documentElement.classList.toggle('dark', theme === 'dark')
+    // Phone status bar and installed-app title bar follow the theme (same colours as index.html).
+    document.querySelector('meta[name="theme-color"]')?.setAttribute('content', theme === 'dark' ? '#110e0b' : '#faf6ee')
     try {
       localStorage.setItem('theme', theme)
     } catch {

@@ -5,6 +5,7 @@ import { Button } from '@/components/ui/button'
 
 // The PWA's own bar. It never links to the public website at "/" (D47).
 const links = [
+  { to: '/app', label: 'Home' },
   { to: '/check', label: 'Check' },
   { to: '/cases', label: 'Cases' },
 ]
@@ -18,7 +19,7 @@ export function TopBar() {
     <header className="border-b border-border bg-background">
       <div className="mx-auto flex h-14 w-full max-w-5xl items-center justify-between gap-2 px-3 sm:px-4">
         <div className="flex items-center gap-3 sm:gap-6">
-          <NavLink to="/check" className="font-semibold tracking-tight text-base">
+          <NavLink to="/app" className="font-semibold tracking-tight text-base">
             <span>Karz</span>
             <span className="text-primary">Samjho</span>
           </NavLink>

@@ -16,7 +16,6 @@ import { ErrorView } from '@/components/check/ErrorView'
 import { api, ApiError, type CheckResult } from '@/lib/api'
 import { days, ERROR_MESSAGES, rupees } from '@/lib/format'
 import { sampleResults } from '@/lib/sample'
-import { InstallPrompt } from '@/components/InstallPrompt'
 import { NewCaseDialog } from '@/components/cases/NewCaseDialog'
 
 function buildShareText(result: CheckResult): string {
@@ -174,7 +173,6 @@ export default function Check() {
         <>
           {/* Normal mode: heading, camera, gallery, divider, textarea, send */}
             <div className="space-y-6">
-              <InstallPrompt />
               <div className="text-center space-y-1">
                 <h1 className="text-2xl font-bold tracking-tight text-foreground">
                   Check a loan ad or SMS

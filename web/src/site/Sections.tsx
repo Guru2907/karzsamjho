@@ -1,11 +1,9 @@
-import { ArrowRight, FileText, Landmark, ShieldAlert } from 'lucide-react'
+import { FileText, Landmark, ShieldAlert } from 'lucide-react'
 import { motion, useReducedMotion, useScroll, useTransform } from 'motion/react'
-import { QRCodeSVG } from 'qrcode.react'
 import { useEffect, useRef, useState } from 'react'
-import { Link } from 'react-router-dom'
-import { buttonVariants } from '@/components/ui/button'
 import { api, type Stats } from '@/lib/api'
-import { CountUp, EASE, Magnetic, Reveal, Rule } from './motion'
+import { CountUp, EASE, Reveal, Rule } from './motion'
+import { PhoneAppLink, QrCard } from './AppQr'
 import { SHELL } from './shell'
 
 // The sections of the public Home page below the scroll story (H2, H3, H7; D47).
@@ -210,10 +208,7 @@ export function LiveStats() {
           <div className="border-t border-border py-10">
             <p className="text-2xl font-semibold tracking-tight">No checks yet.</p>
             <p className="mt-2 max-w-xl text-muted-foreground">
-              Send the first loan offer and this page starts counting.{' '}
-              <Link to="/check" className="text-primary underline-offset-4 hover:underline">
-                Check an offer
-              </Link>
+              Send the first loan offer from the app and this page starts counting.
             </p>
           </div>
         )}
@@ -251,9 +246,8 @@ export function LiveStats() {
 // ---------------------------------------------------------------- call to action + QR (H7)
 export function CallToAction() {
   const reduce = useReducedMotion()
-  const url = `${window.location.origin}/check`
   return (
-    <section className="border-t border-border">
+    <section id="get-app" className="scroll-mt-20 border-t border-border">
       <div className={`${SHELL} grid items-end gap-12 py-28 lg:grid-cols-12`}>
         <div className="lg:col-span-8">
           <Eyebrow n="06">Try it</Eyebrow>
@@ -267,23 +261,11 @@ export function CallToAction() {
             Ek photo. <span className="text-primary">Ek awaaz.</span>
           </motion.p>
           <div className="mt-12">
-            <Magnetic>
-              <Link to="/check" className={buttonVariants({ size: 'lg', className: 'h-16 px-10 text-lg' })}>
-                Check an offer
-                <ArrowRight className="size-5" aria-hidden />
-              </Link>
-            </Magnetic>
+            <PhoneAppLink />
           </div>
         </div>
         <Reveal className="lg:col-span-4" delay={0.2}>
-          <div className="inline-block border border-border bg-background p-4 text-foreground">
-            <QRCodeSVG value={url} size={168} bgColor="transparent" fgColor="currentColor" marginSize={0} />
-          </div>
-          <p className="mt-4 text-sm font-medium">Scan to open it on a phone</p>
-          <p className="mt-1 max-w-xs text-sm text-muted-foreground">
-            Opens the simple mode for Raju: one camera button, one play button. Phone and this screen must be on
-            the same Wi-Fi.
-          </p>
+          <QrCard size="lg" />
         </Reveal>
       </div>
     </section>

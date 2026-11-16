@@ -1,9 +1,8 @@
 import { ArrowRight, Check, X } from 'lucide-react'
-import { Link } from 'react-router-dom'
-import { buttonVariants } from '@/components/ui/button'
+import { GetTheApp } from '@/site/AppQr'
 import { Columns, PageHero, Section } from '@/site/Page'
 import { ScrollText, StickySteps, TypedLines, type Step } from '@/site/fx'
-import { CountUp, Magnetic, Reveal } from '@/site/motion'
+import { CountUp, Reveal } from '@/site/motion'
 
 // Public website: how it works, the proof and the limits (task H5, D47).
 // Every number here is from the repo: docs/TESTING.md and the code in api/core/.
@@ -14,7 +13,7 @@ const mono = 'font-mono text-sm leading-8'
 function ReadVisual() {
   const ring = 'rounded-sm px-1 shadow-[0_0_0_2px_var(--primary)]'
   return (
-    <div className="grid gap-6">
+    <div className="grid grid-cols-1 gap-6">
       <div className="bg-foreground p-5 text-background">
         <p className="text-xl leading-none font-black tracking-tight uppercase">Instant loan in 5 min!</p>
         <p className="mt-4 flex flex-wrap gap-x-5 gap-y-3 text-sm font-medium">
@@ -32,7 +31,7 @@ function ReadVisual() {
           </span>
         </p>
       </div>
-      <pre className={`${mono} text-muted-foreground`}>
+      <pre className={`${mono} overflow-x-auto text-muted-foreground`}>
         {'{ '}
         <span className="text-foreground">"principal"</span>: 5000, <span className="text-foreground">"fees"</span>: 1200,
         {'\n  '}
@@ -147,7 +146,6 @@ const LIMITS = [
   'Every test offer is synthetic. No real borrower has used it yet.',
   '“Not found in RBI’s list” is never “illegal”: the directory is reported by lenders themselves, and names vary.',
   'The cost bands (36% and 100% a year) are our own rule of thumb, not an RBI limit.',
-  'Voice notes are understood in Hindi only. Bengali and Marathi are reply voices, and their sentences still need a native speaker’s check.',
   'The evidence PDF cannot prove a message is genuine. Its hash chain proves the record was not edited after logging.',
   'Free AI tiers may learn from what they are sent. A real deployment needs paid or self-hosted models.',
 ]
@@ -171,7 +169,7 @@ export default function How() {
       </section>
 
       <Section n="04" label="All of the maths">
-        <div className="grid items-center gap-12 lg:grid-cols-12">
+        <div className="grid grid-cols-1 items-center gap-12 lg:grid-cols-12">
           <Reveal className="lg:col-span-4">
             <h2 className="text-[clamp(2rem,4vw,3.5rem)] leading-[1] font-semibold tracking-[-0.03em]">
               Five lines. No model involved.
@@ -245,12 +243,7 @@ export default function How() {
           ))}
         </ul>
         <div className="mt-14">
-          <Magnetic>
-            <Link to="/check" className={buttonVariants({ size: 'lg', className: 'h-16 px-10 text-lg' })}>
-              Check an offer
-              <ArrowRight className="size-5" aria-hidden />
-            </Link>
-          </Magnetic>
+          <GetTheApp />
         </div>
       </Section>
     </>

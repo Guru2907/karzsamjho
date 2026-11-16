@@ -4,6 +4,15 @@ Work after the hackathon goes under [Unreleased]. The hackathon build is the tag
 
 ## [Unreleased]
 
+### Changed
+- Website: no button opens the helper app on a laptop any more; a picture QR (one vegetable vendor drawn into the code) opens it on the phone. Phones get one "Open the app" button instead of the QR (D57).
+- Helper app: new Home at `/app` (what it does, Check, Cases, the Telegram bot, how a check works); the install button moved there from `/check`; the installed app starts on Home.
+- Light and dark: the saved theme is applied before the first paint (no light flash), and the phone status bar follows the theme.
+
+### Fixed
+- `/how` was wider than a phone screen (sideways scrolling); now fits at 360 px.
+- `/how` limit "voice notes are understood in Hindi only" removed: Bengali and Marathi voice notes work.
+
 ## [colossus-submission] - 2026-11-14
 COLOSSUS 3.0 submission (13-14 Nov 2026, FinTech track, Team Y2K Devs), built in about 21 hours. Commit `c5b4b0a`, the state of the code at judging (14 Nov 2026, 9:00 AM IST). Release: https://github.com/Guru2907/karzsamjho/releases/tag/colossus-submission
 

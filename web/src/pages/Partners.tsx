@@ -1,9 +1,9 @@
-import { ArrowRight, ArrowUpRight, FileText, Headphones, Landmark, Languages, Store, Users } from 'lucide-react'
-import { Link } from 'react-router-dom'
+import { ArrowUpRight, FileText, Headphones, Landmark, Languages, Store, Users } from 'lucide-react'
 import { buttonVariants } from '@/components/ui/button'
+import { GetTheApp } from '@/site/AppQr'
 import { PageHero, Section } from '@/site/Page'
 import { HoverRows, ScrollText, ScrollTimeline, type HoverRow, type TimelineItem } from '@/site/fx'
-import { Magnetic, Reveal } from '@/site/motion'
+import { Reveal } from '@/site/motion'
 
 // Public website: for NGOs, bank mitras and other helpers (task H4, D47).
 // The commission model is a proposal for a pilot. Nothing on this page claims it exists today.
@@ -109,13 +109,8 @@ export default function Partners() {
               Run it with <span className="text-primary">your people.</span>
             </p>
           </Reveal>
-          <div className="mt-12 flex flex-wrap items-center gap-4">
-            <Magnetic>
-              <Link to="/check" className={buttonVariants({ size: 'lg', className: 'h-16 px-10 text-lg' })}>
-                Try the helper view
-                <ArrowRight className="size-5" aria-hidden />
-              </Link>
-            </Magnetic>
+          <div className="mt-12 flex flex-wrap items-end gap-8">
+            <GetTheApp />
             <a
               href="https://github.com/Guru2907/karzsamjho"
               target="_blank"

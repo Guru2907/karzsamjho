@@ -1,8 +1,8 @@
-import { ArrowDown, ArrowRight } from 'lucide-react'
+import { ArrowDown, QrCode } from 'lucide-react'
 import { motion, useReducedMotion, useScroll, useTransform } from 'motion/react'
 import { useRef } from 'react'
-import { Link } from 'react-router-dom'
 import { buttonVariants } from '@/components/ui/button'
+import { PhoneAppLink } from '@/site/AppQr'
 import { BigNumbers, CallToAction, Catches, LiveStats, ScamWall } from '@/site/Sections'
 import { Story } from '@/site/Story'
 import { Magnetic, Reveal, WordReveal } from '@/site/motion'
@@ -55,12 +55,15 @@ function Hero() {
               language, what he gets, what he repays and how much extra that is.
             </p>
             <div className="mt-8 flex flex-wrap items-center gap-4 lg:justify-end">
-              <Magnetic>
-                <Link to="/check" className={buttonVariants({ size: 'lg', className: 'h-14 px-8 text-base' })}>
-                  Check an offer
-                  <ArrowRight className="size-4" aria-hidden />
-                </Link>
-              </Magnetic>
+              <div className="pointer-coarse:hidden">
+                <Magnetic>
+                  <a href="#get-app" className={buttonVariants({ size: 'lg', className: 'h-14 px-8 text-base' })}>
+                    <QrCode className="size-4" aria-hidden />
+                    Get the app on your phone
+                  </a>
+                </Magnetic>
+              </div>
+              <PhoneAppLink className="h-14 px-8 text-base" />
             </div>
           </Reveal>
         </div>

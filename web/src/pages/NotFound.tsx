@@ -1,4 +1,3 @@
-import { ArrowRight } from 'lucide-react'
 import { motion, useReducedMotion } from 'motion/react'
 import { Link, useLocation } from 'react-router-dom'
 import { buttonVariants } from '@/components/ui/button'
@@ -46,12 +45,8 @@ export default function NotFound() {
             </p>
           </div>
           <div className="flex flex-wrap gap-3 lg:col-span-5 lg:justify-end">
-            <Link to="/" className={buttonVariants({ variant: 'outline', size: 'lg', className: 'h-14 px-8 text-base' })}>
+            <Link to="/" className={buttonVariants({ size: 'lg', className: 'h-14 px-8 text-base' })}>
               Back home
-            </Link>
-            <Link to="/check" className={buttonVariants({ size: 'lg', className: 'h-14 px-8 text-base' })}>
-              Check an offer
-              <ArrowRight className="size-4" aria-hidden />
             </Link>
           </div>
         </div>

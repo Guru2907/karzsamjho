@@ -1,9 +1,9 @@
-import { ArrowUpRight, Moon, Sun } from 'lucide-react'
+import { Moon, Sun } from 'lucide-react'
 import { useMotionValueEvent, useScroll } from 'motion/react'
 import { useEffect, useState } from 'react'
 import { Link, NavLink, Outlet, useLocation } from 'react-router-dom'
-import { buttonVariants } from '@/components/ui/button'
 import { useTheme } from '@/lib/theme'
+import { NavGetApp } from './AppQr'
 import { DARK_TOP, NAV } from './shell'
 
 // Layout of the public website (D47). It is separate from the PWA layout in App.tsx: its own
@@ -70,10 +70,7 @@ function SiteNav() {
           >
             {dark ? <Sun className="size-4" /> : <Moon className="size-4" />}
           </button>
-          <Link to="/check" className={buttonVariants({ className: 'h-10 px-5' })}>
-            Open the app
-            <ArrowUpRight className="size-4" aria-hidden />
-          </Link>
+          <NavGetApp />
         </div>
       </div>
     </header>

@@ -28,9 +28,39 @@ export function routeInfo(route: string | null | undefined): RouteInfo {
 }
 
 /** "Day 3 of 30" for a regulated lender (the 30-day wait before the RBI Ombudsman), else "Day 3". */
-export function dayLine(c: Pick<Case, 'day' | 'route'>): string {
+export function dayLine(c: Pick<Case, 'day' | 'route' | 'closed_at'>): string {
   const day = c.day ?? 1
-  return routeInfo(c.route).regulated ? `Day ${day} of 30` : `Day ${day}`
+  const base = routeInfo(c.route).regulated ? `Day ${day} of 30` : `Day ${day}`
+  return c.closed_at ? `${base} · closed` : base
+}
+
+/** D60: the types of threat a helper can pick; each may add a rule (the API decides). */
+export const THREAT_TYPES: [string, string][] = [
+  ['death', 'Death or physical harm threat'],
+  ['verbal', 'Verbal abuse or insults'],
+  ['legal', 'Legal or police threat (arrest, court, FIR)'],
+  ['shaming', 'Shaming (photos, posts, telling others)'],
+  ['visit', 'Visit to home or work'],
+  ['other', 'Other'],
+]
+export const THREAT_TYPE_NAME: Record<string, string> = Object.fromEntries(THREAT_TYPES)
+
+/** D60: why a case was closed. */
+export const CLOSE_REASONS: [string, string][] = [
+  ['resolved', 'Resolved'],
+  ['repaid', 'Loan repaid'],
+  ['complaint_filed', 'Complaint filed'],
+  ['stopped', 'Lender stopped contacting'],
+  ['other', 'Other'],
+]
+export const CLOSE_REASON_NAME: Record<string, string> = Object.fromEntries(CLOSE_REASONS)
+
+/** "2026-11-17T09:00:00+05:30" -> "17 Nov 2026". */
+export function shortDate(at: string | null | undefined): string {
+  if (!at) return ''
+  const d = new Date(at)
+  return Number.isNaN(d.getTime()) ? at.slice(0, 10)
+    : d.toLocaleDateString('en-IN', { day: 'numeric', month: 'short', year: 'numeric', timeZone: 'Asia/Kolkata' })
 }
 
 /** Any 12-digit number (Aadhaar-like) shows as XXXX XXXX 1234, as in the evidence PDF. */

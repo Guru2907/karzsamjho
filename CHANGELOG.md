@@ -4,6 +4,16 @@ Work after the hackathon goes under [Unreleased]. The hackathon build is the tag
 
 ## [Unreleased]
 
+### Added (D60)
+- Log a threat: a type of threat (death or physical harm, verbal abuse, legal or police, shaming, visit, other) and up to 3 photos. A type can add a rule (e.g. legal adds H5). Photos are cleaned of hidden location data and protected by the record's hash chain.
+- Close a case: pick a reason, type CASE CLOSED to confirm. A closed case keeps its record, PDF and verify, takes no new threats, and shows under "Closed" on the Cases page. A threat forwarded to the bot after closing opens a new case.
+
+### Changed (D60)
+- The evidence PDF is in three parts: evidence from page 1, the complaint always from a new page, the photos from a new page. It shows the case status (open or closed).
+
+### Fixed
+- The complaint letter no longer doubles a full stop after a lender name ending in "." ("Ltd..").
+
 ### Changed (bot and app split, D59)
 - Every harassment case gets an 8-digit code that never changes. In Telegram, /helper gives it; in the app, Cases -> type the code opens the case. The app no longer lists everyone's cases (only "Cases on this phone"), case ids are random, and the "list every case" API route is gone.
 - The bot no longer sends the evidence PDF and /pdf is removed: the helper gets the PDF in the app. After a saved threat the bot says which rules broke and points to /helper.

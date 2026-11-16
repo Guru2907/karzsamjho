@@ -72,7 +72,10 @@ web/                 React + Vite + Tailwind + shadcn/ui. PWA: /app (home)  /che
 - GET  /api/audio/{id}.mp3    -> MP3
 - POST /api/cases             {borrower_name, lender_name, check_id?, borrower_phone?, telegram_chat?} -> Case
                               (Case has id (random), code (8 digits, made once, D59), borrower_phone (masked XXXXXX 1234), source)
-- POST /api/cases/{id}/events {at, channel, contacted, text} -> {id, at, rules:["H1"], hash, prev_hash}
+- POST /api/cases/{id}/events {at, channel, contacted, text, threat_type?} -> {id, at, rules:["H1"], hash, prev_hash, threat_type, photos}
+                              (JSON, or a form with the same fields + up to 3 `photos`, D60; a closed case -> 409 CASE_CLOSED)
+- GET  /api/cases/{id}/photos/{photo_id}.jpg -> JPEG (cleaned of EXIF/GPS, D60)
+- POST /api/cases/{id}/close  {reason, note?} -> Case (closed for good, no reopen; Case gets closed_at, close_reason, close_note, D60)
 - GET  /api/cases/code/{code} -> Case (the helper types the borrower's code; there is NO "list every case", D59)
 - GET  /api/cases/{id}        -> Case with events and day counter
 - PUT  /api/cases/{id}/phone  {borrower_phone} -> Case (stored masked)
@@ -141,6 +144,7 @@ Harassment rules (basis: RBI circular on recovery agents, 12 Aug 2022):
 - H4 public shaming (sharing photos, posting, telling neighbours)
 - H5 false claims of arrest, court order or police action
 - H6 5 or more calls in one day (our threshold; label it as ours)
+- D60: a helper-picked threat type can ADD a rule, never remove one: death / verbal -> H2, legal -> H5, shaming -> H4.
 Text labelling uses the text model with a keyword list as its backup. H1 and H6 never need AI.
 
 Spoken sentence is a fixed template filled by code, never AI-written:

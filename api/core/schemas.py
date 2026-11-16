@@ -97,6 +97,7 @@ class ChatState(BaseModel):
     case_id: Optional[str] = None
     code: Optional[str] = None
     has_phone: bool = False
+    closed: bool = False
 
 
 class EventIn(BaseModel):
@@ -104,6 +105,17 @@ class EventIn(BaseModel):
     channel: str                 # call | sms | whatsapp | telegram | visit
     contacted: str               # borrower | family | employer | contacts
     text: str = ""
+    threat_type: Optional[str] = None   # death | verbal | legal | shaming | visit | other (D60)
+
+
+class PhotoRef(BaseModel):
+    id: str
+    sha256: str                  # its fingerprint, part of the event's hash (D60)
+
+
+class CloseIn(BaseModel):
+    reason: str                  # resolved | repaid | complaint_filed | stopped | other
+    note: Optional[str] = None
 
 
 class Event(BaseModel):
@@ -115,6 +127,8 @@ class Event(BaseModel):
     rules: list[str] = []
     hash: str
     prev_hash: str
+    threat_type: Optional[str] = None
+    photos: list[PhotoRef] = []
 
 
 class Case(BaseModel):
@@ -127,7 +141,10 @@ class Case(BaseModel):
     check_id: Optional[str] = None
     route: Optional[str] = None
     opened_at: str
-    day: Optional[int] = None    # day counter, e.g. day 1 of 30
+    closed_at: Optional[str] = None        # D60: closed for good; no new threats after this
+    close_reason: Optional[str] = None
+    close_note: Optional[str] = None
+    day: Optional[int] = None    # day counter, e.g. day 1 of 30 (stops when the case is closed)
     events: list[Event] = []
 
 

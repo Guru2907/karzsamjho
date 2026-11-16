@@ -1,11 +1,12 @@
-import { useState, type FormEvent } from 'react'
-import { ChevronRight, FolderOpen, KeyRound, Smartphone } from 'lucide-react'
+import { useEffect, useState, type FormEvent } from 'react'
+import { ChevronDown, ChevronRight, FolderOpen, KeyRound, Lock, Smartphone } from 'lucide-react'
 import { Link, useNavigate } from 'react-router-dom'
 import { NewCaseDialog } from '@/components/cases/NewCaseDialog'
 import { Button } from '@/components/ui/button'
 import { api, ApiError } from '@/lib/api'
 import { ERROR_MESSAGES } from '@/lib/format'
-import { myCases, rememberCase, spacedCode } from '@/lib/myCases'
+import { CLOSE_REASON_NAME, shortDate } from '@/components/cases/caseInfo'
+import { myCases, refreshCase, rememberCase, spacedCode, type MyCase } from '@/lib/myCases'
 
 // E4, changed by D59: there is no list of everyone's cases. A helper opens a borrower's case with the
 // 8-digit code the borrower got from the Telegram bot (/helper), or starts a case by hand for someone
@@ -16,8 +17,24 @@ export default function Cases() {
   const [code, setCode] = useState('')
   const [opening, setOpening] = useState(false)
   const [error, setError] = useState<string | null>(null)
-  const mine = myCases()
+  const [mine, setMine] = useState<MyCase[]>(myCases)
+  const [showClosed, setShowClosed] = useState(false)
   const digits = code.replace(/\D/g, '')
+
+  // D60: a case closed on another helper's phone shows as closed here too. Each remembered case is
+  // asked for once when the page opens; a failure just keeps what this phone already knew.
+  useEffect(() => {
+    let active = true
+    Promise.allSettled(myCases().map((m) => api.getCase(m.id))).then((results) => {
+      results.forEach((r) => r.status === 'fulfilled' && refreshCase(r.value))
+      if (active) setMine(myCases())
+    })
+    return () => {
+      active = false
+    }
+  }, [])
+  const openOnes = mine.filter((m) => !m.closed_at)
+  const closedOnes = mine.filter((m) => m.closed_at)
 
   const open = async (e: FormEvent) => {
     e.preventDefault()
@@ -74,32 +91,63 @@ export default function Cases() {
           <Smartphone className="size-4 text-muted-foreground" aria-hidden />
           Cases on this phone
         </h2>
-        {mine.length === 0 ? (
+        {mine.length === 0 && (
           <div className="flex flex-col items-center space-y-2 rounded-2xl border border-dashed border-border px-4 py-10 text-center">
             <FolderOpen className="size-10 text-muted-foreground" aria-hidden />
             <p className="text-sm text-muted-foreground">
               None yet. Cases you open with a code or start here are kept on this phone only.
             </p>
           </div>
-        ) : (
-          mine.map((c) => (
-            <Link
-              key={c.id}
-              to={`/cases/${c.id}`}
-              className="flex min-h-16 items-center gap-3 rounded-2xl border border-border bg-card p-4 shadow-sm transition-colors hover:bg-muted/50"
+        )}
+        {mine.length > 0 && openOnes.length === 0 && (
+          <p className="text-sm text-muted-foreground">No open cases on this phone.</p>
+        )}
+        {openOnes.map((c) => <CaseRow key={c.id} c={c} />)}
+
+        {closedOnes.length > 0 && (
+          <div className="space-y-3 pt-2">
+            <button
+              type="button"
+              onClick={() => setShowClosed((v) => !v)}
+              aria-expanded={showClosed}
+              className="flex min-h-12 w-full items-center gap-2 text-left text-sm font-semibold text-muted-foreground"
             >
-              <div className="min-w-0 flex-1">
-                <p className="truncate text-lg font-semibold text-foreground">{c.lender_name}</p>
-                <p className="text-xs text-muted-foreground">
-                  {c.borrower_name}
-                  {c.code && <span className="font-mono"> · {spacedCode(c.code)}</span>}
-                </p>
-              </div>
-              <ChevronRight className="size-5 shrink-0 text-muted-foreground" aria-hidden />
-            </Link>
-          ))
+              <Lock className="size-4" aria-hidden />
+              Closed ({closedOnes.length})
+              <ChevronDown className={`ml-auto size-5 transition-transform ${showClosed ? 'rotate-180' : ''}`} aria-hidden />
+            </button>
+            {showClosed && closedOnes.map((c) => <CaseRow key={c.id} c={c} />)}
+          </div>
         )}
       </section>
     </div>
+  )
+}
+
+
+function CaseRow({ c }: { c: MyCase }) {
+  const closed = Boolean(c.closed_at)
+  return (
+    <Link
+      to={`/cases/${c.id}`}
+      className={`flex min-h-16 items-center gap-3 rounded-2xl border border-border p-4 transition-colors hover:bg-muted/50 ${
+        closed ? 'bg-muted/40' : 'bg-card shadow-sm'
+      }`}
+    >
+      <div className="min-w-0 flex-1">
+        <p className={`truncate text-lg font-semibold ${closed ? 'text-muted-foreground' : 'text-foreground'}`}>{c.lender_name}</p>
+        <p className="text-xs text-muted-foreground">
+          {c.borrower_name}
+          {c.code && <span className="font-mono"> · {spacedCode(c.code)}</span>}
+        </p>
+        {closed && (
+          <p className="mt-0.5 text-xs text-muted-foreground">
+            Closed {shortDate(c.closed_at)}
+            {c.close_reason && <> · {CLOSE_REASON_NAME[c.close_reason] ?? c.close_reason}</>}
+          </p>
+        )}
+      </div>
+      <ChevronRight className="size-5 shrink-0 text-muted-foreground" aria-hidden />
+    </Link>
   )
 }

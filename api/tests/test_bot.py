@@ -371,10 +371,10 @@ def log_update(**kwargs):
 
 
 def fake_cases_api(monkeypatch, rules=("H1", "H2"), event_status=200, case_lost_once=False, down=False,
-                   chat_state=None):
+                   chat_state=None, closed_once=False):
     """A fake API for /api/cases and the bot's memory (/api/telegram/{key}, D59)."""
     calls = []
-    state = {"lost": case_lost_once, "cases": 0}
+    state = {"lost": case_lost_once, "cases": 0, "closed": closed_once}
 
     class Client:
         def __init__(self, timeout):
@@ -399,6 +399,9 @@ def fake_cases_api(monkeypatch, rules=("H1", "H2"), event_status=200, case_lost_
             if state["lost"]:
                 state["lost"] = False
                 return httpx.Response(404, json={"detail": "Case not found."})
+            if state["closed"]:
+                state["closed"] = False
+                return httpx.Response(409, json={"detail": {"code": "CASE_CLOSED", "text_hi": "band"}})
             return httpx.Response(event_status, json={"id": "evt_0001", "at": json["at"],
                                                       "rules": list(rules), "hash": "a" * 64,
                                                       "prev_hash": "0" * 64})
@@ -410,7 +413,8 @@ def fake_cases_api(monkeypatch, rules=("H1", "H2"), event_status=200, case_lost_
             if "/api/telegram/" in url:
                 return httpx.Response(200, json=chat_state or {"lang": None, "case_id": None, "code": None,
                                                                "has_phone": False})
-            return httpx.Response(200, json={"id": url.rsplit("/", 1)[1], "code": "48217730"})
+            return httpx.Response(200, json={"id": url.rsplit("/", 1)[1], "code": "48217730",
+                                             "closed_at": (chat_state or {}).get("closed_at")})
 
         async def put(self, url, json=None, **kwargs):
             calls.append(("PUT", url.split("/api", 1)[1], json))
@@ -681,3 +685,27 @@ def test_lender_line_shows_the_cancelled_registration_with_its_date():
     assert "<b>Dhokha &amp; Co Fincap</b>" in line and "2026-09-30" in line
     assert not any(w in line.lower() for w in ("illegal", "fake", "fraud"))
     assert bot.lender_line({"match": None, "warning": None}) is None
+
+
+# ---------------------------------------------------------------- D60: closed cases
+def test_threat_after_the_case_was_closed_opens_a_new_case(monkeypatch):
+    calls = fake_cases_api(monkeypatch, closed_once=True)
+    context = SimpleNamespace(chat_data={"case_id": "case_old", "code": "11112222", "_loaded": True})
+    update = log_update()
+    asyncio.run(bot.on_forward(update, context))
+    posts = [c[1] for c in calls if c[0] == "POST"]
+    assert posts == ["/cases/case_old/events", "/cases", "/cases/case_0001/events"]
+    assert update.message.sent[0] == ("text", bot.MSG_NEW_CASE)
+    assert update.message.sent[1][1].startswith("Darj ho gaya.")
+    assert context.chat_data["case_id"] == "case_0001" and context.chat_data["code"] == "48217731"
+
+
+def test_helper_on_a_closed_case_says_so(monkeypatch):
+    fake_cases_api(monkeypatch, chat_state={"closed_at": "2026-11-17T09:00:00+05:30"})
+    update = log_update(forwarded=False)
+    context = SimpleNamespace(chat_data={"case_id": "case_0001"})
+    asyncio.run(bot.helper_command(update, context))
+    assert "4821 7730" in update.message.sent[0][1] and "band ho chuka" in update.message.sent[0][1]
+    open_update = log_update(forwarded=False)
+    asyncio.run(bot.helper_command(open_update, SimpleNamespace(chat_data={"case_id": "c", "code": "48217730"})))
+    assert "band ho chuka" not in open_update.message.sent[0][1]

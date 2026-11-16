@@ -25,10 +25,10 @@ from reportlab.lib import colors
 from reportlab.lib.pagesizes import A4
 from reportlab.lib.styles import ParagraphStyle, getSampleStyleSheet
 from reportlab.lib.units import mm
-from reportlab.platypus import (KeepTogether, Paragraph, SimpleDocTemplate, Spacer, Table,
+from reportlab.platypus import (Image, KeepTogether, PageBreak, Paragraph, SimpleDocTemplate, Spacer, Table,
                                 TableStyle)
 
-from api.core.harass import RULES, RULES_BASIS
+from api.core.harass import RULES, RULES_BASIS, THREAT_TYPES
 
 IST = timezone(timedelta(hours=5, minutes=30))
 GENESIS = "0" * 64
@@ -63,12 +63,42 @@ def mask_phone(phone: str | None) -> str | None:
     return f"XXXXXX {digits[-4:]}" if len(digits) >= 4 else None
 
 
+def hash_fields(event: dict) -> dict:
+    """The fields an event's hash covers. D60: the threat type and the photos' SHA-256 (in order) are added
+    ONLY when present, so every event logged before D60 keeps exactly the hash it was given."""
+    fields = {k: event.get(k) for k in HASH_FIELDS}
+    if event.get("threat_type"):
+        fields["threat_type"] = event["threat_type"]
+    photos = [p["sha256"] for p in event.get("photos") or []]
+    if photos:
+        fields["photos"] = photos
+    return fields
+
+
 def event_hash(prev_hash: str, event: dict) -> str:
     """SHA-256(prev_hash + the event's fields as sorted JSON). Editing any field, or the order,
     changes this hash and every hash after it."""
-    fields = {k: event.get(k) for k in HASH_FIELDS}
-    return hashlib.sha256((prev_hash + json.dumps(fields, sort_keys=True, ensure_ascii=False,
+    return hashlib.sha256((prev_hash + json.dumps(hash_fields(event), sort_keys=True, ensure_ascii=False,
                                                   separators=(",", ":"))).encode("utf-8")).hexdigest()
+
+
+MAX_PHOTO_SIDE = 1600
+
+
+def clean_photo(raw: bytes) -> bytes:
+    """A photo for the evidence (D60): turned the right way up, at most 1600 px, saved again as a plain
+    JPEG. Saving again drops everything hidden in the file (EXIF: GPS location, phone model, time).
+    Raises ValueError if it is not a picture."""
+    from PIL import Image as PILImage, ImageOps, UnidentifiedImageError
+    try:
+        with PILImage.open(io.BytesIO(raw)) as im:
+            im = ImageOps.exif_transpose(im).convert("RGB")
+            im.thumbnail((MAX_PHOTO_SIDE, MAX_PHOTO_SIDE))
+            out = io.BytesIO()
+            im.save(out, "JPEG", quality=82, optimize=True)
+    except (UnidentifiedImageError, OSError) as exc:
+        raise ValueError("not a picture") from exc
+    return out.getvalue()
 
 
 def verify_chain(events: list[dict]) -> bool:
@@ -166,7 +196,7 @@ def letter_addressee(route: str | None, lender_name: str | None) -> str:
 def complaint_draft(case: dict, counts: dict[str, int]) -> list[str]:
     """A ready complaint letter in English, as paragraphs. The addressee follows the route (F6)."""
     events = case.get("events") or []
-    lender = pdf_text(case.get("lender_name")) or "the lender"
+    lender = pdf_text(case.get("lender_name")).rstrip(".") or "the lender"   # "Ltd." + "." was "Ltd.."
     borrower = pdf_text(case.get("borrower_name")) or "the borrower"
     span = (f"between {_when(events[0].get('at'))} and {_when(events[-1].get('at'))}"
             if events else "recently")
@@ -188,8 +218,23 @@ def complaint_draft(case: dict, counts: dict[str, int]) -> list[str]:
 
 
 # ---------------------------------------------------------------- the PDF
-def build_pdf(case: dict, compress: bool = True) -> bytes:
-    """The case as an English evidence PDF. compress=False only so tests can read the text."""
+CLOSE_REASONS = {"resolved": "Resolved", "repaid": "Loan repaid", "complaint_filed": "Complaint filed",
+                 "stopped": "Lender stopped contacting", "other": "Other"}
+
+
+def _picture(data: bytes, max_w: float, max_h: float) -> Image:
+    """A JPEG scaled to fit the box, keeping its shape."""
+    from PIL import Image as PILImage
+    with PILImage.open(io.BytesIO(data)) as im:
+        w, h = im.size
+    scale = min(max_w / w, max_h / h)
+    return Image(io.BytesIO(data), width=w * scale, height=h * scale)
+
+
+def build_pdf(case: dict, compress: bool = True, photos: dict[str, bytes] | None = None) -> bytes:
+    """The case as an English evidence PDF, in parts (D60): Part 1 evidence (header, rules, timeline,
+    hashes) from page 1; Part 2 the complaint, always from a new page; Part 3 the photos (photo id ->
+    JPEG bytes in `photos`), from a new page. compress=False only so tests can read the text."""
     styles = getSampleStyleSheet()
     body = ParagraphStyle("body", parent=styles["BodyText"], fontSize=9.5, leading=12.5)
     small = ParagraphStyle("small", parent=body, fontSize=8, leading=10)
@@ -212,8 +257,18 @@ def build_pdf(case: dict, compress: bool = True) -> bytes:
         p(f"Opened: {_when(case.get('opened_at'))}  |  "
           + (f"Day {day} of {CASE_DAYS}" if day else f"Day count not available (of {CASE_DAYS})")
           + f"  |  Generated: {_clock(datetime.now(IST))}", small),
-        p("Synthetic demo data. Any 12-digit number is masked as XXXX XXXX 1234.", small),
+        p(("Status: Closed on " + _when(case.get("closed_at"))
+           + (f" ({pdf_text(CLOSE_REASONS.get(case.get('close_reason') or '', case.get('close_reason')))})"
+              if case.get("close_reason") else "")
+           + (f". Note: {pdf_text(case.get('close_note'))}" if case.get("close_note") else ""))
+          if case.get("closed_at") else "Status: Open", small),
+        p("Any 12-digit number in the words is masked as XXXX XXXX 1234. Photos are kept as they were "
+          "added (cleaned of hidden location data, not blurred).", small),
     ]
+    photo_no: dict[str, int] = {}             # photo id -> its number in Part 3
+    for ev in events:
+        for ph in ev.get("photos") or []:
+            photo_no[ph["id"]] = len(photo_no) + 1
 
     out.append(p("Rules broken", h2))
     if counts:
@@ -226,13 +281,18 @@ def build_pdf(case: dict, compress: bool = True) -> bytes:
 
     out.append(p(f"Timeline ({len(events)} contact{'s' if len(events) != 1 else ''})", h2))
     if events:
-        rows = [[p(h, small) for h in ("#", "When", "Channel / who", "Words used (masked)", "Rules")]]
+        rows = [[p(h, small) for h in ("#", "When", "Channel / who", "Type", "Words used (masked)", "Rules")]]
         for i, ev in enumerate(events, 1):
+            words = pdf_text(ev.get("text")) or "(no words logged)"
+            numbers = [photo_no[ph["id"]] for ph in ev.get("photos") or [] if ph["id"] in photo_no]
+            if numbers:
+                words += f" [Photo {', '.join(str(n) for n in numbers)}, see Part 3]"
+            kind = THREAT_TYPES.get(ev.get("threat_type") or "", (None,))[0] or "-"
             rows.append([p(str(i), small), p(_when(ev.get("at")), small),
                          p(f"{pdf_text(ev.get('channel')) or '-'} / {pdf_text(ev.get('contacted')) or '-'}", small),
-                         p(pdf_text(ev.get("text")) or "(no words logged)", small),
+                         p(kind, small), p(words, small),
                          p(", ".join(ev.get("rules") or []) or "none", small)])
-        out.append(_table(rows, [8 * mm, 34 * mm, 28 * mm, 82 * mm, 18 * mm]))
+        out.append(_table(rows, [8 * mm, 30 * mm, 26 * mm, 28 * mm, 62 * mm, 16 * mm]))
     else:
         out.append(p("No contacts logged yet.", body))
 
@@ -243,12 +303,29 @@ def build_pdf(case: dict, compress: bool = True) -> bytes:
         out.append(KeepTogether([p(f"#{i}  hash      {pdf_text(ev.get('hash'))}", mono),
                                  p(f"#{i}  prev_hash {pdf_text(ev.get('prev_hash'))}", mono)]))
 
+    # Part 2 (D60): the complaint ALWAYS starts on a new page, so the evidence and the letter never share
+    # one; the letter stays in one piece, to print and sign.
+    out.append(PageBreak())
+    out.append(p("Part 2: Complaint", h1))
     out.append(p("Where to complain", h2))
     out += [p(f"- {line}", body) for line in where_to_complain(case, counts)]
-
-    # The letter stays in one piece (on its own page if needed), so it can be printed and signed.
     out.append(KeepTogether([p("Complaint draft", h2)]
                             + [p(line, body) for line in complaint_draft(case, counts)]))
+
+    # Part 3 (D60): the photos, from a new page, at most two to a page, each with its entry and fingerprint.
+    pictures = [(i, ev, ph) for i, ev in enumerate(events, 1) for ph in ev.get("photos") or []
+                if (photos or {}).get(ph["id"])]
+    if pictures:
+        out.append(PageBreak())
+        out.append(p("Part 3: Photos", h1))
+        for k, (i, ev, ph) in enumerate(pictures):
+            if k and k % 2 == 0:
+                out.append(PageBreak())
+            out.append(KeepTogether([
+                p(f"Photo {photo_no[ph['id']]}: entry #{i}, {_when(ev.get('at'))}", h2),
+                _picture(photos[ph["id"]], 180 * mm, 105 * mm),
+                p(f"SHA-256 {ph['sha256']} (part of entry #{i}'s hash)", mono),
+            ]))
 
     buf = io.BytesIO()
     old = rl_config.pageCompression

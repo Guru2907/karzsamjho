@@ -43,6 +43,8 @@ export interface CaseEvent {
   rules: string[]
   hash: string
   prev_hash: string
+  threat_type?: string | null       // D60: death | verbal | legal | shaming | visit | other
+  photos?: { id: string; sha256: string }[]
 }
 
 export interface Case {
@@ -55,6 +57,9 @@ export interface Case {
   check_id: string | null
   route: string | null
   opened_at: string
+  closed_at?: string | null         // D60: closed for good; no new threats after this
+  close_reason?: string | null
+  close_note?: string | null
   day: number | null
   events: CaseEvent[]
 }
@@ -155,7 +160,21 @@ export const api = {
   // D59: there is no "list every case". A helper opens a case with the borrower's 8-digit code.
   getCaseByCode: (code: string) => request<Case>(`/api/cases/code/${encodeURIComponent(code.replace(/\D/g, ''))}`),
   getCase: (id: string) => request<Case>(`/api/cases/${id}`),
-  addEvent: (caseId: string, body: { at: string; channel: string; contacted: string; text: string }) =>
+  // D60: with photos it goes as a form (fields + up to 3 `photos`); without, as JSON like before.
+  addEventWithPhotos: (
+    caseId: string,
+    body: { at: string; channel: string; contacted: string; text: string; threat_type?: string },
+    photos: Blob[],
+  ) => {
+    const form = new FormData()
+    Object.entries(body).forEach(([k, v]) => v != null && form.append(k, v))
+    photos.forEach((p, i) => form.append('photos', p, `photo${i + 1}.jpg`))
+    return request<CaseEvent>(`/api/cases/${caseId}/events`, { method: 'POST', body: form })
+  },
+  closeCase: (caseId: string, body: { reason: string; note?: string }) =>
+    request<Case>(`/api/cases/${caseId}/close`, json(body)),
+  photoUrl: (caseId: string, photoId: string) => `/api/cases/${caseId}/photos/${photoId}.jpg`,
+  addEvent: (caseId: string, body: { at: string; channel: string; contacted: string; text: string; threat_type?: string }) =>
     request<CaseEvent>(`/api/cases/${caseId}/events`, json(body)),
   verifyCase: (id: string) => request<{ ok: boolean }>(`/api/cases/${id}/verify`),
   evidenceUrl: (id: string) => `/api/cases/${id}/evidence.pdf`,

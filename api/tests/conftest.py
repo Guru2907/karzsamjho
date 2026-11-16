@@ -37,7 +37,7 @@ def temp_database(monkeypatch, tmp_path, request):
         config.settings, db_path=str(tmp_path / "test.db"), database_url=pg))
     if pg:
         with db._db() as conn:
-            conn.execute("TRUNCATE events, cases, checks")
+            conn.execute("TRUNCATE photos, events, cases, checks, chats")
 
 
 @pytest.fixture(scope="session")

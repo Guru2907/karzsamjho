@@ -164,13 +164,13 @@ def test_bot_memory_for_a_chat(client):
     """D59: the bot's /bhasha language and the chat's case live in the database, by a scrambled key."""
     key = "ab" * 20
     assert client.get(f"/api/telegram/{key}").json() == {"lang": None, "case_id": None, "code": None,
-                                                         "has_phone": False}
+                                                         "has_phone": False, "closed": False}
     case = client.post("/api/cases", json={"borrower_name": "Raju", "lender_name": "QuickCash",
                                            "telegram_chat": key}).json()
     assert case["source"] == "telegram" and "telegram_chat" not in case          # the key is never shown
     assert client.put(f"/api/telegram/{key}", json={"lang": "bn"}).status_code == 200
     state = client.get(f"/api/telegram/{key}").json()
-    assert state == {"lang": "bn", "case_id": case["id"], "code": case["code"], "has_phone": False}
+    assert state == {"lang": "bn", "case_id": case["id"], "code": case["code"], "has_phone": False, "closed": False}
     assert client.get("/api/telegram/not-a-key").status_code == 404
     assert client.put(f"/api/telegram/{key}", json={"lang": "xx"}).status_code == 422
 

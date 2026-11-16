@@ -1,13 +1,14 @@
 import { useCallback, useEffect, useState } from 'react'
 import { Link, useParams } from 'react-router-dom'
 import {
-  ArrowLeft, FileDown, MessageCircle, MessageSquare, Phone, Send, ShieldCheck, ShieldX, User, WifiOff,
+  ArrowLeft, FileDown, Lock, MessageCircle, MessageSquare, Phone, Send, ShieldCheck, ShieldX, User, WifiOff,
   type LucideIcon,
 } from 'lucide-react'
 import { Button, buttonVariants } from '@/components/ui/button'
+import { CloseCaseDialog } from '@/components/cases/CloseCaseDialog'
 import { LogThreatDialog } from '@/components/cases/LogThreatDialog'
 import { RouteBadge, RuleBadges, RulesLegend } from '@/components/cases/meta'
-import { dayLine, formatAt, maskNumbers } from '@/components/cases/caseInfo'
+import { CLOSE_REASON_NAME, dayLine, formatAt, maskNumbers, shortDate, THREAT_TYPE_NAME } from '@/components/cases/caseInfo'
 import { api, type Case } from '@/lib/api'
 import { ERROR_MESSAGES } from '@/lib/format'
 import { rememberCase, spacedCode } from '@/lib/myCases'
@@ -112,6 +113,21 @@ export default function CaseDetail() {
 
       {!loading && !error && caseItem && (
         <>
+          {/* D60: a closed case says so first; it can still be read, its PDF made and verified */}
+          {caseItem.closed_at && (
+            <div className="flex items-start gap-3 rounded-2xl border border-border bg-muted p-4">
+              <Lock className="mt-0.5 size-5 shrink-0 text-muted-foreground" aria-hidden />
+              <div className="min-w-0 text-sm">
+                <p className="font-semibold text-foreground">
+                  Closed on {shortDate(caseItem.closed_at)}
+                  {caseItem.close_reason && <> · {CLOSE_REASON_NAME[caseItem.close_reason] ?? caseItem.close_reason}</>}
+                </p>
+                {caseItem.close_note && <p className="mt-0.5 text-muted-foreground">{caseItem.close_note}</p>}
+                <p className="mt-1 text-xs text-muted-foreground">No new threats can be logged. If it starts again, open a new case.</p>
+              </div>
+            </div>
+          )}
+
           {/* Who, which lender, where to complain */}
           <div className="space-y-3 rounded-2xl border border-border bg-card p-5 shadow-sm">
             {caseItem.code && (
@@ -142,7 +158,9 @@ export default function CaseDetail() {
           </div>
 
           {/* Actions */}
-          <LogThreatDialog caseId={caseItem.id} onLogged={() => { setVerify('idle'); loadCase(true) }} />
+          {!caseItem.closed_at && (
+            <LogThreatDialog caseId={caseItem.id} onLogged={() => { setVerify('idle'); loadCase(true) }} />
+          )}
           <div className="grid grid-cols-2 gap-3">
             <a
               href={api.evidenceUrl(caseItem.id)}
@@ -198,7 +216,25 @@ export default function CaseDetail() {
                     <span>· {e.channel ?? 'message'}</span>
                     {e.contacted && <span>· to {CONTACTED_LABEL[e.contacted] ?? e.contacted}</span>}
                   </div>
-                  <p className="text-sm leading-relaxed text-foreground">{maskNumbers(e.text)}</p>
+                  {e.threat_type && (
+                    <p className="text-xs font-semibold text-foreground">{THREAT_TYPE_NAME[e.threat_type] ?? e.threat_type}</p>
+                  )}
+                  {e.text && <p className="text-sm leading-relaxed text-foreground">{maskNumbers(e.text)}</p>}
+                  {(e.photos ?? []).length > 0 && (
+                    <div className="grid grid-cols-3 gap-2">
+                      {(e.photos ?? []).map((ph, k) => (
+                        <a
+                          key={ph.id}
+                          href={api.photoUrl(caseItem.id, ph.id)}
+                          target="_blank"
+                          rel="noreferrer"
+                          className="block aspect-square overflow-hidden rounded-lg border border-border"
+                        >
+                          <img src={api.photoUrl(caseItem.id, ph.id)} alt={`Photo ${k + 1} of this entry`} loading="lazy" className="size-full object-cover" />
+                        </a>
+                      ))}
+                    </div>
+                  )}
                   <RuleBadges rules={e.rules ?? []} named />
                   {(e.rules ?? []).length === 0 && <p className="text-xs text-muted-foreground">No rule broken.</p>}
                   <p className="font-mono text-[10px] text-muted-foreground">hash {e.hash?.slice(0, 8)}…</p>
@@ -208,6 +244,11 @@ export default function CaseDetail() {
           </div>
 
           <RulesLegend />
+
+          {/* D60: closing is the last thing on the page, away from the everyday buttons */}
+          {!caseItem.closed_at && (
+            <CloseCaseDialog caseId={caseItem.id} onClosed={(c) => { setCaseItem(c); rememberCase(c) }} />
+          )}
         </>
       )}
     </div>

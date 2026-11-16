@@ -58,7 +58,7 @@ api/
     evidence.py      PDF (English) + hash chain + masking
     fallback.py      the ONLY file that calls outside services
     cache.py         results stored by SHA-256 of the image
-    db.py            ALL SQLite access
+    db.py            ALL database access (Postgres on Neon when DATABASE_URL is set, else SQLite; D58)
   data/              rbi_dla.csv, test offers, harassment samples
   tests/
 bot/main.py          Telegram bot, long polling
@@ -176,7 +176,7 @@ Do NOT use gemini-3.8-flash or Gemma (503 errors and 20 requests/day on the free
 - Colours (D47): cream + near-black + burnt orange, as tokens in web/src/index.css. Use the tokens (bg-background, text-foreground, bg-primary...), never hard-coded colours.
 
 ## Out of scope (do not build, do not suggest)
-Login/accounts, guided tours, Bhashini, 3D or animated backgrounds, scroll libraries (only exception: `motion` on the public website, D47), offline mode/service worker, WhatsApp, Tesseract, local Whisper, a second AI reading on every photo, Postgres/Supabase, any feature not in docs/TASKS.md.
+Login/accounts, guided tours, Bhashini, 3D or animated backgrounds, scroll libraries (only exception: `motion` on the public website, D47), offline mode/service worker, WhatsApp, Tesseract, local Whisper, a second AI reading on every photo, Supabase (Postgres on Neon is allowed since D58, only through db.py), any feature not in docs/TASKS.md.
 
 ## Gates and freeze (IST)
 - 13 Nov 2:00 PM: photo in Telegram gets a reply; card page shows sample data.

@@ -8,8 +8,11 @@ from api.core import cache, config
 
 @pytest.fixture(autouse=True)
 def tmp_cache(monkeypatch, tmp_path):
-    monkeypatch.setattr(config, "settings", dataclasses.replace(config.settings, cache_dir=str(tmp_path)))
-    return tmp_path
+    # Its own folder: a miss also looks in the database (D58), whose test file sits in tmp_path.
+    folder = tmp_path / "cache"
+    folder.mkdir()
+    monkeypatch.setattr(config, "settings", dataclasses.replace(config.settings, cache_dir=str(folder)))
+    return folder
 
 
 def test_image_key_is_sha256_of_the_exact_bytes():

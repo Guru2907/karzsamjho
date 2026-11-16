@@ -10,7 +10,7 @@ import os
 import re
 from pathlib import Path
 
-from api.core import config
+from api.core import config, db
 
 log = logging.getLogger("cache")
 _KEY = re.compile(r"^[0-9a-f]{64}$")
@@ -35,14 +35,21 @@ def _path(key: str) -> Path:
 
 
 def get(key: str) -> dict | None:
-    """The stored CheckResult for this photo, or None (missing or unreadable file = a miss)."""
+    """The stored CheckResult for this photo, or None (missing or unreadable = a miss).
+
+    The file first; if it is gone (Render's disk is wiped on a restart), the database, which keeps
+    every check with its photo key (D58). Either way a repeated photo never calls an AI service."""
     try:
         path = _path(key)
-        if not path.is_file():
-            return None
-        return json.loads(path.read_text(encoding="utf-8"))
+        if path.is_file():
+            return json.loads(path.read_text(encoding="utf-8"))
     except (OSError, ValueError) as exc:
         log.warning("cache miss for %s...: %s", key[:12], type(exc).__name__)
+        return None
+    try:
+        return db.get_check_by_image(key)
+    except Exception as exc:                       # the database being down is a miss, never an error
+        log.warning("cache miss for %s... (database): %s", key[:12], type(exc).__name__)
         return None
 
 

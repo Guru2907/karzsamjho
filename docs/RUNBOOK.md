@@ -32,9 +32,14 @@ Health check: open http://localhost:8000/api/health (add `?fresh=true` to re-che
 - Web: Vercel project, Root Directory `web`, Vite, build `npm run build`, output `dist`, Node 22.
   `web/vercel.json` forwards /api/* to the Render API (checks, audio, PDFs; no CORS) and sends every other path to index.html.
 - Bot: stays on the laptop; local .env `API_URL=https://karzsamjho-api.onrender.com`, restart the bot. Bot and web then share one API.
-- Free Render sleeps after 15 min idle and its disk resets on every restart / redeploy (SQLite file, cache, MP3s start empty;
-  RBI lists and demo files come back from the repo). UptimeRobot pings /api/health every 5 min to keep it awake.
-  Do not redeploy after setting up demo cases. Open /api/health 5 min before presenting.
+- Database (D58): Postgres on Neon (free, Singapore, same region as Render). Render's env has DATABASE_URL = Neon's
+  pooled connection string (secret; also in the local .env). Checks, cases and events live there, so a Render
+  restart or redeploy no longer loses them. Render's disk still resets (cache files, MP3s), but a repeated photo
+  is found in the database (no AI call) and a missing MP3 is made again from the stored sentence on first play.
+  UptimeRobot pings /api/health every 5 min; health reads the database, so Neon stays awake too.
+  Without DATABASE_URL the API uses the SQLite file (local work, tests).
+- Test on Postgres: set KS_TEST_DATABASE_URL to Neon's DIRECT (non-pooler) string and run pytest; every table goes
+  in a throw-away schema test_<random> that is dropped at the end. The normal pytest run never touches Neon.
 - Install as an app (HTTPS): Android Chrome -> "Install app" or menu > Install app / Add to Home screen; iPhone Safari ->
   Share > Add to Home Screen; laptop Chrome/Edge -> install icon in the address bar. The website's QR is a fixed picture made by scripts/make_qr.py and always opens https://karzsamjho.vercel.app/app (D57); the installed app starts on /app.
 - Fallback: the laptop setup (Run, above) still works unchanged.

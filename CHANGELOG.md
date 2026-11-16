@@ -4,6 +4,10 @@ Work after the hackathon goes under [Unreleased]. The hackathon build is the tag
 
 ## [Unreleased]
 
+### Changed (database, D58)
+- Hosted data now lives in Postgres on Neon instead of a SQLite file on Render's disk, so checks and harassment cases survive Render restarts and redeploys. Local work and tests still use SQLite.
+- After a restart, a repeated photo is still answered from the database with no AI call, and a missing Hindi MP3 is made again on first play.
+
 ### Changed
 - Website: no button opens the helper app on a laptop any more; "Get the app" buttons open a picture QR (the code itself forms a vegetable vendor's face) to scan with the phone. Phones get one "Open the app" button instead of the QR (D57).
 - `/join` follows the light/dark theme like the other pages (its opening was always black).

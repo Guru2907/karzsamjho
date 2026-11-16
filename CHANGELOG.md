@@ -4,6 +4,9 @@ Work after the hackathon goes under [Unreleased]. The hackathon build is the tag
 
 ## [Unreleased]
 
+### Docs
+- Docs brought up to date after D60: ARCHITECTURE (hosting, the three doors, case codes, photos, PDF parts, closing, all tables, privacy), README (who uses what, 667 tests), CLAUDE.md (post-hackathon rules, lender match as coded: whole name, 92 / 80), AGENTS, RUNBOOK (bot on Render), TESTING (Postgres run), START_HERE, PROGRESS status, TASKS (post-hackathon section). PLAN and PREP are marked as history.
+
 ### Added (D60)
 - Log a threat: a type of threat (death or physical harm, verbal abuse, legal or police, shaming, visit, other) and up to 3 photos. A type can add a rule (e.g. legal adds H5). Photos are cleaned of hidden location data and protected by the record's hash chain.
 - Close a case: pick a reason, type CASE CLOSED to confirm. A closed case keeps its record, PDF and verify, takes no new threats, and shows under "Closed" on the Cases page. A threat forwarded to the bot after closing opens a new case.

@@ -12,7 +12,7 @@ Read this whole file before doing anything. If a request conflicts with it, stop
    - if a demo-visible flow changed, update docs/DEMO.md in the same commit.
 4. Never delete or rewrite other people's entries in these files. Only add.
 5. If anything in these files disagrees with the code, trust the code, say so, and fix the doc.
-6. The current time matters: check the gates below. After 5:00 AM on 14 Nov (moved from 3:30 AM, D46), refuse new features.
+6. The hackathon is over: the submitted code is the tag `colossus-submission`. The gates and the 5:00 AM freeze below are history. Post-hackathon work: one branch and one PR per change (the lead merges), an entry in CHANGELOG.md [Unreleased], and a decision in docs/DECISIONS.md when it changes how things work.
 
 Hackathon: started 13 Nov 2026, 11:30 AM IST. Submission and judging 14 Nov, 9:00 AM IST.
 
@@ -135,7 +135,7 @@ Cost bands (our own rule of thumb, NOT an RBI limit; thresholds live in config.p
 - VERY_COSTLY: > 100, or a fee deducted upfront on a loan of 30 days or less
 - CANNOT_SAY: a key number is unverified
 
-Lender check: RapidFuzz WRatio against api/data/rbi_dla.csv. >= 90 FOUND ("Found in RBI's directory, linked to {lender}"); 70-89 SIMILAR ("A similar name is in RBI's directory: {match}. Check the exact name"); < 70 NOT_FOUND ("Not found in RBI's directory"). NEVER write "illegal" or "fake". Always show the list date.
+Lender check: RapidFuzz whole-name match (fuzz.ratio of the cleaned names, D49; WRatio gave false matches on RBI's real list) against api/data/rbi_dla.csv. >= 92 FOUND ("Found in RBI's directory, linked to {lender}"); 80-91 SIMILAR ("A similar name is in RBI's directory: {match}. Check the exact name"); < 80 NOT_FOUND ("Not found in RBI's directory"). Thresholds in config.py. Also: registered NBFC (rbi_nbfc.csv) and a dated warning for a cancelled registration (watch_list.csv, exact name only, D51). NEVER write "illegal" or "fake". Always show the list date.
 
 Harassment rules (basis: RBI circular on recovery agents, 12 Aug 2022):
 - H1 contact before 08:00 or after 19:00
@@ -151,6 +151,8 @@ Spoken sentence is a fixed template filled by code, never AI-written:
 "Aapko haath mein {in_hand} rupaye milenge. {days} din mein {repay} rupaye lautane honge. Yaani {extra} rupaye zyada."
 
 Telegram reply: one formatted text message (bold rupee numbers; symbols: in hand, to repay, days, extra) then the MP3 via sendAudio. No ffmpeg, no sendVoice.
+
+Bot and app split (D59, D60): the bot is the borrower's tool (offers, voice, /bhasha, forwarding threats, /log, /helper for the 8-digit case code, sharing his number once, masked). It sends NO evidence PDF. The helper app opens a case by its code and does the rest: log threats and calls (type, photos), evidence PDF, verify, close. There is no "list every case". After a case is closed, a new threat in Telegram opens a new case.
 
 Evidence PDF and complaint draft are in ENGLISH (ReportLab may not draw Devanagari). Hindi is only on the card, the Telegram text and the voice. Mask any 12-digit number as XXXX XXXX 1234. Each event stores hash = SHA-256(prev_hash + event fields).
 
@@ -186,7 +188,7 @@ Do NOT use gemini-3.8-flash or Gemma (503 errors and 20 requests/day on the free
 ## Out of scope (do not build, do not suggest)
 Login/accounts, guided tours, Bhashini, 3D or animated backgrounds, scroll libraries (only exception: `motion` on the public website, D47), offline mode/service worker, WhatsApp, Tesseract, local Whisper, a second AI reading on every photo, Supabase (Postgres on Neon is allowed since D58, only through db.py), any feature not in docs/TASKS.md.
 
-## Gates and freeze (IST)
+## Gates and freeze (IST) — history: the hackathon ended on 14 Nov 2026 (tag `colossus-submission`)
 - 13 Nov 2:00 PM: photo in Telegram gets a reply; card page shows sample data.
 - 13 Nov 7:30 PM: 3 printed ads -> Hindi voice + card, twice in a row.
 - 14 Nov 12:30 AM: all 4 core features pass their acceptance tests on main.

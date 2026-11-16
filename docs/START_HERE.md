@@ -1,5 +1,11 @@
 # START HERE
 
+> **Current state (17 Nov 2026, after the hackathon):** everything runs hosted: website + helper app on Vercel
+> (https://karzsamjho.vercel.app), API + Telegram bot on Render, data in Postgres on Neon. Locally the API uses the
+> SQLite file unless `DATABASE_URL` is set in `.env`. `pytest -q`: 667 passed. Parts of this guide describe the hackathon
+> (13-14 Nov) and are kept as history; docs/ARCHITECTURE.md and docs/RUNBOOK.md describe the system as it is now.
+
+
 This zip is the full KarzSamjho starter repo. It includes an **empty `.env`**, which GitHub never carries for you.
 
 > **Never put real keys in this zip, and never send a filled `.env` in any chat.** If that happens, delete the key in the provider's console and make a new one.
@@ -81,9 +87,9 @@ Start the API first. You only need the parts your task touches (web-only work = 
 - http://localhost:8000/api/health shows `"api":"up"` and your keys as `true`
 - Send a loan ad photo or paste a loan SMS to your bot in Telegram: the ₹ card comes back, then a Hindi MP3
 - Send something that is not a loan: a polite Hindi "Yeh loan ka offer nahi lagta" and no card
-- Forward a threat (or `/log` then the message): the rules it breaks come back in Hindi, then the evidence PDF
+- Forward a threat (or `/log` then the message): the rules it breaks come back in Hindi; `/helper` gives the case code (the evidence PDF is in the helper app, D59)
 - http://localhost:8000/api/health: each engine (Groq, Gemini, edge-tts) up or down, and the database
-- Tests: `.venv\Scripts\python -m pytest -q` (440 passed on main at 12:55 AM, 14 Nov)
+- Tests: `.venv\Scripts\python -m pytest -q` (667 passed on 17 Nov; 440 at 12:55 AM, 14 Nov)
 
 Everything is **real** on main (14 Nov, 12:55 AM): checks (photo / SMS / Hindi voice note), the RBI lender check, harassment cases with rules, hash chain and the evidence PDF. Still a stub: verify (F4). The `/check` page shows the old placeholder until Tejaswini's web PRs (E2, E3, E9) are merged. Results are in a SQLite file (`karzsamjho.db`, not committed), so they survive an API restart (A3).
 

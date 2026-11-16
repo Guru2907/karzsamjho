@@ -3,7 +3,7 @@ import { motion, useReducedMotion, useScroll, useTransform } from 'motion/react'
 import { useEffect, useRef, useState } from 'react'
 import { api, type Stats } from '@/lib/api'
 import { CountUp, EASE, Reveal, Rule } from './motion'
-import { PhoneAppLink, QrCard } from './AppQr'
+import { GetTheApp } from './AppQr'
 import { SHELL } from './shell'
 
 // The sections of the public Home page below the scroll story (H2, H3, H7; D47).
@@ -247,7 +247,7 @@ export function LiveStats() {
 export function CallToAction() {
   const reduce = useReducedMotion()
   return (
-    <section id="get-app" className="scroll-mt-20 border-t border-border">
+    <section className="border-t border-border">
       <div className={`${SHELL} grid items-end gap-12 py-28 lg:grid-cols-12`}>
         <div className="lg:col-span-8">
           <Eyebrow n="06">Try it</Eyebrow>
@@ -261,12 +261,9 @@ export function CallToAction() {
             Ek photo. <span className="text-primary">Ek awaaz.</span>
           </motion.p>
           <div className="mt-12">
-            <PhoneAppLink />
+            <GetTheApp />
           </div>
         </div>
-        <Reveal className="lg:col-span-4" delay={0.2}>
-          <QrCard size="lg" />
-        </Reveal>
       </div>
     </section>
   )

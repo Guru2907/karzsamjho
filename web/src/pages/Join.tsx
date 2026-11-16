@@ -7,8 +7,8 @@ import { SHELL } from '@/site/shell'
 
 // Public website: the call to action for foundations, NGOs, non-profits and other backers
 // (task H8, D47). Different shape from the other pages on purpose: an inverted opening, a
-// sideways scroll, and a letter the visitor builds and sends. The opening is dark in BOTH themes
-// (bg-ink / text-paper, colours that do not flip), so it never turns white in the dark theme.
+// sideways scroll, and a letter the visitor builds and sends. The opening follows the page theme like
+// every other page (D57: an always-dark block looked like a bug next to the light pages).
 // Honesty rules: no invented contact details, no invented costs, nothing claimed as running.
 
 const REPO = 'https://github.com/Guru2907/karzsamjho'
@@ -266,11 +266,11 @@ const TRUTHS = [
 export default function Join() {
   return (
     <>
-      <section className="flex min-h-svh flex-col justify-between bg-ink px-[3vw] pt-36 pb-10 text-paper">
+      <section className="flex min-h-svh flex-col justify-between px-[3vw] pt-36 pb-10">
         <div>
           <Reveal>
-            <p className="mb-[2vw] flex items-center gap-3 text-xs font-medium tracking-[0.2em] uppercase opacity-60">
-              <span className="h-px w-8 bg-paper/50" aria-hidden />
+            <p className="mb-[2vw] flex items-center gap-3 text-xs font-medium tracking-[0.2em] text-muted-foreground uppercase">
+              <span className="h-px w-8 bg-foreground/40" aria-hidden />
               For foundations, NGOs and everyone who backs them
             </p>
           </Reveal>
@@ -288,12 +288,12 @@ export default function Join() {
           />
         </div>
         <Reveal delay={0.9}>
-          <div className="grid items-end gap-8 border-t border-paper/25 pt-6 lg:grid-cols-12">
-            <p className="max-w-xl text-lg leading-relaxed opacity-75 lg:col-span-7 lg:text-xl">
+          <div className="grid items-end gap-8 border-t border-border pt-6 lg:grid-cols-12">
+            <p className="max-w-xl text-lg leading-relaxed text-muted-foreground lg:col-span-7 lg:text-xl">
               KarzSamjho reads a loan offer aloud, in rupees, before the borrower signs. The software works. What it
               needs now is not code: it is people who already sit beside borrowers.
             </p>
-            <p className="flex items-center gap-2 text-xs tracking-[0.2em] uppercase opacity-60 lg:col-span-5 lg:justify-end">
+            <p className="flex items-center gap-2 text-xs tracking-[0.2em] text-muted-foreground uppercase lg:col-span-5 lg:justify-end">
               <ArrowDown className="size-3.5 animate-bounce" aria-hidden />
               Three ways to back it
             </p>

@@ -109,7 +109,7 @@ export default function Partners() {
               Run it with <span className="text-primary">your people.</span>
             </p>
           </Reveal>
-          <div className="mt-12 flex flex-wrap items-end gap-8">
+          <div className="mt-12 flex flex-wrap items-center gap-4">
             <GetTheApp />
             <a
               href="https://github.com/Guru2907/karzsamjho"

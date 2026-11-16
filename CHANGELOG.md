@@ -5,7 +5,8 @@ Work after the hackathon goes under [Unreleased]. The hackathon build is the tag
 ## [Unreleased]
 
 ### Changed
-- Website: no button opens the helper app on a laptop any more; a picture QR (one vegetable vendor drawn into the code) opens it on the phone. Phones get one "Open the app" button instead of the QR (D57).
+- Website: no button opens the helper app on a laptop any more; "Get the app" buttons open a QR (a vegetable vendor's portrait in the centre) to scan with the phone. Phones get one "Open the app" button instead of the QR (D57).
+- `/join` follows the light/dark theme like the other pages (its opening was always black).
 - Helper app: new Home at `/app` (what it does, Check, Cases, the Telegram bot, how a check works); the install button moved there from `/check`; the installed app starts on Home.
 - Light and dark: the saved theme is applied before the first paint (no light flash), and the phone status bar follows the theme.
 

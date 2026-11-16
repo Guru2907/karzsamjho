@@ -1,6 +1,8 @@
 """Make the picture QR for the website and the printed card (D57).
 
-A "halftone" QR: the photo fills the code at full detail. Each QR module keeps a solid centre dot
+Two styles. "portrait" (default, used on the site): a clean QR of round dots with the photo as a
+clear portrait in the centre; error correction H lets up to 30% of the code be covered, the
+13x13 portrait covers 16%. "halftone" (tried first, too busy to see the face): the photo fills the code at full detail. Each QR module keeps a solid centre dot
 that carries the data (dark or light). Around the dot the photo is left alone wherever it already
 agrees with the module; only pixels on the wrong side are pushed just past a threshold
 (--dark-max / --light-min), so the picture survives and phone scanners still read it. The finder squares, timing
@@ -8,7 +10,7 @@ lines, alignment square and format/version bits are drawn solid, because scanner
 
 Dev tool only, not part of the API. Needs: pip install segno pillow numpy  (optional check: opencv-python-headless)
 
-  python scripts/make_qr.py --image photo.jpg --crop 15,15,265,265 --out web/public/qr-app.png
+  python scripts/make_qr.py --image photo.jpg --crop 55,15,235,195 --out web/public/qr-app.png
   python scripts/make_qr.py ... --check      # read the result back with OpenCV and print the link
 
 The source photo is a licensed stock image: keep it out of git (docs/assets/*_source.* is ignored).
@@ -93,6 +95,59 @@ def make(image_path, crop, out, url=URL, module=30, dark_max=90, light_min=170, 
     return img
 
 
+def make_portrait(image_path, crop, out, url=URL, module=24, hole=13, dot=0.78):
+    """Clean QR (round ink dots, orange finders) with the photo as a clear portrait in the centre.
+    hole = side of the centre square in modules. Error correction H recovers up to 30% of the
+    code; a 13x13 hole on the 33x33 code covers 16%, so it scans and the face stays fully visible."""
+    qr = segno.make(url, error="h", boost_error=False)
+    n = qr.symbol_size(scale=1, border=0)[0]
+    size = (n + 2 * QUIET) * module
+    values = [[bool(v) for v in row] for row in qr.matrix_iter(scale=1, border=0)]
+    k = segno.consts
+    kinds = [list(row) for row in qr.matrix_iter(scale=1, border=0, verbose=True)]
+    solid = {k.TYPE_TIMING_DARK, k.TYPE_ALIGNMENT_PATTERN_DARK, k.TYPE_FORMAT_DARK, k.TYPE_VERSION_DARK,
+             k.TYPE_DARKMODULE}
+    finder = {k.TYPE_FINDER_PATTERN_DARK, k.TYPE_FINDER_PATTERN_LIGHT, k.TYPE_SEPARATOR}
+    lo = (n - hole) // 2
+    hi = lo + hole
+
+    img = Image.new("RGB", (size, size), PAPER)
+    draw = ImageDraw.Draw(img)
+    pad = module * (1 - dot) / 2
+    for r in range(n):
+        for c in range(n):
+            if not values[r][c] or kinds[r][c] in finder or (lo <= r < hi and lo <= c < hi):
+                continue
+            x0, y0 = (c + QUIET) * module, (r + QUIET) * module
+            if kinds[r][c] in solid:
+                draw.rounded_rectangle([x0 + 1, y0 + 1, x0 + module - 2, y0 + module - 2], radius=module * 0.2, fill=INK)
+            else:
+                draw.ellipse([x0 + pad, y0 + pad, x0 + module - pad, y0 + module - pad], fill=INK)
+
+    for fr, fc in ((0, 0), (0, n - 7), (n - 7, 0)):
+        x0, y0 = (fc + QUIET) * module, (fr + QUIET) * module
+        draw.rounded_rectangle([x0, y0, x0 + 7 * module - 1, y0 + 7 * module - 1], radius=module * 0.25, fill=ACCENT)
+        draw.rounded_rectangle([x0 + module, y0 + module, x0 + 6 * module - 1, y0 + 6 * module - 1],
+                               radius=module * 0.15, fill=PAPER)
+        draw.rounded_rectangle([x0 + 2 * module, y0 + 2 * module, x0 + 5 * module - 1, y0 + 5 * module - 1],
+                               radius=module * 0.15, fill=INK)
+
+    # The portrait: a rounded square with a cream margin of half a module and a thin orange frame.
+    photo = Image.open(image_path).convert("RGB")
+    if crop:
+        photo = photo.crop(crop)
+    side = hole * module - module
+    photo = ImageEnhance.Contrast(photo).enhance(1.1).resize((side, side), Image.LANCZOS)
+    mask = Image.new("L", (side, side), 0)
+    ImageDraw.Draw(mask).rounded_rectangle([0, 0, side - 1, side - 1], radius=module * 1.2, fill=255)
+    px = (lo + QUIET) * module + module // 2
+    draw.rounded_rectangle([px - 4, px - 4, px + side + 3, px + side + 3], radius=module * 1.2 + 4, fill=ACCENT)
+    img.paste(photo, (px, px), mask)
+
+    img.save(out, optimize=True)
+    return img
+
+
 def check(path):
     """Read the QR back like a phone would: full size, small, and slightly blurred."""
     import cv2
@@ -123,10 +178,16 @@ def main():
     ap.add_argument("--dark-max", type=int, default=90, help="brightest a pixel in a dark module may be (0-255)")
     ap.add_argument("--light-min", type=int, default=170, help="darkest a pixel in a light module may be (0-255)")
     ap.add_argument("--contrast", type=float, default=1.2)
+    ap.add_argument("--style", choices=["portrait", "halftone"], default="portrait",
+                    help="portrait: clean QR, photo in the centre (used on the site); halftone: photo behind the dots")
+    ap.add_argument("--hole", type=int, default=13, help="portrait: side of the centre photo in modules (15 fails)")
     ap.add_argument("--check", action="store_true", help="read it back with OpenCV")
     a = ap.parse_args()
     crop = tuple(int(v) for v in a.crop.split(",")) if a.crop else None
-    make(a.image, crop, a.out, a.url, a.module, a.dark_max, a.light_min, a.contrast, a.dot)
+    if a.style == "portrait":
+        make_portrait(a.image, crop, a.out, a.url, a.module if a.module != 30 else 24, a.hole)
+    else:
+        make(a.image, crop, a.out, a.url, a.module, a.dark_max, a.light_min, a.contrast, a.dot)
     print("wrote", a.out)
     if a.check:
         for name, text in check(a.out).items():

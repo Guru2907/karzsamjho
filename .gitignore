@@ -25,3 +25,6 @@ audio/
 .DS_Store
 Thumbs.db
 .idea/
+
+# Licensed source photos for the picture QR (scripts/make_qr.py): never committed (D57)
+docs/assets/*_source.*

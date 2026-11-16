@@ -45,7 +45,7 @@ export function StickySteps({ steps }: { steps: Step[] }) {
   const [active, setActive] = useState(0)
   const reduce = useReducedMotion()
   return (
-    <div className="grid gap-12 lg:grid-cols-2 lg:gap-20">
+    <div className="grid grid-cols-1 gap-12 lg:grid-cols-2 lg:gap-20">
       <div>
         {steps.map((s, i) => (
           <motion.div

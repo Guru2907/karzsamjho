@@ -10,5 +10,3 @@ export const NAV: { to: string; label: string }[] = [
   { to: '/join', label: 'Back this' },
 ]
 
-/** Pages whose first screen is a dark block, so the nav starts with light text. */
-export const DARK_TOP = ['/join']

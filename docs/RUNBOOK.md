@@ -36,7 +36,7 @@ Health check: open http://localhost:8000/api/health (add `?fresh=true` to re-che
   RBI lists and demo files come back from the repo). UptimeRobot pings /api/health every 5 min to keep it awake.
   Do not redeploy after setting up demo cases. Open /api/health 5 min before presenting.
 - Install as an app (HTTPS): Android Chrome -> "Install app" or menu > Install app / Add to Home screen; iPhone Safari ->
-  Share > Add to Home Screen; laptop Chrome/Edge -> install icon in the address bar. The website's QR points to <host>/check.
+  Share > Add to Home Screen; laptop Chrome/Edge -> install icon in the address bar. The website's QR is a fixed picture made by scripts/make_qr.py and always opens https://karzsamjho.vercel.app/app (D57); the installed app starts on /app.
 - Fallback: the laptop setup (Run, above) still works unchanged.
 
 ## When something breaks

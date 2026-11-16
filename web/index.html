@@ -6,8 +6,20 @@
     <link rel="apple-touch-icon" href="/apple-touch-icon.png" />
     <link rel="manifest" href="/manifest.json" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
-    <meta name="theme-color" content="#f8f4ee" />
+    <meta name="theme-color" content="#faf6ee" />
     <title>KarzSamjho</title>
+    <script>
+      // Before the first paint: apply the saved (or system) theme, so a dark-mode visitor never sees a
+      // light flash, and colour the phone status bar / installed app title bar to match. lib/theme.tsx
+      // keeps both in step when the theme is switched.
+      (function () {
+        var t = null
+        try { t = localStorage.getItem('theme') } catch (e) {}
+        if (t !== 'light' && t !== 'dark') t = matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light'
+        if (t === 'dark') document.documentElement.classList.add('dark')
+        document.querySelector('meta[name="theme-color"]').setAttribute('content', t === 'dark' ? '#110e0b' : '#faf6ee')
+      })()
+    </script>
   </head>
   <body>
     <div id="root"></div>

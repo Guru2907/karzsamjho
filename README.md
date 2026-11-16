@@ -11,7 +11,7 @@ Hackathon version: see tag `colossus-submission` (COLOSSUS 3.0, 13-14 Nov 2026).
 **New here? Read [docs/START_HERE.md](docs/START_HERE.md) first.**
 
 ## Try it
-- Website and helper app: https://karzsamjho.vercel.app (the app is at `/check`; it can be installed from the browser)
+- Website and helper app: https://karzsamjho.vercel.app (the helper app's home is at `/app`; it can be installed from there. On a laptop the website shows a QR for the phone)
 - API health: https://karzsamjho-api.onrender.com/api/health (free tier: the first call after a pause can take up to a minute)
 - Telegram bot: https://t.me/karzsamjho_demo_bot (answers only while the team's bot is running)
 
@@ -26,7 +26,7 @@ A vision model reads the photo; plain Python checks the numbers and does the mat
 
 ## Folders
 - `api/`: the backend (FastAPI, SQLite). All logic is in `api/core/`.
-- `web/`: the public website (`/`, `/how`, `/partners`, `/join`) and the helper app (`/check`, `/cases`): React, Vite, Tailwind, shadcn/ui.
+- `web/`: the public website (`/`, `/how`, `/partners`, `/join`) and the helper app (`/app`, `/check`, `/cases`): React, Vite, Tailwind, shadcn/ui.
 - `bot/`: the Telegram bot.
 - `scripts/`: setup and run scripts for Windows (`.bat`) and Mac/Linux (`.sh`).
 - `docs/`: progress log, decisions, architecture, testing, demo script, runbook.

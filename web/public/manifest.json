@@ -1,11 +1,11 @@
 {
   "name": "KarzSamjho",
   "short_name": "KarzSamjho",
-  "start_url": "/check",
+  "start_url": "/app",
   "scope": "/",
   "display": "standalone",
-  "background_color": "#f8f4ee",
-  "theme_color": "#f8f4ee",
+  "background_color": "#faf6ee",
+  "theme_color": "#faf6ee",
   "icons": [
     {
       "src": "/icons/icon-192.png",

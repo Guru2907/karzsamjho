@@ -1,6 +1,7 @@
 import { Outlet, Route, Routes } from 'react-router-dom'
 import { TopBar } from '@/components/TopBar'
 import { Toaster } from '@/components/ui/sonner'
+import AppHome from '@/pages/AppHome'
 import CaseDetail from '@/pages/CaseDetail'
 import Cases from '@/pages/Cases'
 import Check from '@/pages/Check'
@@ -13,7 +14,8 @@ import SiteLayout from '@/site/SiteLayout'
 
 // Two front doors in one app (D47):
 // - the public website (/, /how, /partners, /join and its own 404) with its own layout in web/src/site/;
-// - the PWA (/check, /cases) with the app top bar. The PWA never links to the website.
+// - the PWA (/app, /check, /cases) with the app top bar. The PWA never links to the website,
+//   and the website never opens the PWA on a laptop: it shows a QR for the phone (D57).
 
 function AppLayout() {
   return (
@@ -38,6 +40,7 @@ export default function App() {
           <Route path="*" element={<NotFound />} />
         </Route>
         <Route element={<AppLayout />}>
+          <Route path="/app" element={<AppHome />} />
           <Route path="/check" element={<Check />} />
           <Route path="/cases" element={<Cases />} />
           <Route path="/cases/:id" element={<CaseDetail />} />

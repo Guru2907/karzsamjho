@@ -16,7 +16,7 @@ Builders use their own Gemini and Groq keys and the TEST bot token. Only the ser
 |---|---|---|
 | API | `uvicorn api.main:app --host 0.0.0.0 --port 8000 --reload` | drop --reload on the demo laptop |
 | Bot | `python -m bot.main` | long polling; one program per bot token |
-| Web | `cd web && npm run dev -- --host` | Vite proxies /api to localhost:8000 |
+| Web | `cd web && npm run dev -- --host` | Vite proxies /api to localhost:8000. If the page stays blank ("Invalid hook call" in the console, a known local issue since 16 Nov), use `npm run build && npx vite preview --port 5173 --host` instead: same proxy, production build |
 Health check: open http://localhost:8000/api/health (add `?fresh=true` to re-check now). It shows each engine (Groq, Gemini, edge-tts) up or down with the reason, `can_read_photos`, `can_speak` and the database. Check it before going on stage
 
 ## Phones on the same network
@@ -24,14 +24,15 @@ Health check: open http://localhost:8000/api/health (add `?fresh=true` to re-che
 - Can't connect: allow Python/Node in Windows Firewall, set the network to Private, or put laptop and phone on one phone hotspot (venue Wi-Fi may block device-to-device).
 - Camera button and audio work on plain http. "Add to home screen" needs HTTPS; not needed for the demo.
 
-## Hosting (Render API + Vercel web, 14 Nov 6:45 AM)
-- API: Render Web Service `karzsamjho-api` -> https://karzsamjho-api.onrender.com (health: /api/health).
-  Build `pip install -r api/requirements.txt`; start `uvicorn api.main:app --host 0.0.0.0 --port $PORT`; Free.
-  Environment: pasted from the local .env ("Add from .env") WITHOUT TELEGRAM_BOT_TOKEN and API_URL; plus PYTHON_VERSION=3.12.7.
+## Hosting (Render API + bot, Vercel web, Neon database)
+- API + bot: Render Web Service `karzsamjho-api` -> https://karzsamjho-api.onrender.com (health: /api/health).
+  Build `pip install -r api/requirements.txt`; start `sh -c "python -m bot.main & uvicorn api.main:app --host 0.0.0.0 --port $PORT"`; Free.
+  Environment: the keys from the local .env, TELEGRAM_BOT_TOKEN (the demo bot), API_URL (its own address), DATABASE_URL (Neon), PYTHON_VERSION=3.12.7.
+  The bot runs here; do NOT also run it on a laptop with the same token (two programs polling one token fight over messages).
+  Bot commands (BotFather /setcommands): start, bhasha, log, helper.
   Keys live only in Render's dashboard, never in the repo.
 - Web: Vercel project, Root Directory `web`, Vite, build `npm run build`, output `dist`, Node 22.
   `web/vercel.json` forwards /api/* to the Render API (checks, audio, PDFs; no CORS) and sends every other path to index.html.
-- Bot: stays on the laptop; local .env `API_URL=https://karzsamjho-api.onrender.com`, restart the bot. Bot and web then share one API.
 - Database (D58): Postgres on Neon (free, Singapore, same region as Render). Render's env has DATABASE_URL = Neon's
   pooled connection string (secret; also in the local .env). Checks, cases and events live there, so a Render
   restart or redeploy no longer loses them. Render's disk still resets (cache files, MP3s), but a repeated photo
@@ -60,16 +61,16 @@ Health check: open http://localhost:8000/api/health (add `?fresh=true` to re-che
 | A photo says "Photo saaf nahi hai" | Both readers failed or nothing readable; check the API log for `read_image: engine=... failed (...)` lines (type and status only) |
 | A photo keeps giving an old answer | It is cached by its exact bytes (A4). To read it fresh, stop the API and delete that photo's file in `cache/` (or the whole folder). Never delete `audio/` while cached results point at it; a missing MP3 is made again anyway |
 | What did the team do last? | `python scripts/show_progress.py` (newest progress entries, D43) |
-| Evidence PDF missing in the bot | The API must be running; check http://localhost:8000/api/cases/<id>/evidence.pdf in a browser |
+| Where is the evidence PDF? | Not in Telegram any more (D59). The borrower sends `/helper`; the helper types the code in the app (Cases) and taps Evidence PDF |
+| A helper cannot find a case | Cases are never listed (D59). Ask the borrower for the code (`/helper` in Telegram); a case made in the app shows its code at the top of the case page |
+| "Yeh case band ho chuka hai" | The case was closed (D60). Start a new case; in Telegram the next forwarded threat opens one by itself |
 | How many Groq photo reads are left? | API log lines `read_image: engine=qwen ok ... remaining_tokens=... remaining_requests=...` |
 
 ## Network switch-over
 1. Turn off Wi-Fi, join hotspot. 2. Restart nothing; the bot reconnects. 3. Phones must use the laptop's NEW address. 4. Check /api/health.
 
-## Server laptop rules
-- Plugged in; sleep Never; lid close does nothing; no Windows updates.
-- Push after every merge. A second laptop has the repo + its own .env and can become the server in 10 minutes.
-- Before the pitch: copy the database, cache/ and audio/ to the second laptop so the demo ads stay cached.
+## Server laptop rules (hackathon history)
+During the hackathon one laptop was the server. Since 14 Nov the API and bot run on Render and the data is on Neon, so no laptop needs to stay on.
 
 ## Keys
 - Never commit .env or paste keys in chats. If a key leaks, delete it in the provider console and make a new one.

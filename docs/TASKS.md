@@ -605,3 +605,15 @@ Never "Accept both" on a code clash. The DECISIONS.md clash is two sets of new t
 The website tasks H1-H8 are built and in review inside #45, #46, #49 and #52; they read "todo" on main only until those merge.
 
 After 5:00 AM (D46): bug fixes, wording and rehearsal only. No new features.
+
+## After the hackathon (from 16 Nov 2026; CHANGELOG [Unreleased])
+| ID | Task | Status | Decision / PR |
+|---|---|---|---|
+| P1 | Website shows a QR (vendor halftone) instead of opening the app on a laptop; app Home at /app; theme sync; /how fits phones | done | D57, #68 |
+| P2 | Database on Neon Postgres; cache and MP3 survive a Render restart | done | D58, #69 |
+| P3 | Private 8-digit case codes, `/helper`, no list of every case, masked phone, bot memory in the database; no PDF in Telegram | done | D59, #70 |
+| P4 | Threat type, up to 3 photos per threat, PDF in parts, close a case | done | D60, #71 |
+| P5 | Docs refresh after D60 (this file, ARCHITECTURE, README, CLAUDE, AGENTS, RUNBOOK, TESTING, START_HERE) | review | this PR |
+| P6 | Local Vite dev server shows a blank page ("Invalid hook call"), also on main | todo | separate PR |
+| P7 | Rate-limit wrong case-code guesses | todo | not agreed yet |
+

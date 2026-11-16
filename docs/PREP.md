@@ -1,5 +1,8 @@
 # PREP.md: what Team Y2K Devs prepared before the hackathon
 
+> **History.** What was prepared before the hackathon started (13 Nov, 11:30 AM). Kept for the 25% preparation rule.
+
+
 COLOSSUS 3.0 allows up to 20-25% preparation before the start. This file lists everything we did before 11:30 AM on 13 Nov 2026. No product code was written before the start: this repository was created at 11:30 AM on 13 Nov, and its commit history shows all development.
 
 ## 1. Planning and documents

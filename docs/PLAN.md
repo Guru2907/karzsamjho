@@ -1,5 +1,8 @@
 # PLAN.md: the plan for the 7:30 PM review (written 13 Nov, 5:00 PM IST)
 
+> **History.** The plan written during the hackathon (13 Nov). The system as it is now: docs/ARCHITECTURE.md.
+
+
 This replaces the earlier split. Decision D25 in docs/DECISIONS.md. If this file and the code disagree, trust the code and fix this file.
 
 

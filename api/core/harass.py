@@ -153,3 +153,21 @@ def label(event: dict, calls_that_day: int) -> list[str]:
         rules.add("H3")
     found, _ = text_labels(event.get("text") or "")
     return sorted(rules | found)
+
+
+# D60: the helper picks a type of threat when logging it in the app. A type can ADD a rule (never remove
+# one): "legal" adds H5 even when the words alone did not say "police" or "court".
+THREAT_TYPES = {
+    "death": ("Death or physical harm threat", "H2"),
+    "verbal": ("Verbal abuse or insults", "H2"),
+    "legal": ("Legal or police threat (arrest, court, FIR)", "H5"),
+    "shaming": ("Shaming (photos, posts, telling others)", "H4"),
+    "visit": ("Visit to home or work", None),
+    "other": ("Other", None),
+}
+
+
+def type_rules(threat_type: str | None) -> set[str]:
+    """The rule a threat type adds, as a set ({} for none or an unknown type)."""
+    rule = THREAT_TYPES.get(threat_type or "", (None, None))[1]
+    return {rule} if rule else set()

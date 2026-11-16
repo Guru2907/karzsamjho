@@ -8,6 +8,7 @@ the NBFC list and the cancelled-registration warning (C1, C3).
 Run:  uvicorn api.main:app --host 0.0.0.0 --port 8000 --reload
 """
 import hashlib
+import secrets
 import itertools
 import json
 import threading
@@ -26,7 +27,7 @@ from fastapi.responses import FileResponse, Response
 
 from api.core import cache, config, db, evidence, extract, fallback, harass, lender, maths, next_step, speak, verdict
 from api.core.config import ensure_dirs
-from api.core.schemas import (Case, CaseIn, ChatLangIn, ChatState, CheckResult, Event, EventIn, PhoneIn, Stats,
+from api.core.schemas import (Case, CaseIn, ChatLangIn, ChatState, CheckResult, CloseIn, Event, EventIn, PhoneIn, Stats,
                               VerifyResult)
 
 logging.basicConfig(level=logging.INFO, format="%(asctime)s %(levelname)s %(name)s %(message)s")
@@ -288,9 +289,10 @@ _chain_lock = threading.Lock()        # one event at a time per process, so the 
 
 def event_hash(prev_hash: str, event: dict) -> str:
     """hash = SHA-256(prev_hash + the event's fields), fields as compact sorted JSON (CLAUDE.md, F2).
-    F4 (verify) recomputes exactly this, so any later edit to a stored event breaks the chain."""
-    fields = {k: event.get(k) for k in ("at", "channel", "contacted", "text", "rules")}
-    body = json.dumps(fields, sort_keys=True, ensure_ascii=False, separators=(",", ":"))
+    F4 (verify) recomputes exactly this, so any later edit to a stored event breaks the chain.
+    D60: the threat type and the photos' SHA-256 are covered too, only when present (evidence.hash_fields),
+    so older events keep their hashes."""
+    body = json.dumps(evidence.hash_fields(event), sort_keys=True, ensure_ascii=False, separators=(",", ":"))
     return hashlib.sha256((prev_hash + body).encode("utf-8")).hexdigest()
 
 
@@ -315,26 +317,28 @@ def _with_day(case: dict) -> dict:
     """Adds the day counter (day 1 = the day the case was opened, IST) and the one complaint route
     that fits this lender (F5, next_step.complaint_route). The evidence PDF prints this route."""
     opened = _ist(case["opened_at"]).astimezone(db.IST).date()
-    day = (datetime.now(db.IST).date() - opened).days + 1
+    until = _ist(case["closed_at"]).astimezone(db.IST).date() if case.get("closed_at") else datetime.now(db.IST).date()
+    day = (until - opened).days + 1                       # D60: the counter stops on the day it was closed
     route = case.get("route") or next_step.complaint_route(_lender_match(case), day)
     return {**case, "day": day, "route": route}
 
 
 def _rules(event: dict, calls_that_day: int) -> list[str]:
-    """Siddeshwar's harass.label (F1). Until it is merged, or if it fails, the event is still stored
-    (with no rules) so the record and its chain are never lost."""
+    """Siddeshwar's harass.label (F1), plus the rule the helper's threat type adds (D60: a type only ever
+    ADDS a rule). If labelling fails, the event is still stored so the record and its chain are never lost."""
+    added = harass.type_rules(event.get("threat_type"))
     label = getattr(harass, "label", None)
     if label is None:
-        log.warning("harass.label not available yet (F1): event stored without rules")
-        return []
+        log.warning("harass.label not available yet (F1): event stored without text rules")
+        return sorted(added)
     try:
-        return sorted(set(label(event, calls_that_day)))
+        return sorted(set(label(event, calls_that_day)) | added)
     except NotImplementedError:
-        log.warning("harass.label not built yet (F1): event stored without rules")
-        return []
+        log.warning("harass.label not built yet (F1): event stored without text rules")
+        return sorted(added)
     except Exception as exc:                                  # never lose the evidence itself
-        log.warning("harass.label failed (%s): event stored without rules", type(exc).__name__)
-        return []
+        log.warning("harass.label failed (%s): event stored without text rules", type(exc).__name__)
+        return sorted(added)
 
 
 @app.post("/api/cases", response_model=Case)
@@ -380,7 +384,7 @@ def get_chat(chat_key: str):
         raise HTTPException(404, "Unknown chat.")
     case = db.case_for_chat(chat_key)
     return {"lang": db.chat_lang(chat_key), "case_id": case and case["id"], "code": case and case["code"],
-            "has_phone": bool(case and case.get("borrower_phone"))}
+            "has_phone": bool(case and case.get("borrower_phone")), "closed": bool(case and case.get("closed_at"))}
 
 
 @app.put("/api/telegram/{chat_key}", response_model=ChatState)
@@ -399,25 +403,97 @@ def get_case(case_id: str):
     return _with_day(case)
 
 
+MAX_PHOTOS = 3
+MAX_PHOTO_BYTES = 12 * 1024 * 1024
+CLOSED = {"code": "CASE_CLOSED", "text_hi": "Yeh case band ho chuka hai. Naye message ke liye naya case kholo."}
+
+
 @app.post("/api/cases/{case_id}/events", response_model=Event)
-def add_event(case_id: str, body: EventIn):
-    """Log one threat / message / call: rules H1-H6 (F1), then hash-chained storage (F2)."""
-    if db.get_case(case_id) is None:
+async def add_event(case_id: str, request: Request):
+    """Log one threat / message / call: rules H1-H6 (F1), then hash-chained storage (F2).
+    JSON {at, channel, contacted, text, threat_type?} as before (the bot), or a form with the same fields
+    plus up to 3 `photos` (the app, D60). A closed case takes no new events (409)."""
+    photos_raw: list[bytes] = []
+    if (request.headers.get("content-type") or "").startswith("multipart/form-data"):
+        form = await request.form()
+        fields = {k: form.get(k) for k in ("at", "channel", "contacted", "text", "threat_type")}
+        for item in form.getlist("photos"):
+            if hasattr(item, "read"):
+                data = await item.read()
+                if data:
+                    photos_raw.append(data)
+        try:
+            body = EventIn(**{k: v for k, v in fields.items() if v is not None})
+        except ValueError:
+            raise HTTPException(422, {"code": "BAD_EVENT", "text_hi": "Jaankari poori nahi hai. Dobara bhejo."})
+    else:
+        try:
+            body = EventIn(**(await request.json()))
+        except ValueError:
+            raise HTTPException(422, {"code": "BAD_EVENT", "text_hi": "Jaankari poori nahi hai. Dobara bhejo."})
+    return await run_in_threadpool(_log_event, case_id, body, photos_raw)
+
+
+def _log_event(case_id: str, body: EventIn, photos_raw: list[bytes]) -> dict:
+    case = db.get_case(case_id)
+    if case is None:
         raise HTTPException(404, "Case not found.")
+    if case.get("closed_at"):
+        raise HTTPException(409, CLOSED)
     try:
         when = _ist(body.at)
     except ValueError:
         raise HTTPException(422, {"code": "BAD_TIME", "text_hi": "Samay sahi nahi hai. Dobara bhejo."})
+    threat_type = (body.threat_type or "").strip().lower() or None
+    if threat_type and threat_type not in harass.THREAT_TYPES:
+        raise HTTPException(422, {"code": "BAD_TYPE", "text_hi": "Dhamki ka prakar sahi nahi hai."})
+    if len(photos_raw) > MAX_PHOTOS or any(len(r) > MAX_PHOTO_BYTES for r in photos_raw):
+        raise HTTPException(422, {"code": "TOO_MANY_PHOTOS", "text_hi": "Zyada se zyada 3 photo, har ek 12 MB tak."})
+    photos = []
+    for raw in photos_raw:
+        try:
+            data = evidence.clean_photo(raw)
+        except ValueError:
+            raise HTTPException(422, {"code": "BAD_PHOTO", "text_hi": "Yeh photo khul nahi rahi. Doosri photo lagao."})
+        photos.append({"id": "pho_" + secrets.token_hex(8), "sha256": hashlib.sha256(data).hexdigest(), "data": data})
     event = {"at": when.isoformat(timespec="seconds"), "channel": body.channel.strip().lower(),
-             "contacted": body.contacted.strip().lower(), "text": body.text}
+             "contacted": body.contacted.strip().lower(), "text": body.text, "threat_type": threat_type,
+             "photos": [{"id": p["id"], "sha256": p["sha256"]} for p in photos]}
     with _chain_lock:
         # calls on that date INCLUDING this one (H6 counts the call being logged now)
         calls = db.calls_on(case_id, event["at"][:10]) + (1 if event["channel"] == "call" else 0)
         event["rules"] = _rules(event, calls)
         prev = db.last_event_hash(case_id)
-        stored = db.add_event(case_id, {**event, "prev_hash": prev, "hash": event_hash(prev, event)})
-    log.info("case %s: event %s rules=%s", case_id, stored["id"], stored["rules"])
+        stored = db.add_event(case_id, {**event, "prev_hash": prev, "hash": event_hash(prev, event)}, photos)
+    log.info("case %s: event %s rules=%s type=%s photos=%d", case_id, stored["id"], stored["rules"],
+             threat_type, len(photos))
     return stored
+
+
+@app.get("/api/cases/{case_id}/photos/{photo_id}.jpg")
+def get_photo(case_id: str, photo_id: str):
+    """One evidence photo. Only through its case's secret id (D60)."""
+    data = db.get_photo(case_id, photo_id)
+    if data is None:
+        raise HTTPException(404, "Photo not found.")
+    return Response(content=data, media_type="image/jpeg", headers={"Cache-Control": "private, max-age=86400"})
+
+
+@app.post("/api/cases/{case_id}/close", response_model=Case)
+def close_case(case_id: str, body: CloseIn):
+    """Close a case for good (D60): no new threats after this; the record, PDF and verify stay.
+    A new threat afterwards goes into a NEW case (the bot does this by itself)."""
+    reason = body.reason.strip().lower()
+    if reason not in evidence.CLOSE_REASONS:
+        raise HTTPException(422, {"code": "BAD_REASON", "text_hi": "Band karne ka kaaran chuno."})
+    note = (body.note or "").strip()[:300] or None
+    result = db.close_case(case_id, reason, note)
+    if result is None:
+        raise HTTPException(404, "Case not found.")
+    if result == "already":
+        raise HTTPException(409, {"code": "ALREADY_CLOSED", "text_hi": "Yeh case pehle se band hai."})
+    log.info("case %s: closed (%s)", case_id, reason)
+    return _with_day(db.get_case(case_id))
 
 
 @app.get("/api/cases/{case_id}/evidence.pdf")
@@ -427,7 +503,8 @@ def evidence_pdf(case_id: str):
     case = db.get_case(case_id)
     if case is None:
         raise HTTPException(404, "Case not found.")
-    pdf = evidence.build_pdf(_with_day(case))
+    photos = {ph["id"]: db.get_photo(case_id, ph["id"]) for ev in case["events"] for ph in ev.get("photos") or []}
+    pdf = evidence.build_pdf(_with_day(case), photos={k: v for k, v in photos.items() if v})
     return Response(content=pdf, media_type="application/pdf",
                     headers={"Content-Disposition": f'inline; filename="{case_id}_evidence.pdf"'})
 
@@ -449,10 +526,21 @@ def verify_case(case_id: str):
     case = db.get_case(case_id)
     if case is None:
         raise HTTPException(404, "Case not found.")
-    ok = chain_ok(case["events"])
+    ok = chain_ok(case["events"]) and photos_ok(case_id, case["events"])
     if not ok:
-        log.warning("verify: case %s chain BROKEN (a stored event was changed)", case_id)
+        log.warning("verify: case %s chain BROKEN (a stored event or photo was changed)", case_id)
     return {"ok": ok}
+
+
+def photos_ok(case_id: str, events: list[dict]) -> bool:
+    """D60: every stored photo still has the fingerprint its event's hash covers (a swapped picture whose
+    stored fingerprint was left alone is caught here; one whose fingerprint was changed, by chain_ok)."""
+    for ev in events:
+        for ph in ev.get("photos") or []:
+            data = db.get_photo(case_id, ph["id"])
+            if data is None or hashlib.sha256(data).hexdigest() != ph["sha256"]:
+                return False
+    return True
 
 
 # ---------------------------------------------------------------- stats, health

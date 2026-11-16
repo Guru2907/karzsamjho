@@ -85,6 +85,8 @@ MSG_ASK_PHONE = ("Case par aapka phone number likhein? Sirf aakhri 4 ank dikheng
 MSG_PHONE_SAVED = "Number case par likh diya: {masked}. Poora number hamare paas nahi rakha."
 MSG_PHONE_SKIPPED = "Theek hai. Number ke bina bhi case chalta rahega."
 MSG_PHONE_NOT_OWN = "Sirf apna number bhejo: neeche wala 📱 button dabao."
+MSG_CASE_CLOSED_NOTE = "\n(Yeh case band ho chuka hai. Nayi dhamki aaye to forward karo, naya case khul jayega.)"
+MSG_NEW_CASE = "Purana case band ho chuka tha, isliye naya case khola. Naye code ke liye /helper bhejo."
 RULE_HI = {
     "H1": "H1 raat ya subah jaldi sampark (8 baje se pehle ya 7 baje ke baad)",
     "H2": "H2 dhamki ya gaali",
@@ -277,7 +279,8 @@ async def load_chat(update, context) -> None:
     if state.get("lang") in MSG_LANG_SET:
         chat.setdefault("lang", state["lang"])
     if state.get("case_id") and not chat.get("case_id"):
-        chat.update(case_id=state["case_id"], code=state.get("code"), has_phone=bool(state.get("has_phone")))
+        chat.update(case_id=state["case_id"], code=state.get("code"), has_phone=bool(state.get("has_phone")),
+                    closed=bool(state.get("closed")))
     chat["_loaded"] = True
 
 
@@ -420,7 +423,8 @@ async def _ensure_case(update: Update, context) -> str | None:
         log.warning("case not created: API answered %s", r.status_code)
         return None
     case = r.json()
-    chat.update(case_id=case.get("id"), code=case.get("code"), has_phone=bool(case.get("borrower_phone")))
+    chat.update(case_id=case.get("id"), code=case.get("code"), has_phone=bool(case.get("borrower_phone")),
+                closed=False)
     return chat["case_id"]
 
 
@@ -446,16 +450,19 @@ async def log_event(update: Update, context, text: str, when: datetime | None) -
     event = {"at": _iso_ist(when), "channel": "telegram", "contacted": "borrower",
              "text": text[:MAX_TEXT_CHARS]}
     try:
-        for attempt in (1, 2):                 # a case lost on a server restart is made again once
+        new_after_close = False
+        for attempt in (1, 2):                 # a case lost on a restart, or closed (D60), is made again once
             case_id = await _ensure_case(update, context)
             if not case_id:
                 await update.message.reply_text(MSG_ERROR)
                 return
             async with _http(API_TIMEOUT_S) as http:
                 r = await http.post(f"{settings.api_url}/api/cases/{case_id}/events", json=event)
-            if r.status_code == 404 and attempt == 1:
-                for k in ("case_id", "code", "has_phone"):
+            closed = r.status_code == 409 and _detail_code(r) == "CASE_CLOSED"
+            if (r.status_code == 404 or closed) and attempt == 1:
+                for k in ("case_id", "code", "has_phone", "closed", "asked_phone"):
                     context.chat_data.pop(k, None)
+                new_after_close = new_after_close or closed
                 continue
             break
         if r.status_code != 200:
@@ -464,6 +471,8 @@ async def log_event(update: Update, context, text: str, when: datetime | None) -
             return
         rules = r.json().get("rules") or []
         saved = MSG_LOGGED.format(rules=rules_text(rules)) if rules else MSG_LOGGED_NONE
+        if new_after_close:
+            await update.message.reply_text(MSG_NEW_CASE)
         await update.message.reply_text(f"{saved}\n{MSG_HELPER_HINT}")
         await ask_phone(update, context)
     except httpx.HTTPError:
@@ -488,6 +497,15 @@ async def log_command(update: Update, context: ContextTypes.DEFAULT_TYPE) -> Non
     await update.message.reply_text(MSG_LOG_ASK)
 
 
+def _detail_code(r: httpx.Response) -> str | None:
+    """The API's detail.code (e.g. CASE_CLOSED), or None."""
+    try:
+        detail = r.json().get("detail")
+    except ValueError:
+        return None
+    return detail.get("code") if isinstance(detail, dict) else None
+
+
 def spaced(code: str) -> str:
     """"48217730" -> "4821 7730", easy to read out on the phone."""
     return f"{code[:4]} {code[4:]}" if len(code) == 8 else code
@@ -504,13 +522,15 @@ async def helper_command(update: Update, context: ContextTypes.DEFAULT_TYPE) -> 
                 r = await http.get(f"{settings.api_url}/api/cases/{case_id}")
             code = r.json().get("code") if r.status_code == 200 else None
             chat["code"] = code
+            chat["closed"] = bool(r.status_code == 200 and r.json().get("closed_at"))
     except httpx.HTTPError:
         await update.message.reply_text(MSG_SERVER_DOWN)
         return
     if not code:
         await update.message.reply_text(MSG_NO_CASE)
         return
-    await update.message.reply_text(MSG_CODE.format(code=spaced(code)), parse_mode=ParseMode.HTML)
+    note = MSG_CASE_CLOSED_NOTE if chat.get("closed") else ""
+    await update.message.reply_text(MSG_CODE.format(code=spaced(code)) + note, parse_mode=ParseMode.HTML)
 
 
 async def on_contact(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:

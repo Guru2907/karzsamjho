@@ -10,24 +10,33 @@ Raju never sees an error code or English error text.
 /bhasha (D7): three buttons pick the voice language (Hindi, Bangla, Marathi), remembered per
 chat and sent as `lang` on every check. The card text stays Hinglish; only the voice changes.
 Harassment log (D5): a forwarded text message, or a message after /log, becomes an event in
-this chat's case (created once, id remembered); the bot says in Hindi which rules it broke and
-sends the English evidence PDF. /pdf sends the latest PDF again.
+this chat's case (created once); the bot says in Hindi which rules it broke. The evidence PDF is
+the helper's job now (D59): /helper gives Raju his case's 8-digit code, the helper types it into
+the KarzSamjho app and gets the case, the PDF and the complaint route. After the first threat the
+bot asks once for his number with Telegram's own "share my number" button; only the last 4 digits
+are kept (XXXXXX 3210).
+Memory (D59): the /bhasha language and the chat's case are kept in the database through the API,
+under a scrambled chat key (HMAC with the bot token), so a restart forgets nothing.
 
 Only ONE program may poll a bot token at a time.
 Run:  python -m bot.main
 """
+import hashlib
+import hmac
 import html
 import logging
 from datetime import datetime, timedelta, timezone
 
 import httpx
-from telegram import InlineKeyboardButton, InlineKeyboardMarkup, Update
+from telegram import (InlineKeyboardButton, InlineKeyboardMarkup, KeyboardButton, ReplyKeyboardMarkup,
+                      ReplyKeyboardRemove, Update)
 from telegram.constants import ChatAction, ParseMode
 from telegram.error import BadRequest, NetworkError
 from telegram.ext import (Application, CallbackQueryHandler, CommandHandler,
                           ContextTypes, MessageHandler, filters)
 
 from api.core.config import settings
+from api.core.evidence import mask_phone
 
 logging.basicConfig(level=logging.INFO, format="%(asctime)s %(levelname)s %(message)s")
 logging.getLogger("httpx").setLevel(logging.WARNING)  # httpx logs URLs, which contain the token
@@ -44,7 +53,9 @@ MAX_VOICE_S = 60       # a loan offer fits in a minute; longer notes cost Whispe
 
 MSG_START = ("Namaste! Loan ke offer ki photo bhejo, SMS yahan chipkao, ya bolkar bhejo (voice note). "
              "Main bataunga kitna milega, kitna lautana hoga aur kitna zyada. "
-             "Awaaz Bangla ya Marathi mein chahiye? /bhasha dabao.")
+             "Awaaz Bangla ya Marathi mein chahiye? /bhasha dabao.\n\n"
+             "Koi dhamki de raha hai? Woh message yahan forward karo, main darj kar lunga. "
+             "Apne helper ko dikhane ke liye /helper bhejo.")
 MSG_BAD_VOICE = "Awaaz saaf nahi aayi. Dobara bolo, ya photo bhejo."
 MSG_VOICE_TOO_LONG = "Awaaz 1 minute se lambi hai. Chhota bolo: sirf loan ki rakam, din aur kitna lautana hai."
 MSG_SERVER_DOWN = "Server abhi band hai, thodi der mein try karo."
@@ -57,14 +68,23 @@ MSG_ERROR = "Kuch gadbad hui, dobara try karo."
 # Harassment log (D5). Hindi only for Raju; the PDF itself is English (D20).
 IST = timezone(timedelta(hours=5, minutes=30))
 MSG_LOG_ASK = ("Dhamki ya pareshan karne wala message yahan chipkao, ya seedha forward karo. "
-               "Main use darj karke aapka saboot (PDF) bana dunga.")
+               "Main use aapke case mein darj kar lunga.")
 MSG_LOG_EMPTY = "Message khaali hai. Dhamki wala message chipkao ya forward karo."
 MSG_LOGGED = "Darj ho gaya. Is message mein yeh niyam toote: {rules}."
 MSG_LOGGED_NONE = "Darj ho gaya. Is message mein koi niyam nahi toota, phir bhi saboot mein rakh liya."
-MSG_PDF_CAPTION = ("Yeh aapka saboot hai (PDF, English mein). Bank mitra, shikayat ya police ko dikhayein. "
-                   "Har naya message isme judta jayega.")
-MSG_PDF_LATER = "Message darj ho gaya, par PDF abhi nahi ban paya. Thodi der mein /pdf bhejo."
-MSG_NO_CASE = "Abhi koi shikayat darj nahi hai. Dhamki wala message forward karo, ya /log bhejo."
+MSG_HELPER_HINT = "Helper ko dikhana hai? /helper bhejo, aapka case code milega."
+MSG_NO_CASE = ("Abhi koi case nahi hai. Dhamki wala message yahan forward karo, ya /log bhejo. "
+               "Tab case code milega.")
+MSG_CODE = ("Aapka case code: <b>{code}</b>\n"
+            "Yeh code sirf apne helper (bank mitra, NGO) ko dein. Woh KarzSamjho app mein yeh code daal kar "
+            "aapka poora saboot (PDF) aur shikayat ka rasta dekh sakte hain. Yeh code kabhi nahi badlega.")
+BTN_PHONE = "📱 Number bhejo"
+BTN_SKIP = "Abhi nahi"
+MSG_ASK_PHONE = ("Case par aapka phone number likhein? Sirf aakhri 4 ank dikhenge (jaise XXXXXX 3210), "
+                 "taaki helper aapko pehchan sake. Neeche button dabao.")
+MSG_PHONE_SAVED = "Number case par likh diya: {masked}. Poora number hamare paas nahi rakha."
+MSG_PHONE_SKIPPED = "Theek hai. Number ke bina bhi case chalta rahega."
+MSG_PHONE_NOT_OWN = "Sirf apna number bhejo: neeche wala 📱 button dabao."
 RULE_HI = {
     "H1": "H1 raat ya subah jaldi sampark (8 baje se pehle ya 7 baje ke baad)",
     "H2": "H2 dhamki ya gaali",
@@ -229,6 +249,38 @@ async def send_result(update: Update, result: dict) -> None:
         log.warning("audio not sent for %s: %s", result.get("id"), type(exc).__name__)
 
 
+def chat_key(update) -> str | None:
+    """A scrambled, fixed key for this chat (HMAC-SHA256 of the chat id, keyed with the bot token):
+    the database never sees the real chat id, and nobody can make the key without the token."""
+    chat_id = getattr(getattr(update, "effective_chat", None), "id", None)
+    if chat_id is None or not settings.telegram_bot_token:
+        return None
+    return hmac.new(settings.telegram_bot_token.encode(), f"chat:{chat_id}".encode(),
+                    hashlib.sha256).hexdigest()[:40]
+
+
+async def load_chat(update, context) -> None:
+    """Once per run: this chat's language and case from the database (D59). A failure is not an
+    error: the bot carries on with Hindi and makes a case when one is needed."""
+    chat = getattr(context, "chat_data", None)
+    key = chat_key(update)
+    if chat is None or key is None or chat.get("_loaded"):
+        return
+    try:
+        async with _http(10) as http:
+            r = await http.get(f"{settings.api_url}/api/telegram/{key}")
+    except httpx.HTTPError:
+        return
+    if r.status_code != 200:
+        return
+    state = r.json()
+    if state.get("lang") in MSG_LANG_SET:
+        chat.setdefault("lang", state["lang"])
+    if state.get("case_id") and not chat.get("case_id"):
+        chat.update(case_id=state["case_id"], code=state.get("code"), has_phone=bool(state.get("has_phone")))
+    chat["_loaded"] = True
+
+
 def chat_lang(context: ContextTypes.DEFAULT_TYPE | None) -> str:
     """The voice language this chat picked with /bhasha; Hindi until he picks one."""
     chat_data = getattr(context, "chat_data", None) or {}
@@ -256,9 +308,17 @@ async def on_lang_choice(update: Update, context: ContextTypes.DEFAULT_TYPE) -> 
     context.chat_data["lang"] = lang
     await query.answer()
     await query.edit_message_text(MSG_LANG_SET[lang])
+    key = chat_key(update)
+    if key:                                   # remembered in the database too (D59); best effort
+        try:
+            async with _http(10) as http:
+                await http.put(f"{settings.api_url}/api/telegram/{key}", json={"lang": lang})
+        except httpx.HTTPError:
+            log.warning("language not saved to the database (API not reachable)")
 
 
 async def on_photo(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
+    await load_chat(update, context)
     photo = update.message.photo[-1]  # the largest size
     tg_file = await photo.get_file()
     image = bytes(await tg_file.download_as_bytearray())
@@ -271,7 +331,12 @@ async def on_photo(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
 
 
 async def on_text(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
+    await load_chat(update, context)
     chat_data = getattr(context, "chat_data", None)
+    if chat_data is not None and chat_data.get("asked_phone") and (update.message.text or "").strip() == BTN_SKIP:
+        chat_data.pop("asked_phone", None)
+        await update.message.reply_text(MSG_PHONE_SKIPPED, reply_markup=ReplyKeyboardRemove())
+        return
     if chat_data is not None and chat_data.pop("log_next", False):      # he sent /log before this
         await log_event(update, context, update.message.text or "", update.message.date)
         return
@@ -291,6 +356,7 @@ async def on_text(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
 
 async def on_voice(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
     """A voice note (D6): Raju speaks the offer. The API listens (Whisper) and reads it like an SMS."""
+    await load_chat(update, context)
     voice = update.message.voice
     if voice is None:
         await update.message.reply_text(MSG_SEND_PHOTO)
@@ -341,33 +407,37 @@ async def _ensure_case(update: Update, context) -> str | None:
     if chat.get("case_id"):
         return chat["case_id"]
     last = chat.get("last_check") or {}
-    body = {"borrower_name": "Borrower (Telegram)", "lender_name": last.get("lender") or "Not given"}
+    name = (getattr(getattr(update, "effective_user", None), "first_name", None) or "").strip()
+    body = {"borrower_name": name[:60] or "Borrower (Telegram)", "lender_name": last.get("lender") or "Not given"}
     if last.get("id"):
         body["check_id"] = last["id"]
+    key = chat_key(update)
+    if key:
+        body["telegram_chat"] = key
     async with _http(API_TIMEOUT_S) as http:
         r = await http.post(f"{settings.api_url}/api/cases", json=body)
     if r.status_code != 200:
         log.warning("case not created: API answered %s", r.status_code)
         return None
-    chat["case_id"] = r.json().get("id")
+    case = r.json()
+    chat.update(case_id=case.get("id"), code=case.get("code"), has_phone=bool(case.get("borrower_phone")))
     return chat["case_id"]
 
 
-async def send_pdf(update: Update, case_id: str) -> bool:
-    """GET the case's evidence PDF and send it as a document. False if it is not available."""
-    async with _http(API_TIMEOUT_S) as http:
-        r = await http.get(f"{settings.api_url}/api/cases/{case_id}/evidence.pdf")
-    if r.status_code != 200 or not r.content.startswith(b"%PDF"):
-        log.warning("evidence PDF not available (%s) for %s", r.status_code, case_id)
-        return False
-    await update.message.chat.send_action(ChatAction.UPLOAD_DOCUMENT)
-    await update.message.reply_document(document=r.content, filename=f"{case_id}_saboot.pdf",
-                                        caption=MSG_PDF_CAPTION)
-    return True
+async def ask_phone(update: Update, context) -> None:
+    """Once per chat, after a threat is saved: Telegram's own "share my number" button (D59)."""
+    chat = context.chat_data
+    if chat.get("has_phone") or chat.get("asked_phone") or getattr(update, "effective_user", None) is None:
+        return
+    chat["asked_phone"] = True
+    keyboard = ReplyKeyboardMarkup([[KeyboardButton(BTN_PHONE, request_contact=True)], [KeyboardButton(BTN_SKIP)]],
+                                   one_time_keyboard=True, resize_keyboard=True)
+    await update.message.reply_text(MSG_ASK_PHONE, reply_markup=keyboard)
 
 
 async def log_event(update: Update, context, text: str, when: datetime | None) -> None:
-    """One harassment message -> case event -> Hindi rules line -> evidence PDF."""
+    """One harassment message -> case event -> Hindi rules line + the /helper hint (no PDF, D59)."""
+    await load_chat(update, context)
     text = (text or "").strip()
     if not text:
         await update.message.reply_text(MSG_LOG_EMPTY)
@@ -384,7 +454,8 @@ async def log_event(update: Update, context, text: str, when: datetime | None) -
             async with _http(API_TIMEOUT_S) as http:
                 r = await http.post(f"{settings.api_url}/api/cases/{case_id}/events", json=event)
             if r.status_code == 404 and attempt == 1:
-                context.chat_data.pop("case_id", None)
+                for k in ("case_id", "code", "has_phone"):
+                    context.chat_data.pop(k, None)
                 continue
             break
         if r.status_code != 200:
@@ -392,10 +463,9 @@ async def log_event(update: Update, context, text: str, when: datetime | None) -
             await update.message.reply_text(MSG_ERROR)
             return
         rules = r.json().get("rules") or []
-        await update.message.reply_text(MSG_LOGGED.format(rules=rules_text(rules)) if rules
-                                        else MSG_LOGGED_NONE)
-        if not await send_pdf(update, case_id):
-            await update.message.reply_text(MSG_PDF_LATER)
+        saved = MSG_LOGGED.format(rules=rules_text(rules)) if rules else MSG_LOGGED_NONE
+        await update.message.reply_text(f"{saved}\n{MSG_HELPER_HINT}")
+        await ask_phone(update, context)
     except httpx.HTTPError:
         log.warning("API not reachable at %s", settings.api_url)
         await update.message.reply_text(MSG_SERVER_DOWN)
@@ -418,17 +488,57 @@ async def log_command(update: Update, context: ContextTypes.DEFAULT_TYPE) -> Non
     await update.message.reply_text(MSG_LOG_ASK)
 
 
-async def pdf_command(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
-    """/pdf: the latest evidence PDF of this chat's case again."""
-    case_id = context.chat_data.get("case_id")
-    if not case_id:
-        await update.message.reply_text(MSG_NO_CASE)
-        return
+def spaced(code: str) -> str:
+    """"48217730" -> "4821 7730", easy to read out on the phone."""
+    return f"{code[:4]} {code[4:]}" if len(code) == 8 else code
+
+
+async def helper_command(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
+    """/helper: this chat's case code, the same every time (D59). No case yet -> how to start one."""
+    await load_chat(update, context)
+    chat = context.chat_data
+    case_id, code = chat.get("case_id"), chat.get("code")
     try:
-        if not await send_pdf(update, case_id):
-            await update.message.reply_text(MSG_PDF_LATER)
+        if case_id and not code:
+            async with _http(API_TIMEOUT_S) as http:
+                r = await http.get(f"{settings.api_url}/api/cases/{case_id}")
+            code = r.json().get("code") if r.status_code == 200 else None
+            chat["code"] = code
     except httpx.HTTPError:
         await update.message.reply_text(MSG_SERVER_DOWN)
+        return
+    if not code:
+        await update.message.reply_text(MSG_NO_CASE)
+        return
+    await update.message.reply_text(MSG_CODE.format(code=spaced(code)), parse_mode=ParseMode.HTML)
+
+
+async def on_contact(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
+    """He pressed "📱 Number bhejo". Only his OWN number is taken, masked before it leaves the bot."""
+    contact = update.message.contact
+    user = getattr(update, "effective_user", None)
+    if contact is None or user is None or contact.user_id != user.id:
+        await update.message.reply_text(MSG_PHONE_NOT_OWN)
+        return
+    await load_chat(update, context)
+    chat = context.chat_data
+    chat.pop("asked_phone", None)
+    masked = mask_phone(contact.phone_number)
+    if not chat.get("case_id") or not masked:
+        await update.message.reply_text(MSG_NO_CASE, reply_markup=ReplyKeyboardRemove())
+        return
+    try:
+        async with _http(API_TIMEOUT_S) as http:
+            r = await http.put(f"{settings.api_url}/api/cases/{chat['case_id']}/phone",
+                               json={"borrower_phone": masked})
+    except httpx.HTTPError:
+        await update.message.reply_text(MSG_SERVER_DOWN, reply_markup=ReplyKeyboardRemove())
+        return
+    if r.status_code != 200:
+        await update.message.reply_text(MSG_ERROR, reply_markup=ReplyKeyboardRemove())
+        return
+    chat["has_phone"] = True
+    await update.message.reply_text(MSG_PHONE_SAVED.format(masked=masked), reply_markup=ReplyKeyboardRemove())
 
 
 async def on_other(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
@@ -458,7 +568,8 @@ def main() -> None:
     app.add_handler(CommandHandler("bhasha", bhasha))
     app.add_handler(CallbackQueryHandler(on_lang_choice, pattern=r"^lang:"))
     app.add_handler(CommandHandler("log", log_command))
-    app.add_handler(CommandHandler("pdf", pdf_command))
+    app.add_handler(CommandHandler("helper", helper_command))
+    app.add_handler(MessageHandler(filters.CONTACT, on_contact))
     app.add_handler(MessageHandler(filters.FORWARDED & filters.TEXT, on_forward))   # before on_text
     app.add_handler(MessageHandler(filters.PHOTO, on_photo))
     app.add_handler(MessageHandler(filters.VOICE, on_voice))

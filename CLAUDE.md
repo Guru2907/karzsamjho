@@ -70,9 +70,13 @@ web/                 React + Vite + Tailwind + shadcn/ui. PWA: /app (home)  /che
 - GET  /api/checks/{id}       -> CheckResult
 - GET  /api/checks?limit=20   -> [CheckResult]
 - GET  /api/audio/{id}.mp3    -> MP3
-- POST /api/cases             {borrower_name, lender_name, check_id?} -> Case
+- POST /api/cases             {borrower_name, lender_name, check_id?, borrower_phone?, telegram_chat?} -> Case
+                              (Case has id (random), code (8 digits, made once, D59), borrower_phone (masked XXXXXX 1234), source)
 - POST /api/cases/{id}/events {at, channel, contacted, text} -> {id, at, rules:["H1"], hash, prev_hash}
-- GET  /api/cases             -> [Case]   GET /api/cases/{id} -> Case with events and day counter
+- GET  /api/cases/code/{code} -> Case (the helper types the borrower's code; there is NO "list every case", D59)
+- GET  /api/cases/{id}        -> Case with events and day counter
+- PUT  /api/cases/{id}/phone  {borrower_phone} -> Case (stored masked)
+- GET|PUT /api/telegram/{chat_key} -> {lang, case_id, code, has_phone} (the bot's memory per chat, scrambled key, D59)
 - GET  /api/cases/{id}/evidence.pdf
 - GET  /api/cases/{id}/verify -> {ok: true|false}
 - GET  /api/stats             -> {checks, median_seconds, extra_rupees_flagged}

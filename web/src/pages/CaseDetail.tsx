@@ -10,6 +10,7 @@ import { RouteBadge, RuleBadges, RulesLegend } from '@/components/cases/meta'
 import { dayLine, formatAt, maskNumbers } from '@/components/cases/caseInfo'
 import { api, type Case } from '@/lib/api'
 import { ERROR_MESSAGES } from '@/lib/format'
+import { rememberCase, spacedCode } from '@/lib/myCases'
 
 // E5: one harassment case. Timeline with the rules each message breaks, a "Log a threat" dialog,
 // the English evidence PDF, and a check that the record was not edited after logging (hash chain, F4).
@@ -40,6 +41,7 @@ export default function CaseDetail() {
         .getCase(id)
         .then((data) => {
           setCaseItem(data)
+          rememberCase(data)
           setLoading(false)
         })
         .catch(() => {
@@ -56,7 +58,10 @@ export default function CaseDetail() {
     api
       .getCase(id)
       .then((data) => {
-        if (active) setCaseItem(data)
+        if (active) {
+          setCaseItem(data)
+          rememberCase(data)       // D59: listed under "Cases on this phone"
+        }
       })
       .catch(() => {
         if (active) setError(ERROR_MESSAGES.SERVER_OFF)
@@ -109,11 +114,21 @@ export default function CaseDetail() {
         <>
           {/* Who, which lender, where to complain */}
           <div className="space-y-3 rounded-2xl border border-border bg-card p-5 shadow-sm">
+            {caseItem.code && (
+              <div className="flex items-baseline justify-between gap-3 border-b border-border pb-3">
+                <span className="text-xs text-muted-foreground">Case code</span>
+                <span className="font-mono text-2xl font-bold tracking-[0.12em] text-foreground">{spacedCode(caseItem.code)}</span>
+              </div>
+            )}
             <div className="flex items-start justify-between gap-3">
               <div className="min-w-0">
                 <p className="text-xs text-muted-foreground">Lender</p>
                 <p className="truncate text-lg font-semibold text-foreground">{caseItem.lender_name}</p>
-                <p className="text-xs text-muted-foreground">Borrower: {caseItem.borrower_name}</p>
+                <p className="text-xs text-muted-foreground">
+                  Borrower: {caseItem.borrower_name}
+                  {caseItem.borrower_phone && <span className="font-mono"> · {caseItem.borrower_phone}</span>}
+                  {caseItem.source && <span> · from {caseItem.source === 'telegram' ? 'Telegram' : 'this app'}</span>}
+                </p>
               </div>
               <span className="shrink-0 text-sm font-semibold text-foreground">{dayLine(caseItem)}</span>
             </div>
@@ -168,7 +183,9 @@ export default function CaseDetail() {
             </h2>
             {events.length === 0 && (
               <p className="rounded-2xl border border-dashed border-border p-6 text-center text-sm text-muted-foreground">
-                Nothing logged yet. Use “Log a threat”, or forward the message to the Telegram bot.
+                {caseItem.source === 'telegram'
+                  ? 'Nothing logged yet. Use “Log a threat”, or the borrower forwards the message to the Telegram bot.'
+                  : 'Nothing logged yet. Use “Log a threat” for each message or call.'}
               </p>
             )}
             {events.map((e) => {

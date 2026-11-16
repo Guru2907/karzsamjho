@@ -86,13 +86,15 @@ def test_api_wait_covers_the_worst_photo_check():
 class FakeMessage:
     def __init__(self):
         self.sent = []
+        self.markups = []
         self.chat = self
 
     async def send_action(self, action):
         pass
 
-    async def reply_text(self, text, parse_mode=None):
+    async def reply_text(self, text, parse_mode=None, reply_markup=None):
         self.sent.append(("text", text))
+        self.markups.append(reply_markup)
 
     async def reply_audio(self, audio, filename, title, performer):
         self.sent.append(("audio", filename, audio))
@@ -368,9 +370,9 @@ def log_update(**kwargs):
     return update
 
 
-def fake_cases_api(monkeypatch, rules=("H1", "H2"), event_status=200, pdf_status=200,
-                   case_lost_once=False, down=False):
-    """A fake API for /api/cases. The PDF it serves is the REAL F3 evidence PDF."""
+def fake_cases_api(monkeypatch, rules=("H1", "H2"), event_status=200, case_lost_once=False, down=False,
+                   chat_state=None):
+    """A fake API for /api/cases and the bot's memory (/api/telegram/{key}, D59)."""
     calls = []
     state = {"lost": case_lost_once, "cases": 0}
 
@@ -391,8 +393,9 @@ def fake_cases_api(monkeypatch, rules=("H1", "H2"), event_status=200, pdf_status
             if url.endswith("/api/cases"):
                 state["cases"] += 1
                 case_id = "case_000" + str(state["cases"])
-                return httpx.Response(200, json={"id": case_id, "borrower_name": "x",
-                                                 "lender_name": "x", "opened_at": "x", "events": []})
+                return httpx.Response(200, json={"id": case_id, "code": "4821773" + str(state["cases"]),
+                                                 "borrower_name": "x", "lender_name": "x",
+                                                 "opened_at": "x", "events": []})
             if state["lost"]:
                 state["lost"] = False
                 return httpx.Response(404, json={"detail": "Case not found."})
@@ -402,15 +405,24 @@ def fake_cases_api(monkeypatch, rules=("H1", "H2"), event_status=200, pdf_status
 
         async def get(self, url):
             calls.append(("GET", url.split("/api", 1)[1], None))
-            if pdf_status != 200:
-                return httpx.Response(pdf_status, json={"detail": "No PDF yet."})
-            return httpx.Response(200, content=evidence.build_pdf({"id": "case_0001", "events": []}))
+            if down:
+                raise httpx.ConnectError("refused")
+            if "/api/telegram/" in url:
+                return httpx.Response(200, json=chat_state or {"lang": None, "case_id": None, "code": None,
+                                                               "has_phone": False})
+            return httpx.Response(200, json={"id": url.rsplit("/", 1)[1], "code": "48217730"})
+
+        async def put(self, url, json=None, **kwargs):
+            calls.append(("PUT", url.split("/api", 1)[1], json))
+            if down:
+                raise httpx.ConnectError("refused")
+            return httpx.Response(200, json={"id": "case_0001", "borrower_phone": (json or {}).get("borrower_phone")})
 
     monkeypatch.setattr(bot, "_http", Client)
     return calls
 
 
-def test_forwarded_threat_becomes_event_then_rules_then_pdf(monkeypatch):
+def test_forwarded_threat_becomes_event_then_rules_then_helper_hint(monkeypatch):
     calls = fake_cases_api(monkeypatch)
     context = SimpleNamespace(chat_data={})
     update = log_update()
@@ -419,13 +431,12 @@ def test_forwarded_threat_becomes_event_then_rules_then_pdf(monkeypatch):
     assert calls[1] == ("POST", "/cases/case_0001/events",
                         {"at": "2026-11-13T21:40:00+05:30", "channel": "telegram",
                          "contacted": "borrower", "text": THREAT})     # the ORIGINAL time, in IST
-    assert calls[2] == ("GET", "/cases/case_0001/evidence.pdf", None)
+    assert len(calls) == 2                                              # no PDF is fetched (D59)
     kind, text = update.message.sent[0]
     assert kind == "text" and text.startswith("Darj ho gaya.")
-    assert "H1 raat" in text and "H2 dhamki" in text
-    doc = update.message.sent[1]
-    assert doc[0] == "document" and doc[1] == "case_0001_saboot.pdf" and doc[2] == b"%PDF"
-    assert context.chat_data["case_id"] == "case_0001"
+    assert "H1 raat" in text and "H2 dhamki" in text and text.endswith(bot.MSG_HELPER_HINT)
+    assert all(m[0] == "text" for m in update.message.sent)              # never a document
+    assert context.chat_data["case_id"] == "case_0001" and context.chat_data["code"] == "48217731"
 
 
 def test_case_is_created_once_per_chat(monkeypatch):
@@ -470,14 +481,12 @@ def test_no_rules_broken_is_still_logged(monkeypatch):
     fake_cases_api(monkeypatch, rules=())
     update = log_update(text="Namaste, EMI kal due hai.")
     asyncio.run(bot.on_forward(update, SimpleNamespace(chat_data={})))
-    assert update.message.sent[0] == ("text", bot.MSG_LOGGED_NONE)
+    assert update.message.sent[0] == ("text", f"{bot.MSG_LOGGED_NONE}\n{bot.MSG_HELPER_HINT}")
 
 
-def test_pdf_not_ready_says_so_in_hindi(monkeypatch):
-    fake_cases_api(monkeypatch, pdf_status=404)
-    update = log_update()
-    asyncio.run(bot.on_forward(update, SimpleNamespace(chat_data={})))
-    assert update.message.sent[-1] == ("text", bot.MSG_PDF_LATER)
+def test_the_bot_has_no_pdf_any_more():
+    """D59: the evidence PDF is the helper's job, in the app. /pdf is gone."""
+    assert not hasattr(bot, "pdf_command") and not hasattr(bot, "send_pdf")
 
 
 def test_case_lost_on_a_server_restart_is_made_again_once(monkeypatch):
@@ -487,7 +496,7 @@ def test_case_lost_on_a_server_restart_is_made_again_once(monkeypatch):
     asyncio.run(bot.on_forward(update, context))
     posts = [c[1] for c in calls if c[0] == "POST"]
     assert posts == ["/cases/case_0099/events", "/cases", "/cases/case_0001/events"]
-    assert context.chat_data["case_id"] == "case_0001" and update.message.sent[1][0] == "document"
+    assert context.chat_data["case_id"] == "case_0001" and update.message.sent[0][1].startswith("Darj ho gaya.")
 
 
 def test_server_down_while_logging(monkeypatch):
@@ -504,18 +513,125 @@ def test_empty_forward_is_not_logged(monkeypatch):
     assert calls == [] and update.message.sent == [("text", bot.MSG_LOG_EMPTY)]
 
 
-def test_pdf_command(monkeypatch):
-    fake_cases_api(monkeypatch)
+def test_helper_command_gives_the_code(monkeypatch):
+    calls = fake_cases_api(monkeypatch)
     none = log_update(forwarded=False)
-    asyncio.run(bot.pdf_command(none, SimpleNamespace(chat_data={})))
+    asyncio.run(bot.helper_command(none, SimpleNamespace(chat_data={})))
     assert none.message.sent == [("text", bot.MSG_NO_CASE)]
-    has_case = log_update(forwarded=False)
-    asyncio.run(bot.pdf_command(has_case, SimpleNamespace(chat_data={"case_id": "case_0001"})))
-    assert has_case.message.sent[0][0] == "document"
+    known = log_update(forwarded=False)
+    asyncio.run(bot.helper_command(known, SimpleNamespace(chat_data={"case_id": "case_0001", "code": "48217730"})))
+    assert known.message.sent == [("text", bot.MSG_CODE.format(code="4821 7730"))] and calls == []
+    fetched = log_update(forwarded=False)                       # an old case without the code in memory
+    context = SimpleNamespace(chat_data={"case_id": "case_0001"})
+    asyncio.run(bot.helper_command(fetched, context))
+    assert "4821 7730" in fetched.message.sent[0][1] and context.chat_data["code"] == "48217730"
+
+
+def test_helper_twice_gives_the_same_code(monkeypatch):
+    fake_cases_api(monkeypatch)
+    context = SimpleNamespace(chat_data={})
+    asyncio.run(bot.on_forward(log_update(), context))
+    first, second = log_update(forwarded=False), log_update(forwarded=False)
+    asyncio.run(bot.helper_command(first, context))
+    asyncio.run(bot.helper_command(second, context))
+    assert first.message.sent == second.message.sent and "4821 7731" in first.message.sent[0][1]
+
+
+# ---------------------------------------------------------------- D59: phone number and memory
+USER = SimpleNamespace(id=42, first_name="Raju")
+CHAT = SimpleNamespace(id=777)
+
+
+@pytest.fixture
+def token(monkeypatch):
+    """A fake bot token, so the scrambled chat key is the same on every machine (and in CI)."""
+    import dataclasses
+    monkeypatch.setattr(bot, "settings", dataclasses.replace(bot.settings, telegram_bot_token="123:test-token"))
+
+
+def tg_update(**kwargs):
+    update = log_update(**kwargs)
+    update.effective_user, update.effective_chat = USER, CHAT
+    return update
+
+
+def test_case_uses_his_telegram_name_and_a_scrambled_chat_key(monkeypatch, token):
+    calls = fake_cases_api(monkeypatch)
+    asyncio.run(bot.on_forward(tg_update(), SimpleNamespace(chat_data={})))
+    body = [c for c in calls if c[:2] == ("POST", "/cases")][0][2]
+    key = bot.chat_key(tg_update())
+    assert body["borrower_name"] == "Raju"
+    assert body["telegram_chat"] == key and "777" not in key and len(key) == 40
+
+
+def test_chat_key_is_fixed_per_chat_and_none_without_a_chat(token):
+    a, b = tg_update(), tg_update()
+    assert bot.chat_key(a) == bot.chat_key(b)
+    other = tg_update()
+    other.effective_chat = SimpleNamespace(id=778)
+    assert bot.chat_key(other) != bot.chat_key(a)
+    assert bot.chat_key(log_update()) is None                      # no chat at all
+
+
+def test_after_the_first_threat_he_is_asked_once_for_his_number(monkeypatch):
+    fake_cases_api(monkeypatch)
+    context = SimpleNamespace(chat_data={})
+    first = tg_update()
+    asyncio.run(bot.on_forward(first, context))
+    assert first.message.sent[-1] == ("text", bot.MSG_ASK_PHONE)
+    keyboard = first.message.markups[-1].keyboard
+    assert keyboard[0][0].text == bot.BTN_PHONE and keyboard[0][0].request_contact
+    second = tg_update(text="Kal phir call karenge.")
+    asyncio.run(bot.on_forward(second, context))
+    assert ("text", bot.MSG_ASK_PHONE) not in second.message.sent      # asked only once
+
+
+def contact_update(user_id, phone="+91 98765 43210"):
+    update = tg_update(forwarded=False)
+    update.message.contact = SimpleNamespace(user_id=user_id, phone_number=phone)
+    return update
+
+
+def test_his_own_number_is_saved_masked(monkeypatch):
+    calls = fake_cases_api(monkeypatch)
+    context = SimpleNamespace(chat_data={"case_id": "case_0001", "code": "48217730", "asked_phone": True,
+                                         "_loaded": True})
+    update = contact_update(USER.id)
+    asyncio.run(bot.on_contact(update, context))
+    assert calls == [("PUT", "/cases/case_0001/phone", {"borrower_phone": "XXXXXX 3210"})]
+    assert update.message.sent == [("text", bot.MSG_PHONE_SAVED.format(masked="XXXXXX 3210"))]
+    assert "98765" not in str(calls) and context.chat_data["has_phone"]
+
+
+def test_someone_elses_contact_is_refused(monkeypatch):
+    calls = fake_cases_api(monkeypatch)
+    update = contact_update(user_id=99)                               # a forwarded contact card
+    asyncio.run(bot.on_contact(update, SimpleNamespace(chat_data={"case_id": "case_0001"})))
+    assert calls == [] and update.message.sent == [("text", bot.MSG_PHONE_NOT_OWN)]
+
+
+def test_abhi_nahi_closes_the_question_without_checking_it_as_an_offer(monkeypatch):
+    calls = fake_cases_api(monkeypatch)
+    update = tg_update(text=bot.BTN_SKIP, forwarded=False)
+    context = SimpleNamespace(chat_data={"asked_phone": True, "_loaded": True})
+    asyncio.run(bot.on_text(update, context))
+    assert update.message.sent == [("text", bot.MSG_PHONE_SKIPPED)] and calls == []
+
+
+def test_memory_comes_back_from_the_database_after_a_restart(monkeypatch, token):
+    calls = fake_cases_api(monkeypatch, chat_state={"lang": "mr", "case_id": "case_00ab", "code": "55556666",
+                                                    "has_phone": True})
+    context = SimpleNamespace(chat_data={})                          # a fresh run: nothing in memory
+    update = tg_update(forwarded=False)
+    asyncio.run(bot.helper_command(update, context))
+    assert calls[0][0] == "GET" and calls[0][1].startswith("/telegram/")
+    assert "5555 6666" in update.message.sent[0][1]
+    assert bot.chat_lang(context) == "mr" and context.chat_data["case_id"] == "case_00ab"
 
 
 def test_log_messages_are_hindi_never_error_codes():
-    for msg in (bot.MSG_LOG_ASK, bot.MSG_LOGGED_NONE, bot.MSG_PDF_LATER, bot.MSG_NO_CASE, bot.MSG_LOG_EMPTY):
+    for msg in (bot.MSG_LOG_ASK, bot.MSG_LOGGED_NONE, bot.MSG_HELPER_HINT, bot.MSG_NO_CASE, bot.MSG_LOG_EMPTY,
+                bot.MSG_CODE, bot.MSG_ASK_PHONE, bot.MSG_PHONE_SAVED, bot.MSG_PHONE_SKIPPED, bot.MSG_PHONE_NOT_OWN):
         assert "error" not in msg.lower() and "404" not in msg
     assert set(bot.RULE_HI) == {"H1", "H2", "H3", "H4", "H5", "H6"}
 

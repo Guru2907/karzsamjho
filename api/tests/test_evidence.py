@@ -67,12 +67,25 @@ def test_pdf_never_contains_the_full_12_digit_number():
 
 def test_pdf_has_every_section_in_english():
     text = pdf_text()
-    for words in ("KarzSamjho: harassment evidence", "Case case_0007", "QuickCash", "Day 1 of 30",
+    for words in ("KarzSamjho: harassment evidence", "Case code case_0007", "QuickCash", "Day 1 of 30",
                   "Rules broken", "RBI circular on recovery agents, 12 Aug 2022", "Timeline (3 contacts)",
                   "Record integrity (hash chain)", "Where to complain", "Complaint draft",
                   "Contact before 08:00 or after 19:00", "Threats or abusive language",
                   "13 Nov 2026, 9:40 PM", "Paisa do warna ghar aa jayenge."):
         assert words in text, words
+
+
+def test_pdf_header_shows_code_masked_phone_and_where_it_came_from():
+    case = {**CASE, "code": "48217730", "borrower_phone": "XXXXXX 3210", "source": "telegram"}
+    text = pdf_text(case)
+    for words in ("Case code 4821 7730", "(phone XXXXXX 3210)", "Telegram chat with the KarzSamjho bot"):
+        assert words in text, words
+
+
+def test_mask_phone_keeps_only_the_last_4_digits():
+    assert evidence.mask_phone("+91 98765 43210") == "XXXXXX 3210"
+    assert evidence.mask_phone("XXXXXX 3210") == "XXXXXX 3210"
+    assert evidence.mask_phone("12") is None and evidence.mask_phone(None) is None
 
 
 def test_pdf_shows_every_hash():

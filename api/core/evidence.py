@@ -56,6 +56,13 @@ def mask(text: str) -> str:
     return _TWELVE_DIGITS.sub(lambda m: f"XXXX XXXX {m.group(1)}", text or "")
 
 
+def mask_phone(phone: str | None) -> str | None:
+    """The borrower's phone -> "XXXXXX 3210" (last 4 digits only, D59). The full number is never kept.
+    An already masked value comes back the same; fewer than 4 digits -> None."""
+    digits = re.sub(r"\D", "", phone or "")
+    return f"XXXXXX {digits[-4:]}" if len(digits) >= 4 else None
+
+
 def event_hash(prev_hash: str, event: dict) -> str:
     """SHA-256(prev_hash + the event's fields as sorted JSON). Editing any field, or the order,
     changes this hash and every hash after it."""
@@ -75,6 +82,15 @@ def verify_chain(events: list[dict]) -> bool:
 
 
 # ---------------------------------------------------------------- text helpers
+_SOURCE = {"telegram": "the borrower's own Telegram chat with the KarzSamjho bot",
+           "app": "a helper, in the KarzSamjho helper app"}
+
+
+def _spaced_code(code: str | None) -> str | None:
+    """"48217730" -> "4821 7730", easier to read out."""
+    return f"{code[:4]} {code[4:]}" if code and len(code) == 8 else code
+
+
 def pdf_text(text: str | None) -> str:
     """Masked, plain text the built-in PDF fonts can draw."""
     text = mask(text or "").translate(_ASCII_PUNCT)
@@ -188,8 +204,11 @@ def build_pdf(case: dict, compress: bool = True) -> bytes:
     day = case_day(case)
     out = [
         p("KarzSamjho: harassment evidence", h1),
-        p(f"Case {pdf_text(case.get('id'))}  |  Borrower: {pdf_text(case.get('borrower_name'))}  |  "
-          f"Lender / app: {pdf_text(case.get('lender_name'))}"),
+        p(f"Case code {pdf_text(_spaced_code(case.get('code')) or case.get('id'))}  |  "
+          f"Borrower: {pdf_text(case.get('borrower_name'))}"
+          + (f" (phone {pdf_text(case.get('borrower_phone'))})" if case.get("borrower_phone") else "")
+          + f"  |  Lender / app: {pdf_text(case.get('lender_name'))}"),
+        p(f"Recorded through: {_SOURCE.get(case.get('source') or '', 'KarzSamjho')}", small),
         p(f"Opened: {_when(case.get('opened_at'))}  |  "
           + (f"Day {day} of {CASE_DAYS}" if day else f"Day count not available (of {CASE_DAYS})")
           + f"  |  Generated: {_clock(datetime.now(IST))}", small),

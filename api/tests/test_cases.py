@@ -1,6 +1,7 @@
 """F2: real cases + events with a hash chain (A3 database). No internet; harass.label is faked."""
 import hashlib
 import json
+import re
 from datetime import datetime, timedelta
 
 import pytest
@@ -42,7 +43,8 @@ def log_event(client, case_id, at, text="Paisa do", channel="call", contacted="b
 
 def test_new_case_is_real_not_sample(client):
     case = new_case(client)
-    assert case["id"] == "case_0001" and case["events"] == [] and case["day"] == 1
+    assert re.fullmatch(r"case_[0-9a-f]{16}", case["id"]) and case["events"] == [] and case["day"] == 1
+    assert re.fullmatch(r"[1-9]\d{7}", case["code"]) and case["source"] == "app"
     assert case["lender_name"] == "QuickCash" and case["check_id"] == "chk_0001"
     assert client.get("/api/cases/case_0007").status_code == 404          # the old sample is gone
 
@@ -119,10 +121,58 @@ def test_chain_survives_a_restart(client, fake_label, monkeypatch):
     assert all(main.event_hash(e["prev_hash"], e) == e["hash"] for e in events)
 
 
-def test_list_cases_newest_first(client):
+def test_there_is_no_list_of_every_case(client):
+    """D59: nobody can see every case. A case is found by its code (or its secret id)."""
     new_case(client)
-    second = new_case(client)
-    assert client.get("/api/cases").json()[0]["id"] == second["id"]
+    assert client.get("/api/cases").status_code == 405       # the route is gone (only POST is left)
+
+
+def test_case_is_found_by_its_code_with_or_without_the_space(client):
+    case = new_case(client)
+    code = case["code"]
+    for typed in (code, f"{code[:4]} {code[4:]}"):
+        found = client.get(f"/api/cases/code/{typed}")
+        assert found.status_code == 200 and found.json()["id"] == case["id"]
+
+
+def test_wrong_code_is_404_in_hindi(client):
+    new_case(client)
+    for wrong in ("12345678", "1234", "abcdefgh"):
+        r = client.get(f"/api/cases/code/{wrong}")
+        assert r.status_code == 404 and "nahi mila" in r.json()["detail"]["text_hi"]
+
+
+def test_codes_are_unique_and_never_change(client):
+    cases = [new_case(client) for _ in range(20)]
+    assert len({c["code"] for c in cases}) == 20 and len({c["id"] for c in cases}) == 20
+    one = cases[0]
+    log_event(client, one["id"], "2026-11-13T21:40:00+05:30")
+    assert client.get(f"/api/cases/{one['id']}").json()["code"] == one["code"]
+
+
+def test_phone_is_stored_masked_only(client):
+    case = client.post("/api/cases", json={"borrower_name": "Raju", "lender_name": "QuickCash",
+                                           "borrower_phone": "+91 98765 43210"}).json()
+    assert case["borrower_phone"] == "XXXXXX 3210"
+    later = client.put(f"/api/cases/{new_case(client)['id']}/phone", json={"borrower_phone": "9123456789"})
+    assert later.status_code == 200 and later.json()["borrower_phone"] == "XXXXXX 6789"
+    assert client.put("/api/cases/case_nope/phone", json={"borrower_phone": "9123456789"}).status_code == 404
+    assert client.put(f"/api/cases/{case['id']}/phone", json={"borrower_phone": "12"}).status_code == 422
+
+
+def test_bot_memory_for_a_chat(client):
+    """D59: the bot's /bhasha language and the chat's case live in the database, by a scrambled key."""
+    key = "ab" * 20
+    assert client.get(f"/api/telegram/{key}").json() == {"lang": None, "case_id": None, "code": None,
+                                                         "has_phone": False}
+    case = client.post("/api/cases", json={"borrower_name": "Raju", "lender_name": "QuickCash",
+                                           "telegram_chat": key}).json()
+    assert case["source"] == "telegram" and "telegram_chat" not in case          # the key is never shown
+    assert client.put(f"/api/telegram/{key}", json={"lang": "bn"}).status_code == 200
+    state = client.get(f"/api/telegram/{key}").json()
+    assert state == {"lang": "bn", "case_id": case["id"], "code": case["code"], "has_phone": False}
+    assert client.get("/api/telegram/not-a-key").status_code == 404
+    assert client.put(f"/api/telegram/{key}", json={"lang": "xx"}).status_code == 422
 
 
 # ---------------------------------------------------------------- the evidence PDF route (F3 wired)

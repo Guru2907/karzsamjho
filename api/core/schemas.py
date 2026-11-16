@@ -4,7 +4,7 @@ Do NOT change these shapes without the whole team agreeing.
 """
 from typing import Literal, Optional
 
-from pydantic import BaseModel
+from pydantic import BaseModel, Field
 
 Status = Literal["read", "derived", "computed", "unverified"]
 Verdict = Literal["USUAL", "COSTLY", "VERY_COSTLY", "CANNOT_SAY"]
@@ -79,6 +79,24 @@ class CaseIn(BaseModel):
     borrower_name: str
     lender_name: str
     check_id: Optional[str] = None
+    borrower_phone: Optional[str] = None     # masked by the API to XXXXXX 1234 before it is stored (D59)
+    telegram_chat: Optional[str] = Field(None, pattern=r"^[0-9a-f]{32,64}$")   # the bot's scrambled chat key
+
+
+class PhoneIn(BaseModel):
+    borrower_phone: str                      # masked by the API to XXXXXX 1234 before it is stored
+
+
+class ChatLangIn(BaseModel):
+    lang: str
+
+
+class ChatState(BaseModel):
+    """What the bot remembers about one Telegram chat, kept in the database (D59)."""
+    lang: Optional[str] = None
+    case_id: Optional[str] = None
+    code: Optional[str] = None
+    has_phone: bool = False
 
 
 class EventIn(BaseModel):
@@ -101,7 +119,10 @@ class Event(BaseModel):
 
 class Case(BaseModel):
     id: str
+    code: Optional[str] = None             # 8 digits, made once with the case, never changed (D59)
     borrower_name: str
+    borrower_phone: Optional[str] = None   # always masked: XXXXXX 1234
+    source: Optional[str] = None           # telegram | app
     lender_name: str
     check_id: Optional[str] = None
     route: Optional[str] = None

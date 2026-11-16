@@ -20,13 +20,13 @@ const TILES: Tile[] = [
   {
     icon: FolderOpen,
     title: 'Harassment cases',
-    body: 'Log threats and calls from a lender. You get a dated evidence PDF and where to complain.',
+    body: 'Open a borrower’s case with the code they got from our Telegram bot, or start one. Log threats and calls, get the evidence PDF and where to complain.',
     to: '/cases',
   },
   {
     icon: Send,
     title: 'For the borrower: Telegram',
-    body: 'The borrower can send the photo to our Telegram bot and hear the answer in their language.',
+    body: 'The borrower sends offers and forwards threats to our Telegram bot, and gets a case code to give you.',
     href: BOT_URL,
   },
 ]

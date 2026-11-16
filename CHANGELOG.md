@@ -4,6 +4,13 @@ Work after the hackathon goes under [Unreleased]. The hackathon build is the tag
 
 ## [Unreleased]
 
+### Changed (bot and app split, D59)
+- Every harassment case gets an 8-digit code that never changes. In Telegram, /helper gives it; in the app, Cases -> type the code opens the case. The app no longer lists everyone's cases (only "Cases on this phone"), case ids are random, and the "list every case" API route is gone.
+- The bot no longer sends the evidence PDF and /pdf is removed: the helper gets the PDF in the app. After a saved threat the bot says which rules broke and points to /helper.
+- The bot asks once for the borrower's number (Telegram's share button) and keeps only the last 4 digits (XXXXXX 1234); the case and the PDF show it with the borrower's Telegram name and where the case came from. A helper can add a phone the same way when starting a case in the app.
+- The bot remembers the chosen voice language and the chat's case in the database, so a restart forgets nothing.
+- "Share with helper" is removed from the check result.
+
 ### Changed (database, D58)
 - Hosted data now lives in Postgres on Neon instead of a SQLite file on Render's disk, so checks and harassment cases survive Render restarts and redeploys. Local work and tests still use SQLite.
 - After a restart, a repeated photo is still answered from the database with no AI call, and a missing Hindi MP3 is made again on first play.

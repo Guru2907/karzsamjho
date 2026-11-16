@@ -51,18 +51,31 @@ def event(at, channel="call", text="Paisa do", h="1" * 64, prev=db.GENESIS_HASH,
 
 def test_case_with_events_in_order():
     case = db.create_case("Raju (sample)", "QuickCash", "chk_0007")
-    assert case["id"] == "case_0001" and case["events"] == [] and case["check_id"] == "chk_0007"
-    assert db.last_event_hash("case_0001") == db.GENESIS_HASH          # F2 starts the chain here
-    first = db.add_event("case_0001", event("2026-11-13T21:40:00+05:30"))
-    second = db.add_event("case_0001", event("2026-11-14T10:15:00+05:30", channel="whatsapp",
-                                             h="2" * 64, prev="1" * 64, rules=("H3",)))
+    cid = case["id"]
+    assert cid.startswith("case_") and case["events"] == [] and case["check_id"] == "chk_0007"
+    assert db.last_event_hash(cid) == db.GENESIS_HASH          # F2 starts the chain here
+    first = db.add_event(cid, event("2026-11-13T21:40:00+05:30"))
+    second = db.add_event(cid, event("2026-11-14T10:15:00+05:30", channel="whatsapp",
+                                     h="2" * 64, prev="1" * 64, rules=("H3",)))
     assert (first["id"], second["id"]) == ("evt_0001", "evt_0002")
-    stored = db.get_case("case_0001")
+    stored = db.get_case(cid)
     assert [e["id"] for e in stored["events"]] == ["evt_0001", "evt_0002"]
     assert stored["events"][1]["rules"] == ["H3"] and stored["events"][1]["prev_hash"] == "1" * 64
-    assert db.last_event_hash("case_0001") == "2" * 64
-    assert db.create_case("Raju 2", "FastLoan", None)["id"] == "case_0002"
-    assert [c["id"] for c in db.list_cases()][0] == "case_0002"            # newest first
+    assert db.last_event_hash(cid) == "2" * 64
+    assert db.get_case_by_code(case["code"])["id"] == cid
+    assert not hasattr(db, "list_cases")                       # D59: no "list every case"
+
+
+def test_case_for_a_chat_and_its_language():
+    key = "cd" * 20
+    assert db.case_for_chat(key) is None and db.chat_lang(key) is None
+    case = db.create_case("Raju", "QuickCash", None, source="telegram", telegram_chat=key)
+    assert db.case_for_chat(key)["id"] == case["id"]
+    db.set_chat_lang(key, "mr")
+    db.set_chat_lang(key, "bn")                                # the newest choice wins
+    assert db.chat_lang(key) == "bn"
+    assert db.set_case_phone(case["id"], "XXXXXX 3210") and db.get_case(case["id"])["borrower_phone"] == "XXXXXX 3210"
+    assert db.set_case_phone("case_nope", "XXXXXX 3210") is False
 
 
 def test_event_for_a_missing_case_is_refused():
@@ -71,14 +84,14 @@ def test_event_for_a_missing_case_is_refused():
 
 
 def test_calls_on_a_day_for_h6():
-    db.create_case("Raju", "QuickCash", None)
+    cid = db.create_case("Raju", "QuickCash", None)["id"]
     for hour in (9, 10, 11, 12, 13):
-        db.add_event("case_0001", event(f"2026-11-13T{hour:02d}:00:00+05:30"))
-    db.add_event("case_0001", event("2026-11-13T14:00:00+05:30", channel="sms"))
-    db.add_event("case_0001", event("2026-11-14T09:00:00+05:30"))
-    assert db.calls_on("case_0001", "2026-11-13") == 5         # SMS and next day not counted
-    assert db.calls_on("case_0001", "2026-11-14") == 1
-    assert db.calls_on("case_0001", "2026-11-15") == 0
+        db.add_event(cid, event(f"2026-11-13T{hour:02d}:00:00+05:30"))
+    db.add_event(cid, event("2026-11-13T14:00:00+05:30", channel="sms"))
+    db.add_event(cid, event("2026-11-14T09:00:00+05:30"))
+    assert db.calls_on(cid, "2026-11-13") == 5         # SMS and next day not counted
+    assert db.calls_on(cid, "2026-11-14") == 1
+    assert db.calls_on(cid, "2026-11-15") == 0
 
 
 # ---------------------------------------------------------------- through the API: a restart

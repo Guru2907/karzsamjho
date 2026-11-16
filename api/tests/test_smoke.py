@@ -21,7 +21,7 @@ def test_cases(client):
                     json={"at": "2026-11-13T21:40:00+05:30", "channel": "call",
                           "contacted": "borrower", "text": "sample"})
     assert r.status_code == 200 and len(r.json()["hash"]) == 64
-    Case.model_validate(client.get("/api/cases").json()[0])
+    Case.model_validate(client.get(f"/api/cases/code/{case['code']}").json())
 
 
 def test_stats(client):

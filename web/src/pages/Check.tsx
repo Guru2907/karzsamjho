@@ -4,65 +4,18 @@ import {
   Image as ImageIcon,
   IndianRupee,
   RotateCcw,
-  Share2,
   Volume2,
 } from 'lucide-react'
-import { toast } from 'sonner'
 import { Button } from '@/components/ui/button'
 import { RajuCard } from '@/components/RajuCard'
 import { HelperDetails } from '@/components/check/HelperDetails'
 import { PayFirstBanner } from '@/components/check/PayFirstBanner'
 import { ErrorView } from '@/components/check/ErrorView'
 import { api, ApiError, type CheckResult } from '@/lib/api'
-import { days, ERROR_MESSAGES, rupees } from '@/lib/format'
+import { ERROR_MESSAGES } from '@/lib/format'
 import { sampleResults } from '@/lib/sample'
 import { NewCaseDialog } from '@/components/cases/NewCaseDialog'
 
-function buildShareText(result: CheckResult): string {
-  const lines: string[] = []
-  const { numbers, lender, next_step } = result
-
-  if (numbers?.in_hand?.value != null) {
-    lines.push(`In hand: ${rupees(numbers.in_hand.value)}`)
-  }
-  if (numbers?.repay_total?.value != null) {
-    lines.push(`You repay: ${rupees(numbers.repay_total.value)}`)
-  }
-  if (numbers?.tenure_days?.value != null) {
-    lines.push(`Days: ${days(numbers.tenure_days.value)}`)
-  }
-  if (numbers?.extra?.value != null) {
-    lines.push(`Extra you pay: +${rupees(numbers.extra.value)}`)
-  }
-
-  if (lender?.warning) {
-    let warn = `RBI cancelled this company's NBFC registration`
-    if (lender.warning.date) warn += ` · list as on ${lender.warning.date}`
-    lines.push(`RBI: ${warn}`)
-  } else if (lender?.match != null) {
-    let rbi = ''
-    if (lender.match === 'FOUND') {
-      rbi = `Found in RBI's directory, linked to ${lender.closest || lender.name_read || 'registered lender'}`
-    } else if (lender.match === 'SIMILAR') {
-      rbi = `A similar name is in RBI's directory: ${lender.closest}. Check the exact name`
-    } else if (lender.match === 'NOT_FOUND') {
-      rbi = `Not found in RBI's directory`
-    }
-    if (lender.list_date) {
-      rbi += ` · RBI list as on ${lender.list_date}`
-    }
-    lines.push(`RBI: ${rbi}`)
-  }
-
-  if (next_step?.text_hi) {
-    lines.push(`Next step: ${next_step.text_hi}`)
-  }
-
-  lines.push('')
-  lines.push('Checked with KarzSamjho')
-
-  return lines.join('\n')
-}
 
 export default function Check() {
   const cameraInputRef = useRef<HTMLInputElement>(null)
@@ -114,28 +67,6 @@ export default function Check() {
     const trimmed = smsText.trim()
     if (!trimmed) return
     runCheck(() => api.checkText(trimmed))
-  }
-
-  const handleShare = async () => {
-    if (!result) return
-    const text = buildShareText(result)
-    let shared = false
-    if (typeof navigator !== 'undefined' && navigator.share) {
-      try {
-        await navigator.share({ title: 'KarzSamjho', text })
-        shared = true
-      } catch (err: unknown) {
-        if (err instanceof Error && err.name === 'AbortError') return
-      }
-    }
-    if (!shared) {
-      try {
-        await navigator.clipboard.writeText(text)
-        toast('Copied')
-      } catch {
-        toast('Copied')
-      }
-    }
   }
 
   const handleReset = () => {
@@ -253,7 +184,7 @@ export default function Check() {
 
           <RajuCard result={result} />
 
-          {/* Normal mode: audio player, share button, new check button, helper details */}
+          {/* Audio player, new check, start a case, helper details ("Share with helper" removed, D59) */}
             <>
               {result.audio_url && (
                 <div className="rounded-2xl border border-border bg-card p-4 space-y-2">
@@ -265,26 +196,15 @@ export default function Check() {
                 </div>
               )}
 
-              <div className="grid grid-cols-2 gap-3">
-                <Button
-                  type="button"
-                  onClick={handleShare}
-                  className="h-14 font-semibold flex items-center justify-center gap-2 rounded-xl"
-                >
-                  <Share2 className="size-5" />
-                  <span>Share with helper</span>
-                </Button>
-
-                <Button
-                  type="button"
-                  variant="outline"
-                  onClick={handleReset}
-                  className="h-14 font-semibold flex items-center justify-center gap-2 rounded-xl"
-                >
-                  <RotateCcw className="size-5" />
-                  <span>New check</span>
-                </Button>
-              </div>
+              <Button
+                type="button"
+                variant="outline"
+                onClick={handleReset}
+                className="h-14 w-full font-semibold flex items-center justify-center gap-2 rounded-xl"
+              >
+                <RotateCcw className="size-5" />
+                <span>New check</span>
+              </Button>
 
               <NewCaseDialog
                 label="Being threatened? Start a case"

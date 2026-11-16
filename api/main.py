@@ -26,7 +26,7 @@ from fastapi.responses import FileResponse, Response
 
 from api.core import cache, config, db, evidence, extract, fallback, harass, lender, maths, next_step, speak, verdict
 from api.core.config import ensure_dirs
-from api.core.schemas import (Case, CaseIn, CheckResult, Event, EventIn, Stats,
+from api.core.schemas import (Case, CaseIn, ChatLangIn, ChatState, CheckResult, Event, EventIn, PhoneIn, Stats,
                               VerifyResult)
 
 logging.basicConfig(level=logging.INFO, format="%(asctime)s %(levelname)s %(name)s %(message)s")
@@ -339,12 +339,56 @@ def _rules(event: dict, calls_that_day: int) -> list[str]:
 
 @app.post("/api/cases", response_model=Case)
 def create_case(body: CaseIn):
-    return _with_day(db.create_case(body.borrower_name, body.lender_name, body.check_id))
+    """A new case with its own 8-digit code (D59). The phone is masked here, so even a client that
+    sends the full number never gets it stored. There is no "list every case": find one by its code."""
+    return _with_day(db.create_case(
+        body.borrower_name, body.lender_name, body.check_id,
+        borrower_phone=evidence.mask_phone(body.borrower_phone),
+        source="telegram" if body.telegram_chat else "app", telegram_chat=body.telegram_chat))
 
 
-@app.get("/api/cases", response_model=list[Case])
-def list_cases():
-    return [_with_day(c) for c in db.list_cases()]
+@app.get("/api/cases/code/{code}", response_model=Case)
+def get_case_by_code(code: str):
+    """The helper types the borrower's code ("4821 7730" or "48217730")."""
+    digits = re.sub(r"\D", "", code)
+    case = db.get_case_by_code(digits) if len(digits) == 8 else None
+    if case is None:
+        raise HTTPException(404, {"code": "NO_CASE", "text_hi": "Yeh code nahi mila. Dobara dekh kar likho."})
+    return _with_day(case)
+
+
+@app.put("/api/cases/{case_id}/phone", response_model=Case)
+def set_case_phone(case_id: str, body: PhoneIn):
+    """The borrower shared his number (Telegram's own button): stored masked, last 4 digits only."""
+    masked = evidence.mask_phone(body.borrower_phone)
+    if masked is None:
+        raise HTTPException(422, {"code": "BAD_PHONE", "text_hi": "Number sahi nahi hai."})
+    if not db.set_case_phone(case_id, masked):
+        raise HTTPException(404, "Case not found.")
+    return _with_day(db.get_case(case_id))
+
+
+_CHAT_KEY = re.compile(r"^[0-9a-f]{32,64}$")
+_LANGS = {"hi", "bn", "mr"}
+
+
+@app.get("/api/telegram/{chat_key}", response_model=ChatState)
+def get_chat(chat_key: str):
+    """What the bot remembers about a chat (its /bhasha language and its case), so a bot restart
+    forgets nothing (D59). chat_key is a scrambled form of the chat, made by the bot with a secret."""
+    if not _CHAT_KEY.match(chat_key):
+        raise HTTPException(404, "Unknown chat.")
+    case = db.case_for_chat(chat_key)
+    return {"lang": db.chat_lang(chat_key), "case_id": case and case["id"], "code": case and case["code"],
+            "has_phone": bool(case and case.get("borrower_phone"))}
+
+
+@app.put("/api/telegram/{chat_key}", response_model=ChatState)
+def set_chat(chat_key: str, body: ChatLangIn):
+    if not _CHAT_KEY.match(chat_key) or body.lang not in _LANGS:
+        raise HTTPException(422, "Unknown chat or language.")
+    db.set_chat_lang(chat_key, body.lang)
+    return get_chat(chat_key)
 
 
 @app.get("/api/cases/{case_id}", response_model=Case)

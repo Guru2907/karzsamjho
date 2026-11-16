@@ -47,7 +47,10 @@ export interface CaseEvent {
 
 export interface Case {
   id: string
+  code: string | null               // 8 digits, made once with the case, never changed (D59)
   borrower_name: string
+  borrower_phone: string | null     // always masked: XXXXXX 1234
+  source: string | null             // telegram | app
   lender_name: string
   check_id: string | null
   route: string | null
@@ -147,9 +150,10 @@ export const api = {
     request<CheckResult>('/api/checks', json({ text, lang, source })),
   getCheck: (id: string) => request<CheckResult>(`/api/checks/${id}`),
   listChecks: (limit = 20) => request<CheckResult[]>(`/api/checks?limit=${limit}`),
-  createCase: (body: { borrower_name: string; lender_name: string; check_id?: string }) =>
+  createCase: (body: { borrower_name: string; lender_name: string; check_id?: string; borrower_phone?: string }) =>
     request<Case>('/api/cases', json(body)),
-  listCases: () => request<Case[]>('/api/cases'),
+  // D59: there is no "list every case". A helper opens a case with the borrower's 8-digit code.
+  getCaseByCode: (code: string) => request<Case>(`/api/cases/code/${encodeURIComponent(code.replace(/\D/g, ''))}`),
   getCase: (id: string) => request<Case>(`/api/cases/${id}`),
   addEvent: (caseId: string, body: { at: string; channel: string; contacted: string; text: string }) =>
     request<CaseEvent>(`/api/cases/${caseId}/events`, json(body)),

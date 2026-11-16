@@ -1,124 +1,105 @@
-import { useEffect, useState } from 'react'
-import { ChevronRight, FolderOpen, MessageSquareWarning, WifiOff } from 'lucide-react'
-import { Link } from 'react-router-dom'
+import { useState, type FormEvent } from 'react'
+import { ChevronRight, FolderOpen, KeyRound, Smartphone } from 'lucide-react'
+import { Link, useNavigate } from 'react-router-dom'
 import { NewCaseDialog } from '@/components/cases/NewCaseDialog'
 import { Button } from '@/components/ui/button'
-import { RouteBadge, RuleBadges } from '@/components/cases/meta'
-import { dayLine, uniqueRules } from '@/components/cases/caseInfo'
-import { api, type Case } from '@/lib/api'
+import { api, ApiError } from '@/lib/api'
 import { ERROR_MESSAGES } from '@/lib/format'
+import { myCases, rememberCase, spacedCode } from '@/lib/myCases'
+
+// E4, changed by D59: there is no list of everyone's cases. A helper opens a borrower's case with the
+// 8-digit code the borrower got from the Telegram bot (/helper), or starts a case by hand for someone
+// without Telegram. Cases this phone has opened are listed from this phone's own storage only.
 
 export default function Cases() {
-  const [cases, setCases] = useState<Case[] | null>(null)
+  const navigate = useNavigate()
+  const [code, setCode] = useState('')
+  const [opening, setOpening] = useState(false)
   const [error, setError] = useState<string | null>(null)
-  const [loading, setLoading] = useState(true)
+  const mine = myCases()
+  const digits = code.replace(/\D/g, '')
 
-  const loadCases = () => {
-    setLoading(true)
+  const open = async (e: FormEvent) => {
+    e.preventDefault()
+    setOpening(true)
     setError(null)
-    api
-      .listCases()
-      .then((data) => {
-        setCases(data)
-        setLoading(false)
-      })
-      .catch(() => {
-        setError(ERROR_MESSAGES.SERVER_OFF)
-        setLoading(false)
-      })
+    try {
+      const found = await api.getCaseByCode(digits)
+      rememberCase(found)
+      navigate(`/cases/${found.id}`)
+    } catch (err) {
+      setError(err instanceof ApiError && err.status === 404 ? err.text_hi : ERROR_MESSAGES.SERVER_OFF)
+    } finally {
+      setOpening(false)
+    }
   }
 
-  useEffect(() => {
-    let active = true
-    api
-      .listCases()
-      .then((data) => {
-        if (!active) return
-        setCases(data)
-        setLoading(false)
-      })
-      .catch(() => {
-        if (!active) return
-        setError(ERROR_MESSAGES.SERVER_OFF)
-        setLoading(false)
-      })
-    return () => {
-      active = false
-    }
-  }, [])
-
   return (
-    <div className="w-full max-w-md mx-auto py-2 space-y-4">
-      <div className="flex items-center justify-between">
-        <h1 className="text-2xl font-bold tracking-tight text-foreground">Cases</h1>
-      </div>
+    <div className="mx-auto w-full max-w-md space-y-6 py-2">
+      <h1 className="text-2xl font-bold tracking-tight text-foreground">Cases</h1>
 
-      <NewCaseDialog />
+      {/* 1. Open a borrower's case with their code */}
+      <form onSubmit={open} className="space-y-3 rounded-2xl border border-border bg-card p-5 shadow-sm">
+        <div className="flex items-center gap-2">
+          <KeyRound className="size-5 text-primary" aria-hidden />
+          <h2 className="text-lg font-semibold text-foreground">Open a borrower's case</h2>
+        </div>
+        <label className="block space-y-1 text-sm text-muted-foreground">
+          Case code (8 digits)
+          <input
+            value={code}
+            onChange={(e) => setCode(e.target.value)}
+            inputMode="numeric"
+            autoComplete="off"
+            placeholder="4821 7730"
+            maxLength={12}
+            className="h-14 w-full rounded-lg border border-border bg-background px-3 text-center font-mono text-2xl tracking-[0.2em] text-foreground"
+          />
+        </label>
+        {error && <p className="text-sm font-medium text-red-700 dark:text-red-400">{error}</p>}
+        <Button type="submit" disabled={opening || digits.length !== 8} className="h-14 w-full text-base font-semibold">
+          {opening ? 'Opening…' : 'Open case'}
+        </Button>
+        <p className="text-xs leading-relaxed text-muted-foreground">
+          The borrower gets this code from the KarzSamjho Telegram bot by sending <span className="font-mono">/helper</span>.
+        </p>
+      </form>
 
-      {loading && (
-        <p className="text-sm text-muted-foreground text-center py-12">Loading cases…</p>
-      )}
+      {/* 2. A case for someone without Telegram */}
+      <NewCaseDialog label="New case (borrower without Telegram)" variant="outline" />
 
-      {!loading && error && (
-        <div className="py-12 px-4 flex flex-col items-center text-center space-y-4">
-          <div className="p-4 rounded-full bg-muted text-muted-foreground">
-            <WifiOff className="size-10" />
+      {/* 3. Cases this phone already opened */}
+      <section className="space-y-3">
+        <h2 className="flex items-center gap-2 text-base font-semibold text-foreground">
+          <Smartphone className="size-4 text-muted-foreground" aria-hidden />
+          Cases on this phone
+        </h2>
+        {mine.length === 0 ? (
+          <div className="flex flex-col items-center space-y-2 rounded-2xl border border-dashed border-border px-4 py-10 text-center">
+            <FolderOpen className="size-10 text-muted-foreground" aria-hidden />
+            <p className="text-sm text-muted-foreground">
+              None yet. Cases you open with a code or start here are kept on this phone only.
+            </p>
           </div>
-          <p className="text-sm font-medium text-foreground max-w-xs">{error}</p>
-          <Button onClick={loadCases} className="h-12 w-full font-semibold">
-            Try again
-          </Button>
-        </div>
-      )}
-
-      {!loading && !error && cases && cases.length === 0 && (
-        <div className="py-16 px-4 flex flex-col items-center text-center space-y-3">
-          <div className="p-4 rounded-full bg-muted text-muted-foreground">
-            <FolderOpen className="size-12" />
-          </div>
-          <p className="text-base font-medium text-foreground">No cases yet</p>
-          <p className="text-xs text-muted-foreground max-w-xs">
-            Start one above, or forward a threat to the Telegram bot: both appear here.
-          </p>
-        </div>
-      )}
-
-      {!loading && !error && cases && cases.length > 0 && (
-        <div className="space-y-3">
-          {[...cases]
-            .sort((x, y) => (y.opened_at ?? '').localeCompare(x.opened_at ?? ''))
-            .map((c) => {
-              const rules = uniqueRules(c)
-              const n = c.events?.length ?? 0
-              return (
-                <Link
-                  key={c.id}
-                  to={`/cases/${c.id}`}
-                  className="block min-h-14 rounded-2xl border border-border bg-card p-4 shadow-sm transition-colors hover:bg-muted/50"
-                >
-                  <div className="flex items-start justify-between gap-3">
-                    <div className="min-w-0">
-                      <h3 className="truncate text-lg font-semibold text-foreground">{c.lender_name}</h3>
-                      <p className="text-xs text-muted-foreground">{c.borrower_name}</p>
-                    </div>
-                    <ChevronRight className="mt-1 size-5 shrink-0 text-muted-foreground" aria-hidden />
-                  </div>
-                  <div className="mt-3 flex flex-wrap items-center gap-2">
-                    <RouteBadge route={c.route} />
-                    <span className="text-xs font-medium text-foreground">{dayLine(c)}</span>
-                  </div>
-                  <div className="mt-3 flex items-center justify-between gap-2 border-t border-border pt-3">
-                    <RuleBadges rules={rules} />
-                    <span className="ml-auto inline-flex shrink-0 items-center gap-1 text-xs text-muted-foreground">
-                      <MessageSquareWarning className="size-3.5" aria-hidden />
-                      {n} {n === 1 ? 'message' : 'messages'}
-                    </span>
-                  </div>
-                </Link>
-              )
-            })}
-        </div>
-      )}
+        ) : (
+          mine.map((c) => (
+            <Link
+              key={c.id}
+              to={`/cases/${c.id}`}
+              className="flex min-h-16 items-center gap-3 rounded-2xl border border-border bg-card p-4 shadow-sm transition-colors hover:bg-muted/50"
+            >
+              <div className="min-w-0 flex-1">
+                <p className="truncate text-lg font-semibold text-foreground">{c.lender_name}</p>
+                <p className="text-xs text-muted-foreground">
+                  {c.borrower_name}
+                  {c.code && <span className="font-mono"> · {spacedCode(c.code)}</span>}
+                </p>
+              </div>
+              <ChevronRight className="size-5 shrink-0 text-muted-foreground" aria-hidden />
+            </Link>
+          ))
+        )}
+      </section>
     </div>
   )
 }

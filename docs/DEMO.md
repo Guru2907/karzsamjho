@@ -49,7 +49,7 @@ All in api/data/offers/ (images in demo/, answers in demo_pack.json and sms_demo
 - [ ] Demo-pack images printed at A5, 2 copies each: 02, 03, 08, 09, 10 (api/data/offers/demo/); each run once before the pitch
 - [ ] Threat message ready to forward on the phone
 - [x] Browser tabs open in order: /check (photo/SMS -> card + voice), /cases/:id
-- [x] /check step: photo or SMS -> Raju card + voice player (Easy mode was removed at 6:20 AM, D53: Raju's main door is the Telegram bot); "Share with helper" sends receipt
+- [x] /check step: photo or SMS -> Raju card + voice player (Easy mode was removed at 6:20 AM, D53: Raju's main door is the Telegram bot); ("Share with helper" removed after the hackathon, D59)
 - [ ] Backup video: 60 s clip (7:30 PM) and full run (3:00 AM)
 - [ ] Final numbers filled from docs/TESTING.md
 - [ ] Speaker paired, phone at 100%, hotspot ready
@@ -81,4 +81,5 @@ All in api/data/offers/ (images in demo/, answers in demo_pack.json and sms_demo
 12. Why would a bank mitra bother? Our assumption, not a finding; a pilot tests it.
 - [ ] Cases on the web (E4, E5, 6:00 AM): /cases -> open the case from the Telegram demo -> route badge + day, timeline with named rules (H1-H5) and the Aadhaar masked, "Log a threat" (the new entry and its rules appear without reload), Evidence PDF, "Verify record" -> "Record not edited since logging".
 - [ ] Cases from the web too (D56, 7:50 AM): /cases -> "New case" (borrower + lender), or on a /check result "Being threatened? Start a case" (linked to that check) -> case page -> Log a threat -> PDF -> Verify. Telegram still opens cases by forwarding a threat; both land in the same /cases.
+- [ ] After the hackathon (D59), the bot/app split: in Telegram forward a threat -> "Darj ho gaya ... /helper bhejo" (no PDF in Telegram any more; /pdf is gone) -> the bot asks once for the number ("📱 Number bhejo", only XXXXXX 1234 is kept) -> /helper gives the 8-digit code -> in the app, Cases -> type the code -> the case (code, borrower, masked phone, "from Telegram") -> Evidence PDF / Verify. The app shows no list of everyone's cases, only "Cases on this phone". "Share with helper" on a check result is gone.
 - [ ] After the hackathon (D57): on the laptop every "Get the app" button (nav, Home, /how, /partners) opens the vendor QR in a window; scan it with the phone -> the app's Home (/app) -> Install KarzSamjho. On the phone the website shows "Open the app" instead of a QR.

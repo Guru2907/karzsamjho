@@ -9,6 +9,8 @@ groq==1.7.0
 google-genai==3.3.0
 edge-tts==7.3.1
 rapidfuzz==3.14.6
+psycopg[binary]==3.3.9          # Postgres (Neon) driver, D58; unused when DATABASE_URL is empty
+psycopg-pool==3.3.3
 reportlab==5.1.0
 python-telegram-bot==22.8
 pillow==13.0.0

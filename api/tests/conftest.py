@@ -1,3 +1,5 @@
+import os
+
 import pytest
 from fastapi.testclient import TestClient
 
@@ -23,12 +25,39 @@ def offline_gemini_backups(monkeypatch):
 
 
 @pytest.fixture(autouse=True)
-def temp_database(monkeypatch, tmp_path):
-    """Every test gets its own empty SQLite file (A3), so no test touches the real karzsamjho.db."""
+def temp_database(monkeypatch, tmp_path, request):
+    """Every test gets its own empty SQLite file (A3), so no test touches the real karzsamjho.db,
+    and DATABASE_URL is blanked, so no test ever writes to the real Postgres (Neon) database (D58).
+    With KS_TEST_DATABASE_URL set, the whole suite runs on Postgres instead, in a throw-away schema
+    that is emptied before every test (see pg_test_url below)."""
     import dataclasses
-    from api.core import config
+    from api.core import config, db
+    pg = request.getfixturevalue("pg_test_url") if os.getenv("KS_TEST_DATABASE_URL") else ""
     monkeypatch.setattr(config, "settings", dataclasses.replace(
-        config.settings, db_path=str(tmp_path / "test.db")))
+        config.settings, db_path=str(tmp_path / "test.db"), database_url=pg))
+    if pg:
+        with db._db() as conn:
+            conn.execute("TRUNCATE events, cases, checks")
+
+
+@pytest.fixture(scope="session")
+def pg_test_url():
+    """KS_TEST_DATABASE_URL (a Postgres URL, e.g. Neon's direct, non-pooled one) -> a URL that puts
+    every table in a new schema test_<random>, dropped again when the run ends. The real tables
+    in the public schema are never touched."""
+    import secrets
+    from urllib.parse import quote
+    import psycopg
+    base = os.environ["KS_TEST_DATABASE_URL"]
+    schema = "test_" + secrets.token_hex(4)
+    with psycopg.connect(base, autocommit=True) as conn:
+        conn.execute(f"CREATE SCHEMA {schema}")
+    sep = "&" if "?" in base else "?"
+    yield f"{base}{sep}options={quote(f'-c search_path={schema}')}"
+    from api.core import db
+    db.close_pools()
+    with psycopg.connect(base, autocommit=True) as conn:
+        conn.execute(f"DROP SCHEMA {schema} CASCADE")
 
 
 @pytest.fixture(scope="session")

@@ -49,6 +49,8 @@ class Settings:
 
     # Storage
     db_path: str = field(default_factory=lambda: _s("DB_PATH", "./karzsamjho.db"))
+    # D58: Postgres (Neon) when set; the SQLite file above when empty. A secret: never logged or printed.
+    database_url: str = field(default_factory=lambda: _s("DATABASE_URL"), repr=False)
     # Local copy of RBI's directory of digital lending apps (C1, G4); never fetched live.
     rbi_dla_path: str = field(default_factory=lambda: _s("RBI_DLA_PATH", str(ROOT / "api" / "data" / "rbi_dla.csv")))
     # RBI's NBFC list and the cancelled-registration list (C3, D51); built by scripts/build_ledger.py.

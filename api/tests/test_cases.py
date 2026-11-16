@@ -1,7 +1,6 @@
 """F2: real cases + events with a hash chain (A3 database). No internet; harass.label is faked."""
 import hashlib
 import json
-import sqlite3
 from datetime import datetime, timedelta
 
 import pytest
@@ -105,9 +104,8 @@ def test_missing_case(client):
 
 def test_day_counter(client):
     case = new_case(client)
-    with sqlite3.connect(config.settings.db_path) as conn:                  # pretend it opened 3 days ago
-        when = (datetime.now(db.IST) - timedelta(days=3)).isoformat(timespec="seconds")
-        conn.execute("UPDATE cases SET opened_at = ? WHERE id = ?", (when, case["id"]))
+    when = (datetime.now(db.IST) - timedelta(days=3)).isoformat(timespec="seconds")
+    _sql("UPDATE cases SET opened_at = ? WHERE id = ?", when, case["id"])    # pretend it opened 3 days ago
     assert client.get(f"/api/cases/{case['id']}").json()["day"] == 4
 
 
@@ -160,8 +158,10 @@ def _three_events(client):
 
 
 def _sql(query, *args):
-    with sqlite3.connect(config.settings.db_path) as conn:
+    """A hand edit straight in the database, behind the API's back (SQLite or Postgres, D58)."""
+    with db._db() as conn:
         conn.execute(query, args)
+        conn.commit()
 
 
 def test_verify_untouched_chain_is_ok(client, fake_label):

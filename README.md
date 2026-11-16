@@ -25,7 +25,7 @@ Hackathon version: see tag `colossus-submission` (COLOSSUS 3.0, 13-14 Nov 2026).
 A vision model reads the photo; plain Python checks the numbers and does the maths; a second model re-reads when numbers disagree; anything unclear is reported as "couldn't verify". See docs/ARCHITECTURE.md.
 
 ## Folders
-- `api/`: the backend (FastAPI, SQLite). All logic is in `api/core/`.
+- `api/`: the backend (FastAPI; Postgres on Neon when hosted, SQLite locally and in tests). All logic is in `api/core/`.
 - `web/`: the public website (`/`, `/how`, `/partners`, `/join`) and the helper app (`/app`, `/check`, `/cases`): React, Vite, Tailwind, shadcn/ui.
 - `bot/`: the Telegram bot.
 - `scripts/`: setup and run scripts for Windows (`.bat`) and Mac/Linux (`.sh`).

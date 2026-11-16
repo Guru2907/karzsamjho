@@ -36,10 +36,12 @@ log = logging.getLogger("api")
 
 @asynccontextmanager
 async def _lifespan(_app):
-    """Create the SQLite tables when the server starts (A3; db.py also does it on first use)."""
+    """Create the tables when the server starts (A3; db.py also does it on first use).
+    Postgres (Neon) when DATABASE_URL is set, else the SQLite file (D58)."""
     db.init_db()
-    log.info("database ready: %s", config.settings.db_path)
+    log.info("database ready: %s", db.describe())
     yield
+    db.close_pools()
 
 
 app = FastAPI(title="KarzSamjho API", version="0.3.0", lifespan=_lifespan)
@@ -98,7 +100,7 @@ async def _from_cache(key: str, start: float, lang: str = "hi") -> dict | None:
         cache.put(key, result)
     result.update(cached=True, seconds=round(time.perf_counter() - start, 1))
     CHECKS[result["id"]] = result
-    db.save_check(result, key, "cache", replace=False)    # keeps the first stored answer
+    db.save_check(result, key, "cache", replace=False, lang=lang)    # keeps the first stored answer
     log.info("check %s: cache hit, no AI call, seconds=%s", result["id"], result["seconds"])
     return result
 
@@ -208,7 +210,7 @@ async def run_check(image: bytes | None = None, text: str | None = None,
     }
     CheckResult.model_validate(result)        # the contract shape, checked before anyone sees it
     CHECKS[check_id] = result
-    db.save_check(result, key, source)        # A3: survives a restart
+    db.save_check(result, key, source, lang=lang)    # A3: survives a restart (on Neon, a redeploy too)
     if key:
         try:
             cache.put(key, result)            # photos only (A4); a failed write never stops the answer
@@ -265,10 +267,18 @@ def get_check(check_id: str):
 
 
 @app.get("/api/audio/{check_id}.mp3")
-def get_audio(check_id: str):
-    path = Path(config.settings.audio_dir) / f"{check_id}.mp3"
-    if not SAFE_ID.match(check_id) or not path.is_file():
+async def get_audio(check_id: str):
+    """The check's MP3. If the file is gone (Render's disk is wiped on a restart; the check itself is
+    in the database, D58), it is made again from the stored sentence, in the check's own language.
+    edge-tts only speaks the stored sentence: no AI reader is called."""
+    if not SAFE_ID.match(check_id):
         raise HTTPException(404, "No audio for this check.")
+    path = Path(config.settings.audio_dir) / f"{check_id}.mp3"
+    if not path.is_file():
+        result = CHECKS.get(check_id) or await run_in_threadpool(db.get_check, check_id)
+        lang = await run_in_threadpool(db.check_lang, check_id)
+        if not result or not await speak.make_audio(check_id, result.get("speech_text_hi") or "", lang):
+            raise HTTPException(404, "No audio for this check.")
     return FileResponse(path, media_type="audio/mpeg", filename=f"{check_id}.mp3")
 
 

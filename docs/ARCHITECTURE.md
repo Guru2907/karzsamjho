@@ -7,7 +7,7 @@ The API contract and CheckResult shape live in CLAUDE.md. This file explains the
 Raju's phone (Telegram) ──► bot/main.py ──┐
 Helper's browser (PWA)  ──► web/ (Vite)  ─┼──► FastAPI api/main.py ──► core/ ──► fallback.py ──► Groq / Gemini / edge-tts
                                            │                             │
-                                           │                             └──► db.py (SQLite)  ·  data/rbi_dla.csv
+                                           │                             └──► db.py (Neon Postgres / SQLite)  ·  data/rbi_dla.csv
 ```
 - The bot and the web app are thin: they send a photo, text or event, and show what comes back.
 - All logic is in api/core/. Only fallback.py talks to outside services.
@@ -24,7 +24,7 @@ Helper's browser (PWA)  ──► web/ (Vite)  ─┼──► FastAPI api/main.
 | Telegram card + MP3, pasted SMS, seconds stamp | yes | bot/main.py |
 | Voice notes (Hindi, Bengali, Marathi speech) | yes: Whisper (language = the request's lang, D8; Gemini backup is told the language too) -> number words to digits (gpt-oss, hi/bn/mr examples; code expands হাজার / লাখ / শো / शे and Bengali digits) -> read like an SMS (D6) | fallback.transcribe, extract.extract_from_voice |
 | Bengali + Marathi voice, /bhasha | yes: bn-IN-TanishaaNeural, mr-IN-AarohiNeural; card stays Hinglish; sentences await the native-speaker OK (D7, D32) | speak.py, bot/main.py |
-| Results stored | yes: SQLite file (DB_PATH, default ./karzsamjho.db); survives a restart; main.py keeps a fast in-memory copy (A3) | db.py, main.py |
+| Results stored | yes: Postgres on Neon when DATABASE_URL is set (survives Render restarts and redeploys, D58), else the SQLite file (DB_PATH, default ./karzsamjho.db); main.py keeps a fast in-memory copy (A3) | db.py, main.py |
 | Cache by SHA-256 (photos) | yes: one JSON per photo in CACHE_DIR, survives a restart; a repeat makes no AI call; a missing MP3 is made again with edge-tts only | cache.py, main.py |
 | Lender match | yes: app/lender name (RapidFuzz, generic words stripped) + any website or Play Store link in the SMS, against the local copy of RBI's directory api/data/rbi_dla.csv; a listed name with a different link = SIMILAR (possible clone); empty directory = null (not checked); spoken via C4 when present (C1, D37). Optional lender.nbfc (registered NBFC) and lender.warning (RBI cancelled registration) are part of CheckResult (D51; listed in schemas.Lender since #58, before that FastAPI dropped them from the API answer) | lender.py, main.py, schemas.py |
 | Next step | yes: exactly ONE fixed Hinglish step per check, first match wins: money asked first -> DO_NOT_PAY_FIRST; lender NOT_FOUND -> NOT_IN_RBI_LIST; SIMILAR -> CHECK_APP_NAME; else by verdict: CANNOT_SAY -> SEND_CLEARER, VERY_COSTLY -> FIND_CHEAPER, COSTLY -> ASK_BANK_MITRA, USUAL -> KEEP_PAPERS. Lender not checked (null) never blocks (C2) | next_step.next_step, main.py |
@@ -72,7 +72,7 @@ Groq 429 -> switch to Gemini at once (never wait for retry-after).
 - Gemini 3.5 Flash-Lite: 15 req/min, 500/day; daily reset at 1:30 PM IST.
 - Builders use their own keys. The server account is for the 30-offer run, rehearsals and the demo.
 
-## Data stored (SQLite)
-- checks: id, created_at, source, image_sha256, result_json, engines, seconds
+## Data stored (Postgres on Neon, or SQLite; same tables, D58)
+- checks: id, created_at, source, image_sha256, result_json, engines, seconds, lang (the voice, to make a lost MP3 again)
 - cases: id, borrower_name, lender_name, check_id, route, opened_at
 - events: id, case_id, at, channel, contacted, text, rules, hash, prev_hash

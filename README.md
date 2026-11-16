@@ -6,6 +6,8 @@ Send a photo of a loan offer (or paste the SMS) and hear, in Hindi, what you get
 
 Built by Team Y2K Devs at COLOSSUS 3.0 (13-14 Nov 2026), FinTech track.
 
+Hackathon version: see tag `colossus-submission` (COLOSSUS 3.0, 13-14 Nov 2026). Work after that tag is post-hackathon.
+
 **New here? Read [docs/START_HERE.md](docs/START_HERE.md) first.**
 
 ## Try it

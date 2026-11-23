@@ -1,0 +1,8 @@
+# P8 · 61-second showcase video on GitHub
+- When: 24 Nov 2026, 2:22 AM IST · Who: agent for Siddeshwar
+- Did: added a 61-second showcase video (for LinkedIn and this repo) and a "Watch it" section in the README that plays it. It shows the photo check (Jaldi Gullak: ₹3,800 in hand, ₹5,000 back in 7 days, ₹1,200 extra) with the app's Hindi voice, the RBI list check (KreditBee found; Alok Auto Credit's cancelled registration), and a harassment case (a threat logged with H1 + H2, then the evidence PDF). No code changed.
+- Files: docs/media/karzsamjho-showcase.mp4 (7 MB), docs/media/karzsamjho-showcase.jpg (poster), README.md, CHANGELOG.md, docs/TASKS.md (P8), .gitattributes (*.mp4 binary)
+- Proof: `ffprobe docs/media/karzsamjho-showcase.mp4` -> H.264 1920x1080, 30 fps, AAC 48 kHz, 61.2 s. The three checks in the recording returned the demo pack's expected numbers. Every English line was transcribed from the finished video and matches the script. `pytest -q` -> 667 passed (nothing in api/, bot/ or web/ changed).
+- Status in docs/TASKS.md: review
+- Next: the team watches it once with sound; then it can be posted on LinkedIn (the full-quality copy is on Siddeshwar's laptop).
+- Broken / risks: the English narration is a generated copy of Siddeshwar's voice made from his own recording, and the name "KarzSamjho" was voiced separately so it is said the Hindi way: both need a listen by a person, a transcript cannot judge how natural they sound. The video was recorded on a local copy of the app with its own throwaway database, so nothing was written to the hosted database. The working files (about 1.4 GB: recordings, voice clips, the edit project) are not in the repo; only the finished video and its poster are. The video adds 7 MB to the repo for good.

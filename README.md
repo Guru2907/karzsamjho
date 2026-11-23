@@ -15,6 +15,11 @@ Hackathon version: see tag `colossus-submission` (COLOSSUS 3.0, 13-14 Nov 2026).
 - API health: https://karzsamjho-api.onrender.com/api/health (free tier: the first call after a pause can take up to a minute)
 - Telegram bot: https://t.me/karzsamjho_demo_bot (runs on Render next to the API; the first message after a pause can take up to a minute)
 
+## Watch it (1 minute)
+[![KarzSamjho in one minute: the rupee card for a loan offer, read aloud in Hindi](docs/media/karzsamjho-showcase.jpg)](docs/media/karzsamjho-showcase.mp4)
+
+Click the picture to play the video (61 seconds, with captions): a photo of a loan offer becomes the rupee card and the Hindi voice, then the RBI list check, then a harassment case with its evidence PDF. Every offer and threat shown is a synthetic sample. The English narration is a generated copy of a teammate's own voice; the Hindi sentence is the app's own voice.
+
 ## What it does
 - **Snap & hear:** photo, pasted SMS or a voice note in Telegram, or photo / SMS in the helper app -> a simple card + voice in Hindi, Bengali or Marathi (`/bhasha`); warns when an offer asks for money before the loan
 - **Rupee receipt:** in hand, to repay, days, extra; maths in code, never by AI

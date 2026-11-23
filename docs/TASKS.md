@@ -616,4 +616,5 @@ After 5:00 AM (D46): bug fixes, wording and rehearsal only. No new features.
 | P5 | Docs refresh after D60 (this file, ARCHITECTURE, README, CLAUDE, AGENTS, RUNBOOK, TESTING, START_HERE) | review | this PR |
 | P6 | Local Vite dev server shows a blank page ("Invalid hook call"), also on main | todo | separate PR |
 | P7 | Rate-limit wrong case-code guesses | todo | not agreed yet |
+| P8 | 61-second showcase video in docs/media/, shown in the README; synthetic demo data only | review | this PR |
 

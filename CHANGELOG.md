@@ -4,6 +4,9 @@ Work after the hackathon goes under [Unreleased]. The hackathon build is the tag
 
 ## [Unreleased]
 
+### Added (showcase video)
+- A 61-second showcase video in `docs/media/`, shown in the README ("Watch it"): photo of an offer -> rupee card + Hindi voice, the RBI list check, a harassment case and its evidence PDF. Recorded on a local copy of the app with the synthetic demo pack only. No code changed.
+
 ### Docs
 - Docs brought up to date after D60: ARCHITECTURE (hosting, the three doors, case codes, photos, PDF parts, closing, all tables, privacy), README (who uses what, 667 tests), CLAUDE.md (post-hackathon rules, lender match as coded: whole name, 92 / 80), AGENTS, RUNBOOK (bot on Render), TESTING (Postgres run), START_HERE, PROGRESS status, TASKS (post-hackathon section). PLAN and PREP are marked as history.
 

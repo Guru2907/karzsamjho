@@ -20,6 +20,27 @@ Hackathon version: see tag `colossus-submission` (COLOSSUS 3.0, 13-14 Nov 2026).
 
 Click the picture to play the video (61 seconds, with captions): a photo of a loan offer becomes the rupee card and the Hindi voice, then the RBI list check, then a harassment case with its evidence PDF. Every offer and threat shown is a synthetic sample. The English narration is a generated copy of a teammate's own voice; the Hindi sentence is the app's own voice.
 
+## Screenshots
+Every offer and threat in these pictures is a synthetic sample.
+
+**The website** (for funders and partners):
+
+<img src="docs/media/screenshots/website-home.png" alt="The KarzSamjho website: Loan lene se pehle, suno" width="820">
+
+**Checking a loan offer** (the helper app on a phone):
+
+| Home | A costly offer | A lender in RBI's list | A cancelled registration |
+|---|---|---|---|
+| <img src="docs/media/screenshots/app-home.png" alt="Helper app home: check a loan offer, harassment cases, Telegram for the borrower" width="200"> | <img src="docs/media/screenshots/check-result.png" alt="Rupee card: 3,800 in hand, 5,000 to repay, 7 days, 1,200 extra, very costly" width="200"> | <img src="docs/media/screenshots/check-rbi-found.png" alt="Rupee card for a lender found in RBI's directory, with the list date" width="200"> | <img src="docs/media/screenshots/check-rbi-warning.png" alt="Rupee card with a dated warning: RBI cancelled this company's NBFC registration" width="200"> |
+| What the helper can do | ₹3,800 in hand, ₹5,000 back in 7 days: ₹1,200 extra | "Found in RBI's directory", with the list date | A dated warning and one next step |
+
+**Harassment log:**
+
+| The case | Each threat and the rule it breaks | The evidence PDF |
+|---|---|---|
+| <img src="docs/media/screenshots/case-page.png" alt="A harassment case: its 8-digit code, the lender, where to complain" width="230"> | <img src="docs/media/screenshots/case-timeline.png" alt="Timeline of three threats with rules H1, H2, H4, H5 and a masked Aadhaar number" width="230"> | <img src="docs/media/screenshots/evidence-pdf-1.png" alt="First page of the evidence PDF: rules broken, dated timeline, hash chain" width="300"> |
+| The 8-digit code, the lender and where to complain | Rules H1 to H6 named; a 12-digit ID is masked | Rules broken, dated timeline and the tamper check |
+
 ## What it does
 - **Snap & hear:** photo, pasted SMS or a voice note in Telegram, or photo / SMS in the helper app -> a simple card + voice in Hindi, Bengali or Marathi (`/bhasha`); warns when an offer asks for money before the loan
 - **Rupee receipt:** in hand, to repay, days, extra; maths in code, never by AI
